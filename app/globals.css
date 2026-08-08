@@ -387,10 +387,10 @@ img {
 
 .hero-player {
   position: absolute;
-  right: clamp(-170px, -9vw, -80px);
-  bottom: 15%;
+  right: clamp(24px, 5vw, 96px);
+  bottom: 17%;
   z-index: 2;
-  width: min(54vw, 730px);
+  width: min(46vw, 560px);
   pointer-events: none;
   filter: drop-shadow(0 35px 35px rgba(0, 0, 0, 0.7));
 }
@@ -408,9 +408,9 @@ img {
 }
 
 .hero-player__image {
+  display: block;
   width: 100%;
   height: auto;
-  transform: scale(2.15) translateY(-1%);
   animation: player-float 4.8s ease-in-out infinite;
 }
 
@@ -3168,8 +3168,8 @@ img {
   }
 
   .hero-player {
-    right: -180px;
-    width: 670px;
+    right: -70px;
+    width: 520px;
   }
 
   .event-empty-card {
@@ -3267,10 +3267,10 @@ img {
   }
 
   .hero-player {
-    right: -250px;
+    right: -115px;
     bottom: 12%;
-    width: 650px;
-    opacity: 0.82;
+    width: 480px;
+    opacity: 0.86;
   }
 
   .hero-overlay {
@@ -3517,10 +3517,10 @@ img {
   }
 
   .hero-player {
-    right: -240px;
-    bottom: 12%;
-    width: 540px;
-    opacity: 0.6;
+    right: -120px;
+    bottom: 14%;
+    width: 400px;
+    opacity: 0.68;
   }
 
   .hero-hud--top {

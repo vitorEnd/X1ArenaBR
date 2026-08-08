@@ -76,11 +76,13 @@ export function HomeHero() {
         aria-hidden="true"
       >
         <Image
-          src="/images/player-yellow-glasses.png"
+          src="/images/player-yellow-glasses-hd.png"
           alt=""
-          width={666}
-          height={375}
+          width={1672}
+          height={941}
           priority
+          quality={90}
+          sizes="(max-width: 640px) 400px, (max-width: 900px) 480px, (max-width: 1120px) 520px, 560px"
           className="hero-player__image"
         />
       </motion.div>

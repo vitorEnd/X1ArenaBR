@@ -88,7 +88,8 @@ Os ativos visuais fornecidos foram organizados em:
 - `public/images/arena-field.jfif` (original fornecido);
 - `public/images/arena-field.jpg` (cópia com MIME compatível para uso no navegador);
 - `public/images/player-yellow.png`;
-- `public/images/player-yellow-glasses.png`.
+- `public/images/player-yellow-glasses.png` (recorte original);
+- `public/images/player-yellow-glasses-hd.png` (reconstrução em alta resolução usada no hero).
 
 O logo oficial também alimenta a abertura do site, o header, o banner da comunidade, o footer e os ícones detectados automaticamente pelo App Router em `app/icon.png` e `app/apple-icon.png`.
 
