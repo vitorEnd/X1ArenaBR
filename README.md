@@ -82,14 +82,15 @@ Os dados ficam em `data/arena.ts`. Para conectar uma API no futuro, mantenha os 
 
 ## Imagens e logo
 
-As três imagens fornecidas foram organizadas em:
+Os ativos visuais fornecidos foram organizados em:
 
+- `public/images/axb-logo.png` (logo oficial AXB);
 - `public/images/arena-field.jfif` (original fornecido);
 - `public/images/arena-field.jpg` (cópia com MIME compatível para uso no navegador);
 - `public/images/player-yellow.png`;
 - `public/images/player-yellow-glasses.png`.
 
-O arquivo oficial do logo AXB não estava acessível no workspace. O site usa temporariamente um wordmark tipográfico “AXB”, sem inventar um novo escudo. Quando o logo for anexado, salve-o como `public/images/axb-logo.png` e substitua o conteúdo visual do componente `components/brand-mark.tsx` por `next/image`. A mesma imagem poderá então gerar o favicon oficial.
+O logo oficial também alimenta a abertura do site, o header, o banner da comunidade, o footer e os ícones detectados automaticamente pelo App Router em `app/icon.png` e `app/apple-icon.png`.
 
 ## Acessibilidade e movimento
 

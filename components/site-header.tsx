@@ -72,7 +72,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-header__inner page-container">
-        <BrandMark />
+        <BrandMark priority />
 
         <nav className="desktop-nav" aria-label="Navegação principal">
           {navigation.map((item) => (

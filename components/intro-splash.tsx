@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
-const SESSION_KEY = "axb-intro-viewed";
+const SESSION_KEY = "axb-intro-viewed-v2";
 
 export function IntroSplash() {
   const [visible, setVisible] = useState(false);
@@ -51,8 +52,15 @@ export function IntroSplash() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: reducedMotion ? 0 : 0.42 }}
           >
-            <span className="intro-wordmark">AXB</span>
-            <span className="intro-label">ARENA X1 BRASIL</span>
+            <Image
+              src="/images/axb-logo.png"
+              alt=""
+              width={1024}
+              height={1024}
+              className="intro-logo"
+              priority
+              sizes="(max-width: 640px) 78vw, 520px"
+            />
             <motion.span
               className="intro-shine"
               initial={{ x: "-140%" }}

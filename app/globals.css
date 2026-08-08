@@ -1557,12 +1557,11 @@ img {
   margin-bottom: 35px;
 }
 
-.community-banner .brand-wordmark {
-  color: var(--black);
-}
-
-.community-banner .brand-wordmark::after {
-  background: var(--black);
+.community-banner .brand-logo-frame {
+  width: 104px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #030303;
+  box-shadow: 0 18px 42px rgba(5, 5, 5, 0.28);
 }
 
 .community-banner .eyebrow {
@@ -2749,7 +2748,7 @@ img {
 .not-found-page h1 { max-width: 760px; margin: 12px 0 15px; font-family: var(--font-barlow), sans-serif; font-size: clamp(3.2rem, 8vw, 7rem); font-weight: 900; letter-spacing: -.04em; line-height: .86; text-transform: uppercase; }
 .not-found-page p { margin: 0 0 28px; color: #888; }
 
-/* Brand fallback: official logo file was not available in the workspace. */
+/* Official AXB brand */
 .brand-mark {
   display: inline-flex;
   flex: 0 0 auto;
@@ -2757,30 +2756,31 @@ img {
   gap: 11px;
 }
 
-.brand-wordmark {
+.brand-logo-frame {
   position: relative;
-  display: inline-block;
-  min-width: 58px;
-  padding: 0 9px 5px 0;
-  color: var(--gold-light);
-  font-family: var(--font-barlow), Impact, sans-serif;
-  font-size: 1.55rem;
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: -0.07em;
-  line-height: 1;
-  transform: skewX(-5deg);
+  display: block;
+  width: 62px;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: #000;
+  transition: filter 180ms ease, transform 180ms ease;
 }
 
-.brand-wordmark::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  background: var(--gold);
-  content: "";
-  transform: skewX(5deg);
+.brand-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-mark:hover .brand-logo-frame {
+  filter: drop-shadow(0 0 9px rgba(245, 184, 0, 0.34));
+  transform: translateY(-1px);
+}
+
+.brand-mark--compact .brand-logo-frame {
+  width: 86px;
 }
 
 .brand-copy {
@@ -2994,35 +2994,29 @@ img {
 .intro-wordmark-wrap {
   position: relative;
   display: grid;
+  width: min(72vw, 72svh, 520px);
+  aspect-ratio: 1;
   place-items: center;
   overflow: hidden;
+  isolation: isolate;
+  filter: drop-shadow(0 0 38px rgba(245, 184, 0, 0.14));
 }
 
-.intro-wordmark {
-  color: var(--gold);
-  font-family: var(--font-barlow), Impact, sans-serif;
-  font-size: clamp(6rem, 28vw, 14rem);
-  font-style: italic;
-  font-weight: 900;
-  letter-spacing: -0.08em;
-  line-height: 0.78;
-  text-shadow: 0 0 45px rgba(245, 184, 0, 0.2);
-}
-
-.intro-label {
-  margin-top: 18px;
-  color: var(--white);
-  font-family: var(--font-barlow), sans-serif;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.34em;
+.intro-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .intro-shine {
   position: absolute;
   inset: -20%;
+  z-index: 2;
   width: 20%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.68), transparent);
+  mix-blend-mode: screen;
+  pointer-events: none;
   transform: skewX(-18deg);
 }
 
@@ -3056,6 +3050,10 @@ img {
   margin: 22px 0;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.footer-brand-mark .brand-logo-frame {
+  width: 148px;
 }
 
 .footer-discord {
@@ -3242,6 +3240,10 @@ img {
     justify-content: space-between;
   }
 
+  .site-header .brand-logo-frame {
+    width: 54px;
+  }
+
   .mobile-menu-button,
   .mobile-discord-cta {
     display: grid;
@@ -3353,6 +3355,10 @@ img {
 
   .community-banner__content {
     max-width: 78%;
+  }
+
+  .community-banner .brand-logo-frame {
+    width: 92px;
   }
 
   .community-banner__visual {
@@ -3468,6 +3474,10 @@ img {
 
   .site-footer__brand {
     grid-column: auto;
+  }
+
+  .footer-brand-mark .brand-logo-frame {
+    width: 124px;
   }
 
   .site-footer__bottom {
@@ -3720,6 +3730,14 @@ img {
 
   .community-banner__content {
     max-width: 100%;
+  }
+
+  .community-banner .brand-logo-frame {
+    width: 82px;
+  }
+
+  .intro-wordmark-wrap {
+    width: min(78vw, 58svh);
   }
 
   .community-banner h2 {

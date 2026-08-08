@@ -10,7 +10,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="page-container site-footer__grid">
         <div className="site-footer__brand">
-          <BrandMark />
+          <BrandMark compact className="footer-brand-mark" />
           <p>Comunidade competitiva de World of Football.</p>
           <a
             href={DISCORD_URL}
