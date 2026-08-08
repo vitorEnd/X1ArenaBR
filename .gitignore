@@ -42,5 +42,8 @@ next-env.d.ts
 /outputs/
 /work/
 
+# local hosting metadata (the project is provider-agnostic)
+/.openai/
+
 # local preview logs
 .devserver*.log

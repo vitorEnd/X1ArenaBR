@@ -2,7 +2,7 @@
 
 Plataforma da comunidade competitiva **WOF Arena X1 BR (AXB)** para eventos semanais de x1 dentro do World of Football.
 
-O projeto usa Next.js com App Router, React, TypeScript, Tailwind CSS, Framer Motion e Lucide Icons. A estrutura de dados local foi separada da interface para facilitar uma conexão futura com Supabase, Firebase ou outra API.
+O projeto é uma aplicação Next.js padrão com App Router, React, TypeScript, Tailwind CSS, Framer Motion e Lucide Icons. Ele não depende de nenhum provedor de hospedagem e pode ser publicado onde você preferir.
 
 ## Executar localmente
 
@@ -18,13 +18,19 @@ npm install
 npm run dev
 ```
 
-Abra o endereço exibido no terminal. Para validar a versão de produção:
+Abra `http://localhost:3000`. Para executar a versão de produção localmente:
+
+```bash
+npm run build
+npm run start
+```
+
+Validações disponíveis:
 
 ```bash
 npm run typecheck
 npm run lint
 npm test
-npm run build
 ```
 
 Nenhuma variável de ambiente é necessária na versão atual.
@@ -50,7 +56,6 @@ lib/types.ts          Interfaces e tipos do domínio
 lib/ranking.ts        Fórmulas, ordenação e separação do campeão
 public/images/        Imagens fornecidas para a AXB
 tests/                Testes da lógica de ranking
-worker/               Entrada compatível com a hospedagem Sites
 ```
 
 ## Dados oficiais e demonstrativos
