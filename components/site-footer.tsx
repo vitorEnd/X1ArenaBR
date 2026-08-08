@@ -46,10 +46,6 @@ export function SiteFooter() {
 
       <div className="page-container site-footer__bottom">
         <span>© {year} WOF Arena X1 BR</span>
-        <span>
-          Projeto comunitário e fan-made, sem afiliação declarada com o UFC ou
-          com os responsáveis por World of Football.
-        </span>
       </div>
     </footer>
   );

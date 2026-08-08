@@ -3106,11 +3106,6 @@ img {
   line-height: 1.6;
 }
 
-.site-footer__bottom span:last-child {
-  max-width: 700px;
-  text-align: right;
-}
-
 /* Shared internal-page hero */
 .page-hero {
   position: relative;
@@ -3483,10 +3478,6 @@ img {
   .site-footer__bottom {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .site-footer__bottom span:last-child {
-    text-align: left;
   }
 
   .page-hero {
