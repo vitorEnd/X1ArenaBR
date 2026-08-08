@@ -38,7 +38,7 @@ Nenhuma variável de ambiente é necessária na versão atual.
 ## Rotas
 
 - `/` — homepage editorial;
-- `/eventos` — agenda, card demonstrativo e histórico;
+- `/eventos` — agenda, cards e histórico oficiais;
 - `/rankings` — classificação por categoria e busca por jogador;
 - `/categorias` — comparação de atributos e cinturões;
 - `/jogadores` — diretório de jogadores;
@@ -51,21 +51,23 @@ Nenhuma variável de ambiente é necessária na versão atual.
 ```text
 app/                  Rotas, metadados, sitemap e robots
 components/           Componentes reutilizáveis e interativos
-data/arena.ts         Conteúdo oficial e dados demonstrativos centralizados
+data/arena.ts         Conteúdo e dados oficiais centralizados
 lib/types.ts          Interfaces e tipos do domínio
 lib/ranking.ts        Fórmulas, ordenação e separação do campeão
 public/images/        Imagens fornecidas para a AXB
 tests/                Testes da lógica de ranking
 ```
 
-## Dados oficiais e demonstrativos
+## Estado inicial da Arena
 
-Não foram fornecidos campeões, cards, resultados ou registros oficiais. Por isso:
+Jogadores oficiais cadastrados:
 
-- os estados oficiais permanecem vazios;
-- cinturões exibem **“Cinturão a definir”**;
-- a agenda exibe **“Próximo card a ser anunciado”**;
-- qualquer nome, placar ou número usado para demonstrar filtros, cards e perfis recebe o rótulo persistente **“Dados demonstrativos — não oficiais”**.
+- **Itz** — Peso Médio;
+- **João00325** — Peso Médio;
+- **Vtzinn021** — Peso Pena, divisão leve existente na Arena;
+- **Vwyxz** — categoria a definir.
+
+O primeiro card ainda está em preparação. Rankings, campeões, resultados e históricos permanecem vazios até os primeiros confrontos oficiais, sem posições ou placares presumidos.
 
 Os pontos e o saldo nunca são armazenados duplicados:
 
@@ -105,5 +107,3 @@ O logo oficial também alimenta a abertura do site, o header, o banner da comuni
 ## Créditos
 
 Criadores informados pela comunidade: **Itz**, **Vtzinn021** e **Apenas João00325**.
-
-Projeto comunitário e fan-made, sem afiliação declarada com o UFC ou com os responsáveis por World of Football.

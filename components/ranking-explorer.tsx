@@ -5,11 +5,7 @@ import { Crown, Search, ShieldQuestion, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
-  DEMO_DATA_LABEL,
-  DEMO_DATA_NOTICE,
   categories,
-  examplePlayers,
-  exampleRankingEntries,
   officialChampions,
   officialPlayers,
   officialRankingEntries,
@@ -40,23 +36,19 @@ function FormDots({ form }: { form: readonly ("win" | "loss")[] }) {
 export function RankingExplorer({ compact = false }: RankingExplorerProps) {
   const [categoryId, setCategoryId] = useState<CategoryId>("peso-pena");
   const [query, setQuery] = useState("");
-  const officialCategoryEntries = officialRankingEntries.filter((entry) => entry.categoryId === categoryId);
-  const showingExampleData = officialCategoryEntries.length === 0;
-  const sourceEntries = showingExampleData ? exampleRankingEntries : officialRankingEntries;
-  const sourcePlayers = showingExampleData ? examplePlayers : officialPlayers;
   const championRecord = officialChampions.find(
     (champion) => champion.categoryId === categoryId && champion.type === "official",
   );
   const ranking = useMemo(
     () =>
-      buildCategoryRanking(sourceEntries, categoryId, {
+      buildCategoryRanking(officialRankingEntries, categoryId, {
         championPlayerId: championRecord?.playerId,
       }),
-    [categoryId, championRecord?.playerId, sourceEntries],
+    [categoryId, championRecord?.playerId],
   );
   const playerById = useMemo(
-    () => new Map<string, Player>(sourcePlayers.map((player) => [player.id, player])),
-    [sourcePlayers],
+    () => new Map<string, Player>(officialPlayers.map((player) => [player.id, player])),
+    [],
   );
   const championPlayer = championRecord ? officialPlayers.find((player) => player.id === championRecord.playerId) : null;
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
@@ -104,11 +96,6 @@ export function RankingExplorer({ compact = false }: RankingExplorerProps) {
         )}
       </div>
 
-      {showingExampleData && <div className="demo-notice" role="note">
-          <span className="data-badge">{DEMO_DATA_LABEL}</span>
-          {!compact && <p>{DEMO_DATA_NOTICE}</p>}
-        </div>}
-
       <p className="sr-only" aria-live="polite">
         {visibleStandings.length} jogador{visibleStandings.length === 1 ? "" : "es"} exibido{visibleStandings.length === 1 ? "" : "s"} em {categories.find((item) => item.id === categoryId)?.name}.
       </p>
@@ -122,7 +109,7 @@ export function RankingExplorer({ compact = false }: RankingExplorerProps) {
           <span>Campeão da categoria</span>
           <strong>{championPlayer?.name ?? "Cinturão a definir"}</strong>
         </div>
-        <span className="champion-row__status">{championPlayer ? championRecord?.type === "interim" ? "CAMPEÃO INTERINO" : "CAMPEÃO OFICIAL" : "VAGA OFICIAL"}</span>
+        <span className="champion-row__status">{championPlayer ? championRecord?.type === "interim" ? "CAMPEÃO INTERINO" : "CAMPEÃO OFICIAL" : "CINTURÃO VAGO"}</span>
       </div>
 
       <AnimatePresence mode="wait">
@@ -138,7 +125,7 @@ export function RankingExplorer({ compact = false }: RankingExplorerProps) {
               <div className="ranking-table-wrap" role="region" aria-label="Tabela de classificação com rolagem horizontal" tabIndex={0}>
                 <table className="ranking-table">
                   <caption className="sr-only">
-                    Ranking demonstrativo da categoria {categories.find((item) => item.id === categoryId)?.name}
+                    Ranking oficial da categoria {categories.find((item) => item.id === categoryId)?.name}
                   </caption>
                   <thead>
                     <tr>
@@ -214,11 +201,11 @@ export function RankingExplorer({ compact = false }: RankingExplorerProps) {
           ) : (
             <div className="empty-state">
               <ShieldQuestion size={34} aria-hidden="true" />
-              <h3>Nenhum jogador encontrado</h3>
-              <p>Ajuste a busca ou limpe o termo para ver a classificação.</p>
-              <button type="button" className="button-ghost" onClick={() => setQuery("")}>
-                Limpar busca
-              </button>
+              <h3>{normalizedQuery ? "Nenhum jogador encontrado" : "Ranking aguardando os primeiros resultados"}</h3>
+              <p>{normalizedQuery ? "Ajuste a busca ou limpe o termo para ver a classificação." : "Os jogadores já estão inscritos. A classificação começa assim que o primeiro confronto oficial for registrado."}</p>
+              {normalizedQuery && <button type="button" className="button-ghost" onClick={() => setQuery("")}>
+                  Limpar busca
+                </button>}
             </div>
           )}
         </motion.div>

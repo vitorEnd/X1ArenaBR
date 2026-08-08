@@ -20,7 +20,7 @@ export default function CategoriesPage() {
       </section>
       <section className="section section--graphite">
         <div className="page-container">
-          <SectionHeading eyebrow="Cinturões da Arena" title={<>Prestígio que precisa ser <span className="title-accent">defendido</span></>} description="O campeão é exibido com C e fora da numeração comum do ranking. Nenhum nome é mostrado até haver informação oficial." />
+          <SectionHeading eyebrow="Cinturões da Arena" title={<>Prestígio que precisa ser <span className="title-accent">defendido</span></>} description="O campeão é exibido com C e fora da numeração comum do ranking. O primeiro nome ocupará esse posto quando o cinturão inaugural for conquistado." />
           <ChampionsGrid />
         </div>
       </section>

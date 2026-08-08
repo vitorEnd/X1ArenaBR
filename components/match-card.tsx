@@ -1,5 +1,5 @@
 import { CalendarDays, Clock3, MapPin, Swords } from "lucide-react";
-import { categories, examplePlayers, officialPlayers } from "@/data/arena";
+import { categories, officialPlayers } from "@/data/arena";
 import type { Event, Match } from "@/lib/types";
 
 const typeLabels: Record<Match["type"], string> = {
@@ -25,9 +25,8 @@ const methodLabels: Record<NonNullable<Match["result"]>["method"], string> = {
 };
 
 export function MatchCard({ match, event }: { match: Match; event: Event }) {
-  const players = [...officialPlayers, ...examplePlayers];
-  const playerA = players.find((player) => player.id === match.playerAId);
-  const playerB = players.find((player) => player.id === match.playerBId);
+  const playerA = officialPlayers.find((player) => player.id === match.playerAId);
+  const playerB = officialPlayers.find((player) => player.id === match.playerBId);
   const category = categories.find((item) => item.id === match.categoryId);
   const startsAt = new Date(match.scheduledAt ?? event.startsAt);
   const score = match.result?.score;

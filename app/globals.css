@@ -230,7 +230,6 @@ img {
   color: var(--gold-light);
 }
 
-.data-badge,
 .status-badge {
   display: inline-flex;
   width: fit-content;
@@ -635,6 +634,15 @@ img {
   font-style: italic;
   font-weight: 900;
   line-height: 1;
+}
+
+.arena-stats strong.arena-welcome {
+  align-self: center;
+  font-size: clamp(1rem, 1.45vw, 1.3rem);
+  font-style: normal;
+  letter-spacing: 0.045em;
+  line-height: 1.15;
+  text-transform: uppercase;
 }
 
 .arena-stats span:not(strong span) {
@@ -1042,23 +1050,6 @@ img {
   background: transparent;
   color: #aaa;
   cursor: pointer;
-}
-
-.demo-notice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin: 18px 0;
-}
-
-.demo-notice p {
-  max-width: 720px;
-  margin: 0;
-  color: #878787;
-  font-size: 0.72rem;
-  line-height: 1.55;
-  text-align: right;
 }
 
 .champion-row {
@@ -1870,16 +1861,6 @@ img {
   font-family: var(--font-barlow), sans-serif;
   font-size: 1.2rem;
   text-transform: uppercase;
-}
-
-.demo-notice--block {
-  align-items: flex-start;
-  flex-direction: column;
-  margin: 35px 0 24px;
-}
-
-.demo-notice--block p {
-  text-align: left;
 }
 
 .event-card-heading {
@@ -3598,15 +3579,6 @@ img {
   .category-tabs button {
     padding-inline: 8px;
     font-size: 0.72rem;
-  }
-
-  .demo-notice {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .demo-notice p {
-    text-align: left;
   }
 
   .champion-row {

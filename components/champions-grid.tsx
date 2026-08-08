@@ -35,7 +35,7 @@ export function ChampionsGrid() {
           <span className="champion-card__c">C</span>
           <Crown className="champion-card__crown" size={34} aria-hidden="true" />
           <h3>{hasChampion ? player?.name : "Cinturão a definir"}</h3>
-          <p>{hasChampion ? `${champion?.type === "interim" ? "Campeão interino" : "Campeão oficial"} da categoria.` : "Nenhum campeão oficial informado para esta categoria."}</p>
+          <p>{hasChampion ? `${champion?.type === "interim" ? "Campeão interino" : "Campeão oficial"} da categoria.` : "A disputa pelo cinturão inaugural começa em breve."}</p>
           <dl>
             <div><dt>Defesas</dt><dd>{champion?.defenses ?? "—"}</dd></div>
             <div><dt>Vitórias</dt><dd>{rankingEntry?.wins ?? "—"}</dd></div>
@@ -44,7 +44,7 @@ export function ChampionsGrid() {
           </dl>
           <div className="champion-card__footer">
             <span>Conquista</span>
-            <strong>{champion ? new Date(champion.wonAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "AGUARDANDO DEFINIÇÃO"}</strong>
+            <strong>{champion ? new Date(champion.wonAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "AGUARDANDO PRIMEIRO CAMPEÃO"}</strong>
           </div>
         </motion.article>;
       })}

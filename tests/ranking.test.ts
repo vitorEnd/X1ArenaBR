@@ -23,7 +23,7 @@ function makeEntry(
     goalsFor: 10,
     goalsAgainst: 5,
     recentForm: [],
-    dataStatus: "example",
+    dataStatus: "official",
     ...overrides,
   };
 }
@@ -128,10 +128,10 @@ test("recorre à decisão da organização quando confronto direto não resolve"
 test("aceita uma decisão persistida da organização como último desempate", () => {
   const entries = [
     makeEntry("alpha", {
-      organizationDecision: { order: 2, reason: "Decisão de exemplo" },
+      organizationDecision: { order: 2, reason: "Critério definido" },
     }),
     makeEntry("bravo", {
-      organizationDecision: { order: 1, reason: "Decisão de exemplo" },
+      organizationDecision: { order: 1, reason: "Critério definido" },
     }),
   ];
 
@@ -158,7 +158,7 @@ test("ignora um override parcial para não produzir desempate inconsistente", ()
 
 test("separa o campeão com C e numera o primeiro desafiante como #1", () => {
   const entries = [
-    makeEntry("campeao-exemplo", { wins: 10, losses: 0 }),
+    makeEntry("campeao-fixture", { wins: 10, losses: 0 }),
     makeEntry("desafiante-01", { wins: 7, losses: 1 }),
     makeEntry("desafiante-02", { wins: 5, losses: 2 }),
     makeEntry("outra-categoria", {
@@ -169,10 +169,10 @@ test("separa o campeão com C e numera o primeiro desafiante como #1", () => {
   ];
 
   const ranking = buildCategoryRanking(entries, "peso-pena", {
-    championPlayerId: "campeao-exemplo",
+    championPlayerId: "campeao-fixture",
   });
 
-  assert.equal(ranking.champion?.playerId, "campeao-exemplo");
+  assert.equal(ranking.champion?.playerId, "campeao-fixture");
   assert.equal(ranking.champion?.marker, "C");
   assert.equal(ranking.champion?.position, null);
   assert.deepEqual(
@@ -187,7 +187,7 @@ test("separa o campeão com C e numera o primeiro desafiante como #1", () => {
     ],
   );
   assert.equal(
-    ranking.standings.some((entry) => entry.playerId === "campeao-exemplo"),
+    ranking.standings.some((entry) => entry.playerId === "campeao-fixture"),
     false,
   );
   assert.equal(

@@ -4,8 +4,8 @@ export type PlayerId = string;
 export type EventId = string;
 export type MatchId = string;
 
-/** Identifica claramente se um registro e oficial ou apenas demonstrativo. */
-export type DataStatus = "official" | "example";
+/** Todos os registros publicados pertencem ao conjunto oficial da Arena. */
+export type DataStatus = "official";
 
 export interface AttributeRange {
   readonly min: number;
@@ -34,7 +34,7 @@ export interface Player {
   readonly slug: string;
   readonly name: string;
   readonly avatarUrl: string | null;
-  readonly currentCategoryId: CategoryId;
+  readonly currentCategoryId: CategoryId | null;
   readonly status: PlayerStatus;
   readonly joinedAt?: string | null;
   readonly dataStatus: DataStatus;

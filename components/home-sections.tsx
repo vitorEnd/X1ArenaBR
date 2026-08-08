@@ -50,18 +50,24 @@ function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string
 export function ArenaStats() {
   const stats = [
     { value: 3, suffix: "", label: "Categorias oficiais" },
-    { value: 9, suffix: "", label: "Passos até o cinturão" },
+    { message: "Bem-Vindo ao Arena x1 BR Oficial!" },
     { value: 2, suffix: " pts", label: "Por vitória" },
     { value: 1, suffix: "", label: "Arena: o Park" },
-  ];
+  ] as const;
 
   return (
     <section className="arena-stats" aria-label="Estatísticas gerais da Arena">
       <div className="page-container arena-stats__grid">
         {stats.map((stat) => (
-          <div key={stat.label}>
-            <strong><AnimatedNumber value={stat.value} suffix={stat.suffix} /></strong>
-            <span>{stat.label}</span>
+          <div key={"message" in stat ? stat.message : stat.label}>
+            {"message" in stat ? (
+              <strong className="arena-welcome">{stat.message}</strong>
+            ) : (
+              <>
+                <strong><AnimatedNumber value={stat.value} suffix={stat.suffix} /></strong>
+                <span>{stat.label}</span>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -70,8 +76,8 @@ export function ArenaStats() {
 }
 
 export function NextEventSection() {
-  const hasOfficialEvent = officialEvents.length > 0;
-  const nextOfficialEvent = officialEvents.find((event) => event.status !== "finished") ?? officialEvents[0];
+  const nextOfficialEvent = officialEvents.find((event) => event.status !== "finished");
+  const hasOfficialEvent = Boolean(nextOfficialEvent);
   const nextOfficialMatches = nextOfficialEvent ? officialMatches.filter((match) => nextOfficialEvent.matchIds.includes(match.id)) : [];
   const eventDate = nextOfficialEvent ? new Date(nextOfficialEvent.startsAt) : null;
   return (
@@ -195,7 +201,7 @@ export function CreatorsSection() {
         <SectionHeading
           eyebrow="Comunidade em movimento"
           title={<>Quem constrói <span className="title-accent">a Arena</span></>}
-          description="Três nomes na origem da WOF Arena X1 BR. A estrutura está pronta para receber mais informações oficiais no futuro."
+          description="Três nomes na origem da WOF Arena X1 BR e uma comunidade pronta para escrever sua própria história."
         />
         <div className="creators-grid">
           {creators.map((creator, index) => (

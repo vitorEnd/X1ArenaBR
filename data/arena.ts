@@ -16,10 +16,6 @@ export const ARENA_NAME = "WOF Arena X1 BR";
 export const ARENA_SHORT_NAME = "AXB";
 export const ARENA_VENUE = "Park";
 
-export const DEMO_DATA_LABEL = "DADOS DEMONSTRATIVOS — NÃO OFICIAIS";
-export const DEMO_DATA_NOTICE =
-  "Os nomes e números desta área existem apenas para demonstrar a interface. Não representam jogadores, campeões ou resultados oficiais da AXB.";
-
 export const categories = [
   {
     id: "peso-pena",
@@ -116,8 +112,7 @@ export const glossary = [
   },
   {
     term: "Defesa",
-    definition:
-      "Quando o campeão vence um x1 valendo seu cinturão.",
+    definition: "Quando o campeão vence um x1 valendo seu cinturão.",
   },
   {
     term: "Campeão interino",
@@ -202,367 +197,56 @@ export const arenaRules = {
     "Quando um campeão perde o cinturão, a organização decide em qual posição ele retorna ao ranking.",
 } as const;
 
+export const officialPlayers = [
+  {
+    id: "itz",
+    slug: "itz",
+    name: "Itz",
+    avatarUrl: null,
+    currentCategoryId: "peso-medio",
+    status: "active",
+    dataStatus: "official",
+  },
+  {
+    id: "joao00325",
+    slug: "joao00325",
+    name: "João00325",
+    avatarUrl: null,
+    currentCategoryId: "peso-medio",
+    status: "active",
+    dataStatus: "official",
+  },
+  {
+    id: "vtzinn021",
+    slug: "vtzinn021",
+    name: "Vtzinn021",
+    avatarUrl: null,
+    // "Peso leve" usa a divisão leve já existente, definida como Peso Pena.
+    currentCategoryId: "peso-pena",
+    status: "active",
+    dataStatus: "official",
+  },
+  {
+    id: "vwyxz",
+    slug: "vwyxz",
+    name: "Vwyxz",
+    avatarUrl: null,
+    currentCategoryId: null,
+    status: "active",
+    dataStatus: "official",
+  },
+] as const satisfies readonly Player[];
+
 /**
- * Não há campeões, cards ou resultados oficiais fornecidos. Estas coleções
- * permanecem vazias para que a interface apresente os estados corretos.
+ * A Arena ainda não publicou resultados, ranking, campeões, cards ou históricos.
+ * As coleções ficam vazias até que os primeiros registros oficiais sejam enviados.
  */
 export const officialChampions: readonly Champion[] = [];
 export const officialEvents: readonly Event[] = [];
 export const officialMatches: readonly Match[] = [];
-export const officialPlayers: readonly Player[] = [];
 export const officialRankingEntries: readonly RankingEntry[] = [];
 export const officialBeltHistory: readonly BeltHistory[] = [];
 export const officialRivalries: readonly Rivalry[] = [];
-
-export const examplePlayers = [
-  {
-    id: "example-pena-01",
-    slug: "jogador-exemplo-pena-01",
-    name: "Jogador Exemplo P01",
-    avatarUrl: null,
-    currentCategoryId: "peso-pena",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-pena-02",
-    slug: "jogador-exemplo-pena-02",
-    name: "Jogador Exemplo P02",
-    avatarUrl: null,
-    currentCategoryId: "peso-pena",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-pena-03",
-    slug: "jogador-exemplo-pena-03",
-    name: "Jogador Exemplo P03",
-    avatarUrl: null,
-    currentCategoryId: "peso-pena",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-pena-04",
-    slug: "jogador-exemplo-pena-04",
-    name: "Jogador Exemplo P04",
-    avatarUrl: null,
-    currentCategoryId: "peso-pena",
-    status: "inactive",
-    dataStatus: "example",
-  },
-  {
-    id: "example-medio-01",
-    slug: "jogador-exemplo-medio-01",
-    name: "Jogador Exemplo M01",
-    avatarUrl: null,
-    currentCategoryId: "peso-medio",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-medio-02",
-    slug: "jogador-exemplo-medio-02",
-    name: "Jogador Exemplo M02",
-    avatarUrl: null,
-    currentCategoryId: "peso-medio",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-medio-03",
-    slug: "jogador-exemplo-medio-03",
-    name: "Jogador Exemplo M03",
-    avatarUrl: null,
-    currentCategoryId: "peso-medio",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-medio-04",
-    slug: "jogador-exemplo-medio-04",
-    name: "Jogador Exemplo M04",
-    avatarUrl: null,
-    currentCategoryId: "peso-medio",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-pesado-01",
-    slug: "jogador-exemplo-pesado-01",
-    name: "Jogador Exemplo G01",
-    avatarUrl: null,
-    currentCategoryId: "peso-pesado",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-pesado-02",
-    slug: "jogador-exemplo-pesado-02",
-    name: "Jogador Exemplo G02",
-    avatarUrl: null,
-    currentCategoryId: "peso-pesado",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-pesado-03",
-    slug: "jogador-exemplo-pesado-03",
-    name: "Jogador Exemplo G03",
-    avatarUrl: null,
-    currentCategoryId: "peso-pesado",
-    status: "active",
-    dataStatus: "example",
-  },
-  {
-    id: "example-pesado-04",
-    slug: "jogador-exemplo-pesado-04",
-    name: "Jogador Exemplo G04",
-    avatarUrl: null,
-    currentCategoryId: "peso-pesado",
-    status: "inactive",
-    dataStatus: "example",
-  },
-] as const satisfies readonly Player[];
-
-export const exampleRankingEntries = [
-  {
-    playerId: "example-pena-01",
-    categoryId: "peso-pena",
-    wins: 6,
-    losses: 1,
-    goalsFor: 23,
-    goalsAgainst: 11,
-    recentForm: ["win", "win", "loss", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-pena-02",
-    categoryId: "peso-pena",
-    wins: 5,
-    losses: 0,
-    goalsFor: 18,
-    goalsAgainst: 8,
-    recentForm: ["win", "win", "win", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-pena-03",
-    categoryId: "peso-pena",
-    wins: 4,
-    losses: 1,
-    goalsFor: 16,
-    goalsAgainst: 10,
-    recentForm: ["loss", "win", "win", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-pena-04",
-    categoryId: "peso-pena",
-    wins: 3,
-    losses: 2,
-    goalsFor: 15,
-    goalsAgainst: 13,
-    recentForm: ["loss", "win", "loss", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-medio-01",
-    categoryId: "peso-medio",
-    wins: 7,
-    losses: 2,
-    goalsFor: 27,
-    goalsAgainst: 14,
-    recentForm: ["win", "loss", "win", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-medio-02",
-    categoryId: "peso-medio",
-    wins: 6,
-    losses: 1,
-    goalsFor: 22,
-    goalsAgainst: 12,
-    recentForm: ["win", "win", "loss", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-medio-03",
-    categoryId: "peso-medio",
-    wins: 5,
-    losses: 2,
-    goalsFor: 21,
-    goalsAgainst: 16,
-    recentForm: ["loss", "win", "win", "loss", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-medio-04",
-    categoryId: "peso-medio",
-    wins: 3,
-    losses: 3,
-    goalsFor: 17,
-    goalsAgainst: 18,
-    recentForm: ["loss", "loss", "win", "loss", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-pesado-01",
-    categoryId: "peso-pesado",
-    wins: 8,
-    losses: 2,
-    goalsFor: 32,
-    goalsAgainst: 17,
-    recentForm: ["win", "win", "win", "loss", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-pesado-02",
-    categoryId: "peso-pesado",
-    wins: 7,
-    losses: 1,
-    goalsFor: 28,
-    goalsAgainst: 15,
-    recentForm: ["win", "win", "loss", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-pesado-03",
-    categoryId: "peso-pesado",
-    wins: 5,
-    losses: 3,
-    goalsFor: 24,
-    goalsAgainst: 20,
-    recentForm: ["loss", "win", "loss", "win", "win"],
-    dataStatus: "example",
-  },
-  {
-    playerId: "example-pesado-04",
-    categoryId: "peso-pesado",
-    wins: 4,
-    losses: 4,
-    goalsFor: 22,
-    goalsAgainst: 23,
-    recentForm: ["loss", "win", "loss", "loss", "win"],
-    dataStatus: "example",
-  },
-] as const satisfies readonly RankingEntry[];
-
-/**
- * Cards e resultados exclusivamente demonstrativos. Servem para validar a
- * experiência de eventos e históricos sem se passar por registros da Arena.
- */
-export const exampleEvents = [
-  {
-    id: "example-event-upcoming",
-    slug: "card-demonstrativo-futuro",
-    name: "Card demonstrativo",
-    startsAt: "2026-08-15T20:00:00-03:00",
-    timeZone: "America/Sao_Paulo",
-    venue: "Park",
-    status: "confirmed",
-    matchIds: ["example-match-04", "example-match-05", "example-match-06"],
-    dataStatus: "example",
-  },
-  {
-    id: "example-event-history",
-    slug: "historico-demonstrativo",
-    name: "Histórico demonstrativo",
-    startsAt: "2026-07-26T20:00:00-03:00",
-    timeZone: "America/Sao_Paulo",
-    venue: "Park",
-    status: "finished",
-    matchIds: ["example-match-01", "example-match-02", "example-match-03"],
-    dataStatus: "example",
-  },
-] as const satisfies readonly Event[];
-
-export const exampleMatches = [
-  {
-    id: "example-match-01",
-    eventId: "example-event-history",
-    categoryId: "peso-pena",
-    playerAId: "example-pena-01",
-    playerBId: "example-pena-02",
-    type: "rematch",
-    status: "finished",
-    scheduledAt: "2026-07-26T20:00:00-03:00",
-    result: {
-      winnerId: "example-pena-01",
-      score: { playerA: 4, playerB: 2 },
-      method: "regular",
-    },
-    dataStatus: "example",
-  },
-  {
-    id: "example-match-02",
-    eventId: "example-event-history",
-    categoryId: "peso-medio",
-    playerAId: "example-medio-01",
-    playerBId: "example-medio-03",
-    type: "normal",
-    status: "finished",
-    scheduledAt: "2026-07-26T20:35:00-03:00",
-    result: {
-      winnerId: "example-medio-03",
-      score: { playerA: 2, playerB: 3 },
-      method: "golden-goal",
-    },
-    dataStatus: "example",
-  },
-  {
-    id: "example-match-03",
-    eventId: "example-event-history",
-    categoryId: "peso-pesado",
-    playerAId: "example-pesado-02",
-    playerBId: "example-pesado-03",
-    type: "challenge",
-    status: "finished",
-    scheduledAt: "2026-07-26T21:10:00-03:00",
-    result: {
-      winnerId: "example-pesado-02",
-      score: { playerA: 3, playerB: 0 },
-      method: "knockout",
-    },
-    dataStatus: "example",
-  },
-  {
-    id: "example-match-04",
-    eventId: "example-event-upcoming",
-    categoryId: "peso-pena",
-    playerAId: "example-pena-03",
-    playerBId: "example-pena-04",
-    type: "normal",
-    status: "confirmed",
-    scheduledAt: "2026-08-15T20:00:00-03:00",
-    result: null,
-    dataStatus: "example",
-  },
-  {
-    id: "example-match-05",
-    eventId: "example-event-upcoming",
-    categoryId: "peso-medio",
-    playerAId: "example-medio-02",
-    playerBId: "example-medio-04",
-    type: "rematch",
-    status: "confirmed",
-    scheduledAt: "2026-08-15T20:35:00-03:00",
-    result: null,
-    dataStatus: "example",
-  },
-  {
-    id: "example-match-06",
-    eventId: "example-event-upcoming",
-    categoryId: "peso-pesado",
-    playerAId: "example-pesado-01",
-    playerBId: "example-pesado-04",
-    type: "belt",
-    status: "awaiting",
-    scheduledAt: "2026-08-15T21:10:00-03:00",
-    result: null,
-    dataStatus: "example",
-  },
-] as const satisfies readonly Match[];
 
 export const officialArenaData = {
   categories,
@@ -575,13 +259,4 @@ export const officialArenaData = {
   rivalries: officialRivalries,
   glossary,
   rules: arenaRules,
-} as const;
-
-export const exampleArenaData = {
-  label: DEMO_DATA_LABEL,
-  notice: DEMO_DATA_NOTICE,
-  players: examplePlayers,
-  rankingEntries: exampleRankingEntries,
-  events: exampleEvents,
-  matches: exampleMatches,
 } as const;
