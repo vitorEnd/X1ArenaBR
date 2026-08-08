@@ -221,8 +221,7 @@ export const officialPlayers = [
     slug: "vtzinn021",
     name: "Vtzinn021",
     avatarUrl: null,
-    // "Peso leve" usa a divisão leve já existente, definida como Peso Pena.
-    currentCategoryId: "peso-pena",
+    currentCategoryId: "peso-medio",
     status: "active",
     dataStatus: "official",
   },

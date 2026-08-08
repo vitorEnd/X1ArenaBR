@@ -64,7 +64,7 @@ Jogadores oficiais cadastrados:
 
 - **Itz** — Peso Médio;
 - **João00325** — Peso Médio;
-- **Vtzinn021** — Peso Pena, divisão leve existente na Arena;
+- **Vtzinn021** — Peso Médio;
 - **Vwyxz** — categoria a definir.
 
 O primeiro card ainda está em preparação. Rankings, campeões, resultados e históricos permanecem vazios até os primeiros confrontos oficiais, sem posições ou placares presumidos.
