@@ -22,9 +22,12 @@ export function useMatchmakingLive({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
+  const refreshControllerRef = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async () => {
+    refreshControllerRef.current?.abort();
     const controller = new AbortController();
+    refreshControllerRef.current = controller;
 
     try {
       const nextSnapshot = await adapter.getSnapshot(controller.signal);
@@ -39,10 +42,11 @@ export function useMatchmakingLive({
           : "Não foi possível atualizar o estado da Arena.",
       );
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (refreshControllerRef.current === controller) {
+        refreshControllerRef.current = null;
+        if (mountedRef.current) setLoading(false);
+      }
     }
-
-    return () => controller.abort();
   }, [adapter]);
 
   useEffect(() => {
@@ -51,6 +55,8 @@ export function useMatchmakingLive({
     return () => {
       clearTimeout(initialRefresh);
       mountedRef.current = false;
+      refreshControllerRef.current?.abort();
+      refreshControllerRef.current = null;
     };
   }, [refresh]);
 
@@ -60,6 +66,8 @@ export function useMatchmakingLive({
       snapshot?.foundMatch ||
       snapshot?.activeMatch,
   );
+  const currentMatchId =
+    snapshot?.foundMatch?.matchId ?? snapshot?.activeMatch?.matchId ?? null;
 
   useEffect(() => {
     if (!snapshot?.configured || !profileId) return;
@@ -71,7 +79,7 @@ export function useMatchmakingLive({
       refreshTimer = setTimeout(() => void refresh(), 120);
     };
 
-    const channel = supabase
+    let channel = supabase
       .channel(`ranked-profile:${profileId}`)
       .on(
         "postgres_changes",
@@ -80,6 +88,7 @@ export function useMatchmakingLive({
           schema: "public",
           table: "ranked_notifications",
           filter: `recipient_profile_id=eq.${profileId}`,
+          select: ["id", "recipient_profile_id", "kind", "created_at", "read_at"],
         },
         scheduleRefresh,
       )
@@ -90,6 +99,15 @@ export function useMatchmakingLive({
           schema: "public",
           table: "ranked_profiles",
           filter: `id=eq.${profileId}`,
+          select: [
+            "id",
+            "username",
+            "avatar_path",
+            "wins",
+            "losses",
+            "placement_matches",
+            "updated_at",
+          ],
         },
         scheduleRefresh,
       )
@@ -100,21 +118,77 @@ export function useMatchmakingLive({
           schema: "public",
           table: "ranked_queue_entries",
           filter: `profile_id=eq.${profileId}`,
+          select: ["id", "profile_id", "status", "match_id", "updated_at"],
         },
         scheduleRefresh,
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "ranked_matches" },
+        {
+          event: "*",
+          schema: "public",
+          table: "ranked_post_match_choices",
+          filter: `profile_id=eq.${profileId}`,
+          select: ["id", "match_id", "profile_id", "requeue", "acknowledged_at"],
+        },
         scheduleRefresh,
-      )
-      .subscribe();
+      );
+
+    if (currentMatchId) {
+      channel = channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "ranked_matches",
+            filter: `id=eq.${currentMatchId}`,
+            select: [
+              "id",
+              "status",
+              "accept_deadline",
+              "room_name",
+              "room_password",
+              "score_deadline",
+              "confirmation_deadline",
+              "player_one_score",
+              "player_two_score",
+              "updated_at",
+            ],
+          },
+          scheduleRefresh,
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "ranked_match_acceptances",
+            filter: `match_id=eq.${currentMatchId}`,
+            select: ["id", "match_id", "profile_id", "state", "responded_at"],
+          },
+          scheduleRefresh,
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "ranked_result_confirmations",
+            filter: `match_id=eq.${currentMatchId}`,
+            select: ["id", "match_id", "profile_id", "state", "responded_at"],
+          },
+          scheduleRefresh,
+        );
+    }
+
+    channel.subscribe();
 
     return () => {
       if (refreshTimer) clearTimeout(refreshTimer);
       void supabase.removeChannel(channel);
     };
-  }, [profileId, refresh, snapshot?.configured]);
+  }, [currentMatchId, profileId, refresh, snapshot?.configured]);
 
   useEffect(() => {
     if (!needsLiveUpdates) return;
@@ -130,7 +204,7 @@ export function useMatchmakingLive({
       try {
         await adapter.updateQueue("heartbeat");
       } catch {
-        // The 15-second reconciliation refresh will surface a persistent failure.
+        // The short polling fallback will surface a persistent failure.
       }
     };
 

@@ -163,15 +163,46 @@ export async function GET(request: Request) {
       profileIds.add(match.player_one_id);
       profileIds.add(match.player_two_id);
     }
-    const { data: profiles, error: profilesError } = profileIds.size
-      ? await admin
-          .from("ranked_public_profiles")
-          .select("*")
-          .in("id", [...profileIds])
-      : { data: [], error: null };
-    if (profilesError) throw profilesError;
+    const profileIdList = [...profileIds];
+    const [publicProfilesResult, baseProfilesResult] = profileIdList.length
+      ? await Promise.all([
+          admin
+            .from("ranked_public_profiles")
+            .select("*")
+            .in("id", profileIdList),
+          admin
+            .from("ranked_profiles")
+            .select(
+              "id,username,avatar_path,wins,losses,mmr,placement_matches,created_at,updated_at",
+            )
+            .in("id", profileIdList),
+        ])
+      : [
+          { data: [], error: null },
+          { data: [], error: null },
+        ];
+    if (publicProfilesResult.error) throw publicProfilesResult.error;
+    if (baseProfilesResult.error) throw baseProfilesResult.error;
+
+    const publicProfilesById = new Map(
+      (publicProfilesResult.data ?? []).map((profile) => [
+        stringValue(profile.id),
+        profile,
+      ]),
+    );
     const profilesById = new Map(
-      (profiles ?? []).map((profile) => [stringValue(profile.id), profile]),
+      (baseProfilesResult.data ?? []).map((profile) => {
+        const id = stringValue(profile.id);
+        return [
+          id,
+          publicProfilesById.get(id) ?? {
+            ...profile,
+            mmr: profile.placement_matches === 5 ? profile.mmr : null,
+            global_position: null,
+            tier: null,
+          },
+        ];
+      }),
     );
     const reportsByMatch = new Map(
       (reportsResult.data ?? []).map((report) => [report.match_id, report]),
@@ -254,14 +285,11 @@ export async function GET(request: Request) {
         penaltyByProfile.set(item.profile_id, item.ends_at);
       }
     }
-    const publicAccountRows = new Map(
-      (profiles ?? []).map((item) => [stringValue(item.id), item]),
-    );
     const accounts: RankedSupportAccount[] = (accountsResult.data ?? []).map(
       (account) => {
         const publicAccount = toRankedOpponent(
           admin,
-          publicAccountRows.get(account.id),
+          profilesById.get(account.id),
         );
         const frozenUntil = account.frozen_until as string | null;
         return {

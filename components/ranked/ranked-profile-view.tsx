@@ -136,8 +136,18 @@ export function RankedProfileView({ username, adapter = rankedUiAdapter }: Ranke
                     : `${entry.ownGoals} × ${entry.opponentGoals}`}
                 </strong>
                 <div className={styles.historyMeta}>
-                  <strong className={entry.mmrChange >= 0 ? styles.positive : styles.negative}>
-                    {entry.mmrChange > 0 ? "+" : ""}{entry.mmrChange} MMR
+                  <strong
+                    className={
+                      entry.mmrChange === null
+                        ? undefined
+                        : entry.mmrChange >= 0
+                          ? styles.positive
+                          : styles.negative
+                    }
+                  >
+                    {entry.mmrChange === null
+                      ? "MMR oculto"
+                      : `${entry.mmrChange > 0 ? "+" : ""}${entry.mmrChange} MMR`}
                   </strong>
                   <span className={styles.historyTierChange}>
                     {entry.previousTier ? rankedTierLabels[entry.previousTier] : "Colocação"}

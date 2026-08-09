@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Flag, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { RankedLobbyView } from "./adapter";
+import type { RankedLobbyView, RankedReportCategory } from "./adapter";
 import styles from "./ranked.module.css";
 import { useDialogFocusTrap } from "./use-dialog-focus-trap";
 
@@ -110,7 +110,10 @@ export function ScoreDialog({ open, onClose, match, busy, onSubmit }: ScoreDialo
   );
 }
 
-const reportCategories = [
+const reportCategories: ReadonlyArray<{
+  readonly value: RankedReportCategory;
+  readonly label: string;
+}> = [
   { value: "room_not_created", label: "Sala não criada" },
   { value: "incorrect_password", label: "Senha incorreta" },
   { value: "opponent_absent", label: "Adversário ausente" },
@@ -122,11 +125,11 @@ const reportCategories = [
 
 interface ReportDialogProps extends BaseDialogProps {
   readonly busy: boolean;
-  readonly onSubmit: (category: string, observation: string) => Promise<unknown>;
+  readonly onSubmit: (category: RankedReportCategory, observation: string) => Promise<unknown>;
 }
 
 export function ReportDialog({ open, onClose, busy, onSubmit }: ReportDialogProps) {
-  const [category, setCategory] = useState<(typeof reportCategories)[number]["value"]>(reportCategories[0].value);
+  const [category, setCategory] = useState<RankedReportCategory>(reportCategories[0].value);
   const [observation, setObservation] = useState("");
   const [error, setError] = useState<string | null>(null);
   const selectRef = useRef<HTMLSelectElement>(null);
@@ -176,7 +179,7 @@ export function ReportDialog({ open, onClose, busy, onSubmit }: ReportDialogProp
               ref={selectRef}
               id="report-category"
               value={category}
-              onChange={(event) => setCategory(event.target.value as typeof category)}
+              onChange={(event) => setCategory(event.target.value as RankedReportCategory)}
             >
               {reportCategories.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>

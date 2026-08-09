@@ -3,5 +3,11 @@ export async function register() {
   const { syncConfiguredSupportUsers } = await import(
     "@/lib/ranked/support-sync"
   );
-  await syncConfiguredSupportUsers();
+  try {
+    await syncConfiguredSupportUsers();
+  } catch {
+    // Keep the public site available. Support RPCs remain fail-closed until
+    // the database and the environment allowlist can be synchronized again.
+    console.error("AXB support allowlist could not be synchronized at startup.");
+  }
 }

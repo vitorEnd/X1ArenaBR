@@ -48,7 +48,17 @@ npm.cmd run build
 5. Em Authentication, mantenha e-mail/senha habilitado e exija confirmação de e-mail.
 6. Ative **Manual Identity Linking** para permitir conectar Discord e senha à mesma conta.
 7. Cadastre nas URLs permitidas o endereço local e o domínio final, ambos com `/auth/callback`.
-8. Em Supabase Cron, agende periodicamente `select public.ranked_reconcile();` para reconciliar prazos mesmo quando nenhum navegador estiver ativo.
+8. Em **Integrations → Cron**, habilite o módulo e agende a reconciliação a cada cinco segundos para que aceite, placar e confirmação expirem mesmo sem navegadores ativos:
+
+```sql
+select cron.schedule(
+  'ranked-reconcile',
+  '5 seconds',
+  $$ select public.ranked_reconcile(); $$
+);
+```
+
+9. Abra o histórico do job no painel do Cron e confirme execuções consecutivas com status `succeeded` antes de liberar a fila.
 
 Exemplo local:
 
@@ -100,7 +110,7 @@ O matchmaking começa em uma janela de ±150 MMR. Depois de 60 segundos, a busca
 - `/matchmaking` — lobby e fila ranked;
 - `/matchmaking/ranking` — Top 50 global;
 - `/ranked/[username]` — perfil ranked público;
-- `/auth/entrar` e `/cadastro` — acesso à ranked;
+- `/auth/entrar` e `/auth/cadastro` — acesso à ranked;
 - `/conta` — segurança e métodos vinculados;
 - `/conta/perfil` — nome e avatar ranked;
 - `/suporte` — operação protegida;

@@ -52,8 +52,8 @@ export async function GET() {
     }
 
     const { supabase, profile } = context;
-    await supabase.rpc("ranked_reconcile");
-    await supabase.rpc("ranked_try_matchmake");
+    assertNoSupabaseError(await supabase.rpc("ranked_reconcile"));
+    assertNoSupabaseError(await supabase.rpc("ranked_try_matchmake"));
 
     const now = new Date().toISOString();
     const [publicProfileResult, queueResult, matchResult, penaltyResult, queueCount] =

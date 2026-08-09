@@ -1,34 +1,143 @@
-import { expect, test } from "@playwright/test";
+import type { BrowserContextOptions, Page } from "@playwright/test";
+import { devices, expect, test } from "@playwright/test";
 
-test("a ranked permanece separada dos jogadores oficiais em duas sessões", async ({
+function deviceOptions(
+  name: "Desktop Chrome" | "Pixel 7",
+): BrowserContextOptions {
+  const device = devices[name];
+
+  return {
+    viewport: device.viewport,
+    userAgent: device.userAgent,
+    deviceScaleFactor: device.deviceScaleFactor,
+    isMobile: device.isMobile,
+    hasTouch: device.hasTouch,
+    locale: "pt-BR",
+    reducedMotion: "reduce",
+  };
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const dimensions = await page.locator("html").evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+}
+
+async function expectPublicRankedFallback(page: Page) {
+  await expect(
+    page.getByRole("heading", { name: /entre\.\s*jogue\.\s*suba\./i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: /sistema em prepara/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /entrar na fila/i }),
+  ).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+}
+
+test("fallback público e jogadores oficiais funcionam em dois contextos isolados", async ({
   browser,
-}) => {
-  const firstContext = await browser.newContext();
-  const secondContext = await browser.newContext();
-  const firstPlayer = await firstContext.newPage();
-  const secondPlayer = await secondContext.newPage();
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "O cenário cria explicitamente um contexto desktop e outro mobile.",
+  );
 
-  await Promise.all([
-    firstPlayer.goto("/matchmaking"),
-    secondPlayer.goto("/matchmaking"),
-  ]);
+  const baseURL = String(testInfo.project.use.baseURL);
+  const desktopContext = await browser.newContext({
+    ...deviceOptions("Desktop Chrome"),
+    baseURL,
+  });
+  const mobileContext = await browser.newContext({
+    ...deviceOptions("Pixel 7"),
+    baseURL,
+  });
 
-  await expect(firstPlayer.getByRole("heading", { name: /matchmaking/i })).toBeVisible();
-  await expect(secondPlayer.getByRole("heading", { name: /matchmaking/i })).toBeVisible();
+  try {
+    const desktopPage = await desktopContext.newPage();
+    const mobilePage = await mobileContext.newPage();
 
-  await firstPlayer.goto("/jogadores");
-  await expect(firstPlayer.getByText("Itz", { exact: true })).toBeVisible();
-  await expect(firstPlayer.getByText(/conta ranked/i)).toHaveCount(0);
+    await Promise.all([
+      desktopPage.goto("/matchmaking"),
+      mobilePage.goto("/matchmaking"),
+    ]);
+    await Promise.all([
+      expectPublicRankedFallback(desktopPage),
+      expectPublicRankedFallback(mobilePage),
+    ]);
 
-  await firstContext.close();
-  await secondContext.close();
+    await desktopPage.locator("html").evaluate((element) => {
+      element.dataset.testContext = "desktop";
+    });
+    await expect(mobilePage.locator("html")).not.toHaveAttribute(
+      "data-test-context",
+      "desktop",
+    );
+
+    await desktopPage.goto("/jogadores");
+    await expect(
+      desktopPage.getByRole("heading", { name: "Jogadores", exact: true }),
+    ).toBeVisible();
+
+    for (const playerName of ["Itz", "João00325", "Vtzinn021", "Vwyxz"]) {
+      await expect(
+        desktopPage.getByRole("heading", { name: playerName, exact: true }),
+      ).toBeVisible();
+    }
+
+    const itzCard = desktopPage
+      .getByRole("article")
+      .filter({ has: desktopPage.getByRole("heading", { name: "Itz", exact: true }) });
+    await expect(itzCard.getByRole("link", { name: /ver perfil/i })).toHaveAttribute(
+      "href",
+      "/jogadores/itz",
+    );
+    await expect(desktopPage.locator('a[href^="/ranked/"]')).toHaveCount(0);
+    await expect(desktopPage.getByText(/conta ranked/i)).toHaveCount(0);
+    await expectNoHorizontalOverflow(desktopPage);
+  } finally {
+    await Promise.all([desktopContext.close(), mobileContext.close()]);
+  }
 });
 
-test("a experiência mobile respeita movimento reduzido", async ({ page }) => {
+test("menu mobile respeita movimento reduzido e não cria overflow", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile-chromium",
+    "Interação exclusiva da navegação mobile.",
+  );
+
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/matchmaking");
+  await expectPublicRankedFallback(page);
+  await expect
+    .poll(() => page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches))
+    .toBe(true);
 
-  await expect(page.locator("main")).toBeVisible();
-  await expect(page.getByRole("button", { name: /abrir menu/i })).toBeVisible();
-  await expect(page.locator("body")).toHaveCSS("overflow-x", "hidden");
+  const menuButton = page.locator('button[aria-controls="mobile-navigation"]');
+  await expect(menuButton).toBeVisible();
+  await expect(menuButton).toHaveAccessibleName(/abrir menu/i);
+  await menuButton.click();
+
+  const mobileNavigation = page.getByRole("navigation", {
+    name: /navega.*mobile/i,
+  });
+  await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+  await expect(mobileNavigation).toBeVisible();
+  await expect(
+    mobileNavigation.getByRole("link", { name: /matchmaking$/i }),
+  ).toHaveAttribute("aria-current", "page");
+  await expectNoHorizontalOverflow(page);
+
+  await page.keyboard.press("Escape");
+  await expect(mobileNavigation).toBeHidden();
+  await expect(menuButton).toBeFocused();
+  await expect(menuButton).toHaveAccessibleName(/abrir menu/i);
+  await expect(menuButton).toHaveAttribute("aria-expanded", "false");
+  await expectNoHorizontalOverflow(page);
 });

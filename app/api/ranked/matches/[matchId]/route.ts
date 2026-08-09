@@ -128,7 +128,7 @@ export async function POST(
         break;
     }
 
-    await supabase.rpc("ranked_reconcile");
+    assertNoSupabaseError(await supabase.rpc("ranked_reconcile"));
     const response: RankedMutationResponse = {
       ok: true,
       message:

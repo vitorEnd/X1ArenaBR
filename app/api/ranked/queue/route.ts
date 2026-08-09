@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       throw new RankedRequestError("Finalize seu perfil ranked antes de entrar na fila.", 409);
     }
 
-    await supabase.rpc("ranked_reconcile");
+    assertNoSupabaseError(await supabase.rpc("ranked_reconcile"));
 
     if (payload.data.intent === "join") {
       assertNoSupabaseError(await supabase.rpc("ranked_join_queue"));

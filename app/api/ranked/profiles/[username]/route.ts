@@ -26,7 +26,7 @@ export async function GET(
 ) {
   try {
     const { username: rawUsername } = await context.params;
-    const username = usernameSchema.safeParse(decodeURIComponent(rawUsername));
+    const username = usernameSchema.safeParse(rawUsername);
     if (!username.success) throw new RankedRequestError("Perfil ranked inválido.");
 
     const api = await getRankedApiContext();
@@ -72,11 +72,18 @@ export async function GET(
       const newMmr = nullableNumber(
         viewerIsPlayerOne ? match.player_one_new_mmr : match.player_two_new_mmr,
       );
-      const mmrChange = numberValue(
+      const wasPlacement = Boolean(
         viewerIsPlayerOne
-          ? match.player_one_mmr_delta
-          : match.player_two_mmr_delta,
+          ? match.player_one_was_placement
+          : match.player_two_was_placement,
       );
+      const mmrChange = wasPlacement
+        ? null
+        : numberValue(
+            viewerIsPlayerOne
+              ? match.player_one_mmr_delta
+              : match.player_two_mmr_delta,
+          );
 
       return {
         id: stringValue(match.id),

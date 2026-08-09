@@ -2866,8 +2866,11 @@ img {
 
 .mobile-nav {
   position: fixed;
-  inset: var(--header-height) 0 0;
+  inset: var(--header-height) 0 auto;
   z-index: 70;
+  width: 100%;
+  height: calc(100vh - var(--header-height));
+  height: calc(100dvh - var(--header-height));
   overflow-y: auto;
   background:
     linear-gradient(135deg, transparent 0 74%, rgba(245, 184, 0, 0.08) 74%),

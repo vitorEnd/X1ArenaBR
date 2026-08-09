@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Menu, Shield, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,6 +14,7 @@ function isActive(pathname: string, href: string) {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileNavRef = useRef<HTMLElement>(null);
@@ -117,18 +118,29 @@ export function SiteHeader() {
             id="mobile-navigation"
             className="mobile-nav"
             aria-label="Navegação mobile"
-            initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
+            initial={
+              reduceMotion
+                ? false
+                : { opacity: 0, clipPath: "inset(0 0 100% 0)" }
+            }
             animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }}
-            exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }}
-            transition={{ duration: 0.25 }}
+            exit={
+              reduceMotion
+                ? { opacity: 1, clipPath: "inset(0 0 0% 0)" }
+                : { opacity: 0, clipPath: "inset(0 0 100% 0)" }
+            }
+            transition={{ duration: reduceMotion ? 0 : 0.25 }}
           >
             <div className="mobile-nav__links page-container">
               {navigation.map((item, index) => (
                 <motion.div
                   key={item.href}
-                  initial={{ opacity: 0, x: -16 }}
+                  initial={reduceMotion ? false : { opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.035 }}
+                  transition={{
+                    delay: reduceMotion ? 0 : index * 0.035,
+                    duration: reduceMotion ? 0 : undefined,
+                  }}
                 >
                   <Link
                     href={item.href}

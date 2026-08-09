@@ -11,7 +11,7 @@ interface RankedPublicProfilePageProps {
 
 export async function generateMetadata({ params }: RankedPublicProfilePageProps): Promise<Metadata> {
   const { username } = await params;
-  const readableName = decodeURIComponent(username);
+  const readableName = username;
   return {
     title: `${readableName} • Perfil Ranked`,
     description: `Perfil competitivo, Elo e histórico confirmado de ${readableName} na AXB Ranked.`,
@@ -20,13 +20,12 @@ export async function generateMetadata({ params }: RankedPublicProfilePageProps)
 
 export default async function RankedPublicProfilePage({ params }: RankedPublicProfilePageProps) {
   const { username } = await params;
-  const decodedUsername = decodeURIComponent(username);
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("ranked_public_profiles")
       .select("id")
-      .eq("username", decodedUsername)
+      .eq("username", username)
       .maybeSingle();
     if (!error && !data) notFound();
   }
@@ -34,7 +33,7 @@ export default async function RankedPublicProfilePage({ params }: RankedPublicPr
     <div className={styles.rankedPage}>
       <section className={styles.contentSection}>
         <div className="page-container">
-          <RankedProfileView username={decodedUsername} />
+          <RankedProfileView username={username} />
         </div>
       </section>
     </div>

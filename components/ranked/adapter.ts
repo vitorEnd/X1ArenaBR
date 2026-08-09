@@ -19,6 +19,15 @@ export type RankedMatchState =
 
 export type RankedQueueState = "idle" | "searching" | "match_found";
 
+export type RankedReportCategory =
+  | "room_not_created"
+  | "incorrect_password"
+  | "opponent_absent"
+  | "abandonment"
+  | "technical_problem"
+  | "misconduct"
+  | "other";
+
 export interface RankedPublicProfile {
   readonly id: string;
   readonly username: string;
@@ -105,7 +114,7 @@ export interface RankedHistoryEntry {
   readonly outcome: "win" | "loss";
   readonly method: "score" | "walkover";
   readonly resolutionSource: "players" | "automatic" | "support";
-  readonly mmrChange: number;
+  readonly mmrChange: number | null;
   readonly previousTier: RankedTier | null;
   readonly nextTier: RankedTier | null;
   readonly confirmedAt: string;
@@ -190,7 +199,7 @@ export type RankedMatchIntent =
     }
   | {
       readonly intent: "report";
-      readonly category: string;
+      readonly category: RankedReportCategory;
       readonly observation: string;
     };
 
