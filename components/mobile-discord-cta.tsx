@@ -1,9 +1,21 @@
 "use client";
 
 import { MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { DISCORD_URL } from "@/lib/site";
 
 export function MobileDiscordCta() {
+  const pathname = usePathname();
+  if (
+    pathname.startsWith("/matchmaking") ||
+    pathname.startsWith("/ranked") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/conta") ||
+    pathname.startsWith("/suporte")
+  ) {
+    return null;
+  }
+
   return (
     <a
       href={DISCORD_URL}

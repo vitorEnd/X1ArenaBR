@@ -2,6 +2,7 @@ export const DISCORD_URL = "https://discord.gg/DsB6udDVeh";
 
 export const navigation = [
   { href: "/", label: "Início" },
+  { href: "/matchmaking", label: "Matchmaking" },
   { href: "/eventos", label: "Eventos" },
   { href: "/rankings", label: "Rankings" },
   { href: "/categorias", label: "Categorias" },

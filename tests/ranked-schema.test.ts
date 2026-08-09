@@ -1,0 +1,68 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+const migrationRoot = new URL("../supabase/migrations/", import.meta.url);
+const schema = await readFile(new URL("202608080001_ranked_schema.sql", migrationRoot), "utf8");
+const rpcs = await readFile(new URL("202608080002_ranked_rpcs.sql", migrationRoot), "utf8");
+const security = await readFile(new URL("202608080003_ranked_security.sql", migrationRoot), "utf8");
+
+test("keeps ranked persistence isolated from official tournament entities", () => {
+  const allMigrations = `${schema}\n${rpcs}\n${security}`.toLowerCase();
+  assert.doesNotMatch(allMigrations, /references\s+public\.(players|events|matches|champions)\b/);
+  assert.match(schema, /ranked-only accounts/i);
+});
+
+test("enforces case-insensitive usernames and the three-hour server cooldown", () => {
+  assert.match(schema, /username\s+extensions\.citext\s+not null/i);
+  assert.match(schema, /ranked_profiles_username_unique/i);
+  assert.match(rpcs, /last_username_changed_at \+ interval '3 hours'/i);
+  assert.match(schema, /ranked_username_history/i);
+});
+
+test("uses database guards for one active match and one MMR result", () => {
+  assert.match(schema, /ranked_active_match_players[\s\S]*profile_id uuid primary key/i);
+  assert.match(schema, /ranked_mmr_ledger_match_profile_unique/i);
+  assert.match(rpcs, /for update of q skip locked/i);
+  assert.match(rpcs, /Esta partida já foi contabilizada/i);
+});
+
+test("stores all authoritative deadlines and reconciles them server-side", () => {
+  for (const field of [
+    "accept_deadline",
+    "heartbeat_at",
+    "score_deadline",
+    "confirmation_deadline",
+  ]) {
+    assert.match(`${schema}\n${rpcs}`, new RegExp(field, "i"));
+  }
+  assert.match(rpcs, /create or replace function public\.ranked_reconcile\(\)/i);
+  assert.match(rpcs, /auto_approved/i);
+});
+
+test("does not grant clients direct ranked writes", () => {
+  assert.doesNotMatch(security, /grant\s+(insert|update|delete|all)[^;]+authenticated/i);
+  assert.match(security, /enable row level security/gi);
+  assert.match(security, /grant execute on function public\.ranked_submit_score/i);
+  assert.match(security, /grant execute on function public\.ranked_support_resolve_match/i);
+});
+
+test("protects lobby passwords with participant RLS and publishes realtime state", () => {
+  assert.match(security, /auth\.uid\(\) in \(player_one_id, player_two_id\)/i);
+  assert.match(security, /alter publication supabase_realtime add table/i);
+  assert.doesNotMatch(schema, /room_password[\s\S]{0,400}ranked_public_match_history/i);
+});
+
+test("persists an idempotent per-player post-match choice before requeueing", () => {
+  assert.match(schema, /create table if not exists public\.ranked_post_match_choices/i);
+  assert.match(schema, /unique \(match_id, profile_id\)/i);
+  assert.match(rpcs, /create or replace function public\.ranked_acknowledge_post_match/i);
+  assert.match(rpcs, /on conflict \(match_id, profile_id\) do nothing/i);
+  assert.match(rpcs, /perform public\.ranked_join_queue\(\)/i);
+});
+
+test("limits avatar storage to one canonical WebP object per account", () => {
+  assert.match(schema, /avatar_path = id::text \|\| '\/avatar\.webp'/i);
+  assert.match(security, /name = auth\.uid\(\)::text \|\| '\/avatar\.webp'/i);
+  assert.match(security, /array\['image\/webp'\]/i);
+});

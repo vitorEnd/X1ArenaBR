@@ -1,0 +1,701 @@
+-- AXB Ranked Matchmaking: isolated schema and immutable domain records.
+-- This migration deliberately does not reference the official tournament tables.
+
+create extension if not exists citext with schema extensions;
+create extension if not exists pgcrypto with schema extensions;
+
+do $$ begin
+  create type public.ranked_tier as enum (
+    'novato', 'pro', 'craque', 'desafiante', 'immortal', 'champion'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_queue_status as enum (
+    'waiting', 'matched', 'completed', 'cancelled', 'expired'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_match_status as enum (
+    'awaiting_acceptance',
+    'lobby',
+    'in_progress',
+    'awaiting_score',
+    'awaiting_confirmation',
+    'frozen',
+    'disputed',
+    'confirmed',
+    'cancelled'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_acceptance_state as enum (
+    'pending', 'accepted', 'declined', 'expired'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_confirmation_state as enum (
+    'pending', 'approved', 'contested', 'auto_approved'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_report_category as enum (
+    'room_not_created',
+    'incorrect_password',
+    'opponent_absent',
+    'abandonment',
+    'technical_problem',
+    'misconduct',
+    'other'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_report_status as enum ('open', 'resolved', 'dismissed');
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_resolution_source as enum ('players', 'automatic', 'support');
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_mmr_reason as enum (
+    'ranked_result', 'placement_complete', 'support_adjustment'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_penalty_kind as enum (
+    'no_accept', 'manual_queue_lock', 'account_freeze', 'ban'
+  );
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_penalty_status as enum ('active', 'expired', 'revoked');
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_notification_audience as enum ('profile', 'support');
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type public.ranked_notification_kind as enum (
+    'match_found',
+    'lobby_ready',
+    'score_submitted',
+    'match_confirmed',
+    'match_frozen',
+    'support_required',
+    'penalty_applied',
+    'support_resolution'
+  );
+exception when duplicate_object then null;
+end $$;
+
+create table if not exists public.ranked_profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  username extensions.citext not null,
+  avatar_path text,
+  wins integer not null default 0 check (wins >= 0),
+  losses integer not null default 0 check (losses >= 0),
+  mmr integer not null default 800 check (mmr >= 800),
+  provisional_mmr integer not null default 800 check (provisional_mmr >= 800),
+  placement_matches smallint not null default 0
+    check (placement_matches between 0 and 5),
+  placement_wins smallint not null default 0
+    check (placement_wins between 0 and placement_matches),
+  mmr_reached_at timestamptz not null default clock_timestamp(),
+  last_username_changed_at timestamptz,
+  queue_strike_count smallint not null default 0
+    check (queue_strike_count between 0 and 2),
+  no_accept_penalty_level smallint not null default 0
+    check (no_accept_penalty_level between 0 and 9),
+  frozen_until timestamptz,
+  banned_at timestamptz,
+  ban_reason text,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp(),
+  constraint ranked_profiles_username_length
+    check (char_length(username::text) between 3 and 24),
+  constraint ranked_profiles_username_trimmed
+    check (username::text = btrim(username::text)),
+  constraint ranked_profiles_username_characters
+    check (username::text !~ '[[:cntrl:]]'),
+  constraint ranked_profiles_avatar_path_safe
+    check (
+      avatar_path is null
+      or avatar_path = id::text || '/avatar.webp'
+    ),
+  constraint ranked_profiles_ban_reason_consistent
+    check (banned_at is not null or ban_reason is null)
+);
+
+create unique index if not exists ranked_profiles_username_unique
+  on public.ranked_profiles (username);
+create index if not exists ranked_profiles_global_order_idx
+  on public.ranked_profiles (mmr desc, wins desc, losses asc, mmr_reached_at asc, id asc)
+  where placement_matches = 5 and banned_at is null;
+
+create table if not exists public.ranked_username_history (
+  id bigint generated by default as identity primary key,
+  profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  old_username extensions.citext not null,
+  new_username extensions.citext not null,
+  changed_at timestamptz not null default clock_timestamp(),
+  check (old_username <> new_username)
+);
+
+create index if not exists ranked_username_history_profile_idx
+  on public.ranked_username_history (profile_id, changed_at desc);
+
+create table if not exists public.ranked_matches (
+  id uuid primary key default gen_random_uuid(),
+  match_number bigint generated by default as identity unique not null,
+  player_one_id uuid not null references public.ranked_profiles(id),
+  player_two_id uuid not null references public.ranked_profiles(id),
+  creator_profile_id uuid references public.ranked_profiles(id),
+  status public.ranked_match_status not null default 'awaiting_acceptance',
+  accept_deadline timestamptz not null default (clock_timestamp() + interval '15 seconds'),
+  room_name text,
+  room_password text,
+  started_at timestamptz,
+  ended_at timestamptz,
+  score_deadline timestamptz,
+  confirmation_deadline timestamptz,
+  player_one_score integer,
+  player_two_score integer,
+  winner_profile_id uuid references public.ranked_profiles(id),
+  loser_profile_id uuid references public.ranked_profiles(id),
+  resolution_source public.ranked_resolution_source,
+  confirmed_at timestamptz,
+  cancelled_at timestamptz,
+  cancellation_reason text,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp(),
+  constraint ranked_matches_distinct_players check (player_one_id <> player_two_id),
+  constraint ranked_matches_creator_is_participant check (
+    creator_profile_id is null
+    or creator_profile_id in (player_one_id, player_two_id)
+  ),
+  constraint ranked_matches_winner_is_participant check (
+    winner_profile_id is null
+    or winner_profile_id in (player_one_id, player_two_id)
+  ),
+  constraint ranked_matches_loser_is_participant check (
+    loser_profile_id is null
+    or loser_profile_id in (player_one_id, player_two_id)
+  ),
+  constraint ranked_matches_result_players_consistent check (
+    (winner_profile_id is null and loser_profile_id is null)
+    or (
+      winner_profile_id is not null
+      and loser_profile_id is not null
+      and winner_profile_id <> loser_profile_id
+      and winner_profile_id in (player_one_id, player_two_id)
+      and loser_profile_id in (player_one_id, player_two_id)
+    )
+  ),
+  constraint ranked_matches_scores_consistent check (
+    (player_one_score is null and player_two_score is null)
+    or (
+      player_one_score is not null
+      and player_two_score is not null
+      and player_one_score >= 0
+      and player_two_score >= 0
+      and player_one_score <> player_two_score
+    )
+  ),
+  constraint ranked_matches_room_password_numeric check (
+    room_password is null or room_password ~ '^\d{6}$'
+  )
+);
+
+create index if not exists ranked_matches_player_one_idx
+  on public.ranked_matches (player_one_id, created_at desc);
+create index if not exists ranked_matches_player_two_idx
+  on public.ranked_matches (player_two_id, created_at desc);
+create index if not exists ranked_matches_status_deadlines_idx
+  on public.ranked_matches (status, accept_deadline, score_deadline, confirmation_deadline);
+
+create table if not exists public.ranked_queue_entries (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  status public.ranked_queue_status not null default 'waiting',
+  effective_mmr integer not null check (effective_mmr >= 800),
+  joined_at timestamptz not null default clock_timestamp(),
+  heartbeat_at timestamptz not null default clock_timestamp(),
+  matched_at timestamptz,
+  match_id uuid references public.ranked_matches(id),
+  left_at timestamptz,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp()
+);
+
+create unique index if not exists ranked_queue_one_active_entry_idx
+  on public.ranked_queue_entries (profile_id)
+  where status in ('waiting', 'matched');
+create index if not exists ranked_queue_matchmaking_idx
+  on public.ranked_queue_entries (status, joined_at, effective_mmr)
+  where status = 'waiting';
+
+/**
+ * A profile row can only appear once here. This is the cross-column uniqueness
+ * guard that prevents one player being selected into two concurrent matches.
+ */
+create table if not exists public.ranked_active_match_players (
+  profile_id uuid primary key references public.ranked_profiles(id) on delete cascade,
+  match_id uuid not null references public.ranked_matches(id) on delete cascade,
+  created_at timestamptz not null default clock_timestamp()
+);
+
+create index if not exists ranked_active_match_players_match_idx
+  on public.ranked_active_match_players (match_id);
+
+create table if not exists public.ranked_match_acceptances (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.ranked_matches(id) on delete cascade,
+  profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  state public.ranked_acceptance_state not null default 'pending',
+  responded_at timestamptz,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp(),
+  unique (match_id, profile_id)
+);
+
+create index if not exists ranked_match_acceptances_profile_idx
+  on public.ranked_match_acceptances (profile_id, state, created_at desc);
+
+create table if not exists public.ranked_result_confirmations (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.ranked_matches(id) on delete cascade,
+  profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  state public.ranked_confirmation_state not null default 'pending',
+  responded_at timestamptz,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp(),
+  unique (match_id, profile_id)
+);
+
+create table if not exists public.ranked_post_match_choices (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.ranked_matches(id) on delete cascade,
+  profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  requeue boolean not null,
+  acknowledged_at timestamptz not null default clock_timestamp(),
+  created_at timestamptz not null default clock_timestamp(),
+  unique (match_id, profile_id)
+);
+
+create index if not exists ranked_post_match_choices_profile_idx
+  on public.ranked_post_match_choices (profile_id, acknowledged_at desc);
+
+create table if not exists public.ranked_match_reports (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.ranked_matches(id) on delete cascade,
+  reporter_profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  category public.ranked_report_category not null,
+  observation text not null,
+  status public.ranked_report_status not null default 'open',
+  resolved_by uuid references auth.users(id),
+  resolved_at timestamptz,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp(),
+  constraint ranked_match_reports_observation_length
+    check (char_length(btrim(observation)) between 10 and 1000),
+  constraint ranked_match_reports_resolution_consistent check (
+    (status = 'open' and resolved_at is null and resolved_by is null)
+    or (status <> 'open' and resolved_at is not null and resolved_by is not null)
+  )
+);
+
+create index if not exists ranked_match_reports_open_idx
+  on public.ranked_match_reports (status, created_at)
+  where status = 'open';
+
+create table if not exists public.ranked_mmr_ledger (
+  id bigint generated by default as identity primary key,
+  profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  match_id uuid references public.ranked_matches(id) on delete restrict,
+  reason public.ranked_mmr_reason not null,
+  old_mmr integer,
+  new_mmr integer,
+  delta integer,
+  is_placement boolean not null default false,
+  created_by uuid references auth.users(id),
+  created_at timestamptz not null default clock_timestamp(),
+  constraint ranked_mmr_ledger_values_consistent check (
+    (old_mmr is null and new_mmr is null and delta is null)
+    or (
+      old_mmr is not null
+      and new_mmr is not null
+      and old_mmr >= 800
+      and new_mmr >= 800
+      and delta = new_mmr - old_mmr
+    )
+  )
+);
+
+create unique index if not exists ranked_mmr_ledger_match_profile_unique
+  on public.ranked_mmr_ledger (match_id, profile_id)
+  where match_id is not null;
+create index if not exists ranked_mmr_ledger_profile_idx
+  on public.ranked_mmr_ledger (profile_id, created_at desc);
+
+create table if not exists public.ranked_penalties (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.ranked_profiles(id) on delete cascade,
+  kind public.ranked_penalty_kind not null,
+  level smallint,
+  reason text,
+  starts_at timestamptz not null default clock_timestamp(),
+  ends_at timestamptz,
+  status public.ranked_penalty_status not null default 'active',
+  created_by uuid references auth.users(id),
+  revoked_by uuid references auth.users(id),
+  revoked_at timestamptz,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp(),
+  constraint ranked_penalties_level_range check (level is null or level between 1 and 9),
+  constraint ranked_penalties_revocation_consistent check (
+    (status <> 'revoked' and revoked_at is null and revoked_by is null)
+    or (status = 'revoked' and revoked_at is not null and revoked_by is not null)
+  )
+);
+
+create index if not exists ranked_penalties_active_profile_idx
+  on public.ranked_penalties (profile_id, ends_at)
+  where status = 'active';
+
+create table if not exists public.ranked_notifications (
+  id uuid primary key default gen_random_uuid(),
+  audience public.ranked_notification_audience not null,
+  recipient_profile_id uuid references public.ranked_profiles(id) on delete cascade,
+  kind public.ranked_notification_kind not null,
+  title text not null,
+  body text not null,
+  payload jsonb not null default '{}'::jsonb,
+  read_at timestamptz,
+  created_at timestamptz not null default clock_timestamp(),
+  constraint ranked_notifications_recipient_consistent check (
+    (audience = 'profile' and recipient_profile_id is not null)
+    or (audience = 'support' and recipient_profile_id is null)
+  )
+);
+
+create index if not exists ranked_notifications_recipient_idx
+  on public.ranked_notifications (recipient_profile_id, read_at, created_at desc);
+create index if not exists ranked_notifications_support_idx
+  on public.ranked_notifications (created_at desc)
+  where audience = 'support';
+
+create table if not exists public.support_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  is_active boolean not null default true,
+  created_at timestamptz not null default clock_timestamp(),
+  updated_at timestamptz not null default clock_timestamp()
+);
+
+create table if not exists public.support_audit_log (
+  id bigint generated by default as identity primary key,
+  support_user_id uuid not null references auth.users(id),
+  action text not null,
+  target_type text not null,
+  target_id text not null,
+  previous_state jsonb,
+  next_state jsonb,
+  note text,
+  created_at timestamptz not null default clock_timestamp()
+);
+
+create index if not exists support_audit_log_created_idx
+  on public.support_audit_log (created_at desc);
+
+create table if not exists public.ranked_rate_limits (
+  actor_id uuid not null references auth.users(id) on delete cascade,
+  action_key text not null,
+  window_started_at timestamptz not null,
+  attempts integer not null default 1 check (attempts > 0),
+  primary key (actor_id, action_key)
+);
+
+create or replace function public.ranked_set_updated_at()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  new.updated_at := clock_timestamp();
+  return new;
+end;
+$$;
+
+create or replace function public.ranked_track_username_change()
+returns trigger
+language plpgsql
+set search_path = public, extensions, pg_temp
+as $$
+begin
+  if old.username is distinct from new.username then
+    insert into public.ranked_username_history (
+      profile_id, old_username, new_username, changed_at
+    ) values (
+      old.id, old.username, new.username, clock_timestamp()
+    );
+    new.last_username_changed_at := clock_timestamp();
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.ranked_validate_match_transition()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  if old.status = new.status then
+    return new;
+  end if;
+
+  if not (
+    (old.status = 'awaiting_acceptance' and new.status in ('lobby', 'cancelled'))
+    or (old.status = 'lobby' and new.status in ('in_progress', 'frozen', 'disputed', 'cancelled'))
+    or (old.status = 'in_progress' and new.status in ('awaiting_score', 'frozen', 'disputed', 'cancelled'))
+    or (old.status = 'awaiting_score' and new.status in ('awaiting_confirmation', 'frozen', 'disputed', 'cancelled'))
+    or (old.status = 'awaiting_confirmation' and new.status in ('confirmed', 'frozen', 'disputed', 'cancelled'))
+    or (old.status = 'frozen' and new.status in ('disputed', 'confirmed', 'cancelled'))
+    or (old.status = 'disputed' and new.status in ('confirmed', 'cancelled'))
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = format('Transição de partida inválida: %s → %s.', old.status, new.status);
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function public.ranked_prevent_ledger_mutation()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  raise exception using
+    errcode = '55000',
+    message = 'O histórico de MMR é imutável.';
+end;
+$$;
+
+drop trigger if exists ranked_profiles_updated_at on public.ranked_profiles;
+create trigger ranked_profiles_updated_at
+before update on public.ranked_profiles
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists ranked_profiles_username_history on public.ranked_profiles;
+create trigger ranked_profiles_username_history
+before update of username on public.ranked_profiles
+for each row execute function public.ranked_track_username_change();
+
+drop trigger if exists ranked_matches_updated_at on public.ranked_matches;
+create trigger ranked_matches_updated_at
+before update on public.ranked_matches
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists ranked_matches_validate_transition on public.ranked_matches;
+create trigger ranked_matches_validate_transition
+before update of status on public.ranked_matches
+for each row execute function public.ranked_validate_match_transition();
+
+drop trigger if exists ranked_queue_entries_updated_at on public.ranked_queue_entries;
+create trigger ranked_queue_entries_updated_at
+before update on public.ranked_queue_entries
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists ranked_match_acceptances_updated_at on public.ranked_match_acceptances;
+create trigger ranked_match_acceptances_updated_at
+before update on public.ranked_match_acceptances
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists ranked_result_confirmations_updated_at on public.ranked_result_confirmations;
+create trigger ranked_result_confirmations_updated_at
+before update on public.ranked_result_confirmations
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists ranked_match_reports_updated_at on public.ranked_match_reports;
+create trigger ranked_match_reports_updated_at
+before update on public.ranked_match_reports
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists ranked_penalties_updated_at on public.ranked_penalties;
+create trigger ranked_penalties_updated_at
+before update on public.ranked_penalties
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists support_users_updated_at on public.support_users;
+create trigger support_users_updated_at
+before update on public.support_users
+for each row execute function public.ranked_set_updated_at();
+
+drop trigger if exists ranked_mmr_ledger_immutable_update on public.ranked_mmr_ledger;
+create trigger ranked_mmr_ledger_immutable_update
+before update or delete on public.ranked_mmr_ledger
+for each row execute function public.ranked_prevent_ledger_mutation();
+
+create or replace function public.ranked_base_tier(p_mmr integer)
+returns public.ranked_tier
+language sql
+immutable
+strict
+set search_path = public, pg_temp
+as $$
+  select case
+    when p_mmr < 1000 then 'novato'::public.ranked_tier
+    when p_mmr < 1250 then 'pro'::public.ranked_tier
+    when p_mmr < 1800 then 'craque'::public.ranked_tier
+    when p_mmr < 2100 then 'desafiante'::public.ranked_tier
+    else 'immortal'::public.ranked_tier
+  end;
+$$;
+
+create or replace function public.ranked_placement_mmr(p_wins integer)
+returns integer
+language sql
+immutable
+strict
+set search_path = public, pg_temp
+as $$
+  select case p_wins
+    when 0 then 800
+    when 1 then 900
+    when 2 then 1000
+    when 3 then 1100
+    when 4 then 1200
+    when 5 then 1400
+    else null
+  end;
+$$;
+
+create or replace function public.ranked_is_support(p_user_id uuid default auth.uid())
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, auth, pg_temp
+as $$
+  select p_user_id is not null and exists (
+    select 1
+    from public.support_users su
+    where su.user_id = p_user_id and su.is_active
+  );
+$$;
+
+create or replace view public.ranked_global_standings
+with (security_barrier = true)
+as
+select
+  p.id,
+  p.username,
+  p.avatar_path,
+  p.wins,
+  p.losses,
+  p.mmr,
+  row_number() over (
+    order by p.mmr desc, p.wins desc, p.losses asc, p.mmr_reached_at asc, p.id asc
+  )::integer as global_position,
+  case
+    when p.mmr >= 2500 and row_number() over (
+      order by p.mmr desc, p.wins desc, p.losses asc, p.mmr_reached_at asc, p.id asc
+    ) <= 10 then 'champion'::public.ranked_tier
+    else public.ranked_base_tier(p.mmr)
+  end as tier,
+  p.mmr_reached_at,
+  p.created_at,
+  p.updated_at
+from public.ranked_profiles p
+where p.placement_matches = 5 and p.banned_at is null;
+
+create or replace view public.ranked_leaderboard
+with (security_barrier = true)
+as
+select *
+from public.ranked_global_standings
+where global_position <= 50;
+
+create or replace view public.ranked_public_profiles
+with (security_barrier = true)
+as
+select
+  p.id,
+  p.username,
+  p.avatar_path,
+  p.wins,
+  p.losses,
+  case when p.placement_matches = 5 then p.mmr else null end as mmr,
+  p.placement_matches,
+  p.placement_wins,
+  g.global_position,
+  g.tier,
+  p.created_at,
+  p.updated_at
+from public.ranked_profiles p
+left join public.ranked_global_standings g on g.id = p.id
+where p.banned_at is null;
+
+create or replace view public.ranked_public_match_history
+with (security_barrier = true)
+as
+select
+  m.id,
+  m.match_number,
+  m.player_one_id,
+  p1.username as player_one_username,
+  p1.avatar_path as player_one_avatar_path,
+  m.player_two_id,
+  p2.username as player_two_username,
+  p2.avatar_path as player_two_avatar_path,
+  m.player_one_score,
+  m.player_two_score,
+  m.winner_profile_id,
+  m.loser_profile_id,
+  m.resolution_source,
+  m.confirmed_at,
+  l1.old_mmr as player_one_old_mmr,
+  l1.new_mmr as player_one_new_mmr,
+  l1.delta as player_one_mmr_delta,
+  l1.is_placement as player_one_was_placement,
+  l2.old_mmr as player_two_old_mmr,
+  l2.new_mmr as player_two_new_mmr,
+  l2.delta as player_two_mmr_delta,
+  l2.is_placement as player_two_was_placement
+from public.ranked_matches m
+join public.ranked_profiles p1 on p1.id = m.player_one_id
+join public.ranked_profiles p2 on p2.id = m.player_two_id
+left join public.ranked_mmr_ledger l1
+  on l1.match_id = m.id and l1.profile_id = m.player_one_id
+left join public.ranked_mmr_ledger l2
+  on l2.match_id = m.id and l2.profile_id = m.player_two_id
+where m.status = 'confirmed';
+
+comment on table public.ranked_profiles is
+  'Ranked-only accounts. Never join or synchronize this table with official tournament players.';
+comment on view public.ranked_public_profiles is
+  'Safe public projection; provisional MMR and moderation state are intentionally omitted.';
+comment on view public.ranked_leaderboard is
+  'Official ranked Top 50 using MMR, wins, losses, reached-at time and stable UUID tie-breaks.';
