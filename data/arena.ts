@@ -252,6 +252,15 @@ export const officialPlayers = [
     status: "active",
     dataStatus: "official",
   },
+       {
+    id: "ShotColt",
+    slug: "ShotColt",
+    name: "ShotColt",
+    avatarUrl: null,
+    currentCategoryId: "peso-pena",
+    status: "active",
+    dataStatus: "official",
+  },
 ] as const satisfies readonly Player[];
 
 /**
