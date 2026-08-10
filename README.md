@@ -48,17 +48,8 @@ npm.cmd run build
 5. Em Authentication, mantenha e-mail/senha habilitado e exija confirmação de e-mail.
 6. Ative **Manual Identity Linking** para permitir conectar Discord e senha à mesma conta.
 7. Cadastre nas URLs permitidas o endereço local e o domínio final, ambos com `/auth/callback`.
-8. Em **Integrations → Cron**, habilite o módulo e agende a reconciliação a cada cinco segundos para que aceite, placar e confirmação expirem mesmo sem navegadores ativos:
-
-```sql
-select cron.schedule(
-  'ranked-reconcile',
-  '5 seconds',
-  $$ select public.ranked_reconcile(); $$
-);
-```
-
-9. Abra o histórico do job no painel do Cron e confirme execuções consecutivas com status `succeeded` antes de liberar a fila.
+8. A migration `202608090004_ranked_cron.sql` habilita o Cron e agenda automaticamente `ranked_reconcile()` a cada cinco segundos, garantindo os prazos mesmo sem navegadores ativos.
+9. Abra **Integrations → Cron → History** e confirme execuções consecutivas do job `ranked-reconcile` com status `succeeded` antes de liberar a fila.
 
 Exemplo local:
 
