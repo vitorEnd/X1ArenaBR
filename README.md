@@ -47,9 +47,10 @@ npm.cmd run build
 4. Aplique, na ordem, as migrations versionadas da pasta `supabase/migrations`.
 5. Em Authentication, mantenha e-mail/senha habilitado e exija confirmação de e-mail.
 6. Ative **Manual Identity Linking** para permitir conectar Discord e senha à mesma conta.
-7. Cadastre nas URLs permitidas o endereço local e o domínio final, ambos com `/auth/callback`.
-8. A migration `202608090004_ranked_cron.sql` habilita o Cron e agenda automaticamente `ranked_reconcile()` a cada cinco segundos, garantindo os prazos mesmo sem navegadores ativos.
-9. Abra **Integrations → Cron → History** e confirme execuções consecutivas do job `ranked-reconcile` com status `succeeded` antes de liberar a fila.
+7. Defina o domínio final como **Site URL** e permita o endereço local e o domínio final com `/**` nas URLs de redirecionamento.
+8. Antes do lançamento, configure um provedor em **Authentication → Emails → SMTP Settings**. O remetente padrão do Supabase é limitado a dois e-mails por hora e não é adequado para produção.
+9. A migration `202608090004_ranked_cron.sql` habilita o Cron e agenda automaticamente `ranked_reconcile()` a cada cinco segundos, garantindo os prazos mesmo sem navegadores ativos.
+10. Abra **Integrations → Cron → History** e confirme execuções consecutivas do job `ranked-reconcile` com status `succeeded` antes de liberar a fila.
 
 Exemplo local:
 

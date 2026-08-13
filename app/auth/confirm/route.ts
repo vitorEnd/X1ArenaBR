@@ -36,7 +36,10 @@ export async function GET(request: Request) {
 
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = getSafeNextPath(url.searchParams.get("next"), "/conta/perfil");
+  const next = getSafeNextPath(
+    url.searchParams.get("next"),
+    type === "recovery" ? "/auth/atualizar-senha" : "/conta/perfil",
+  );
 
   if (!tokenHash || !type || !EMAIL_OTP_TYPES.has(type)) {
     return NextResponse.redirect(`${origin}/auth/erro?reason=confirmation`);

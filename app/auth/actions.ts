@@ -155,9 +155,13 @@ export async function requestPasswordResetAction(
 
   const origin = await getSiteOrigin();
   const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(parsed.data, {
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
     redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/auth/atualizar-senha")}`,
   });
+
+  if (error) {
+    return { status: "error", message: authErrorMessage(error.message) };
+  }
 
   // Keep the response deliberately identical for registered and unknown emails.
   return {
