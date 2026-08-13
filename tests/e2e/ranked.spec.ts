@@ -309,6 +309,7 @@ test("perfil público exibe gols, win rate e retrospecto contra adversários", a
           goalsAgainst: 5,
           goalDifference: 7,
           winRate: 75,
+          winStreak: 3,
           mostBeatenOpponent: { username: "Vtzinn021", avatarUrl: null, matches: 2 },
           mostLostToOpponent: { username: "João00325", avatarUrl: null, matches: 1 },
         },

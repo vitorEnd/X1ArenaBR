@@ -3,6 +3,7 @@
 import {
   CalendarDays,
   ChevronLeft,
+  Flame,
   Goal,
   Gavel,
   History,
@@ -148,6 +149,12 @@ export function RankedProfileView({
           </div>
 
           <div className={styles.profilePerformanceGrid}>
+            <article className={`${styles.profileMetricCard} ${styles.profileMetricHighlight}`}>
+              <Flame size={22} aria-hidden="true" />
+              <span>Winstreak atual</span>
+              <strong>{statistics.winStreak}</strong>
+              <small>{statistics.winStreak === 1 ? "vitória seguida" : "vitórias seguidas"}</small>
+            </article>
             <article className={styles.profileMetricCard}>
               <Goal size={22} aria-hidden="true" />
               <span>Gols marcados</span>

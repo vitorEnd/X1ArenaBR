@@ -20,6 +20,7 @@ export interface RankedProfileStatistics {
   readonly goalsAgainst: number;
   readonly goalDifference: number;
   readonly winRate: number | null;
+  readonly winStreak: number;
   readonly mostBeatenOpponent: RankedOpponentStatistic | null;
   readonly mostLostToOpponent: RankedOpponentStatistic | null;
 }
@@ -63,9 +64,10 @@ export function calculateRankedProfileStatistics(
   let losses = 0;
   let goalsFor = 0;
   let goalsAgainst = 0;
+  let winStreak = 0;
   const opponents = new Map<string, OpponentCounter>();
 
-  for (const match of matches) {
+  for (const [index, match] of matches.entries()) {
     const normalizedName = match.opponentUsername.trim();
     const opponentKey = normalizedName.toLocaleLowerCase("pt-BR");
     const opponent = opponents.get(opponentKey) ?? {
@@ -82,6 +84,7 @@ export function calculateRankedProfileStatistics(
     if (match.outcome === "win") {
       wins += 1;
       opponent.wins += 1;
+      if (index === winStreak) winStreak += 1;
     } else {
       losses += 1;
       opponent.losses += 1;
@@ -104,6 +107,7 @@ export function calculateRankedProfileStatistics(
     goalsAgainst,
     goalDifference: goalsFor - goalsAgainst,
     winRate: totalMatches > 0 ? Math.round((wins / totalMatches) * 1_000) / 10 : null,
+    winStreak,
     mostBeatenOpponent: selectOpponent(opponents.values(), "wins"),
     mostLostToOpponent: selectOpponent(opponents.values(), "losses"),
   };

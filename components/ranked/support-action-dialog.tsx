@@ -4,6 +4,7 @@ import { Gavel, ShieldAlert, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   RankedSupportAccount,
+  RankedSupportHistoryMatch,
   RankedSupportIntent,
   RankedSupportMatch,
 } from "./adapter";
@@ -11,7 +12,7 @@ import styles from "./ranked.module.css";
 import { useDialogFocusTrap } from "./use-dialog-focus-trap";
 
 interface SupportActionDialogProps {
-  readonly match?: RankedSupportMatch | null;
+  readonly match?: RankedSupportMatch | RankedSupportHistoryMatch | null;
   readonly account?: RankedSupportAccount | null;
   readonly busy: boolean;
   readonly onClose: () => void;
@@ -31,6 +32,15 @@ export function SupportActionDialog({
   );
   const [playerBGoals, setPlayerBGoals] = useState(() =>
     String(match?.submittedScore?.playerBGoals ?? 0),
+  );
+  const historyMatch = match?.state === "confirmed"
+    ? match as RankedSupportHistoryMatch
+    : null;
+  const [playerAMmr, setPlayerAMmr] = useState(() =>
+    String(historyMatch?.playerACurrentMmr ?? 800),
+  );
+  const [playerBMmr, setPlayerBMmr] = useState(() =>
+    String(historyMatch?.playerBCurrentMmr ?? 800),
   );
   const [accountAction, setAccountAction] = useState<"freeze" | "unfreeze" | "ban" | "unban" | "penalize" | "adjust-mmr">(
     account?.banned ? "unban" : account?.frozen ? "unfreeze" : "freeze",
@@ -62,7 +72,32 @@ export function SupportActionDialog({
     }
 
     let payload: RankedSupportIntent;
-    if (match) {
+    if (historyMatch) {
+      const scoreA = Number(playerAGoals);
+      const scoreB = Number(playerBGoals);
+      const mmrA = Number(playerAMmr);
+      const mmrB = Number(playerBMmr);
+      if (
+        !Number.isInteger(scoreA) || !Number.isInteger(scoreB) ||
+        scoreA < 0 || scoreB < 0 || scoreA === scoreB
+      ) {
+        setError("Informe um placar válido e sem empate.");
+        return;
+      }
+      if (!Number.isInteger(mmrA) || !Number.isInteger(mmrB) || mmrA < 800 || mmrB < 800) {
+        setError("O MMR dos dois jogadores deve ser um número inteiro a partir de 800.");
+        return;
+      }
+      payload = {
+        intent: "correct-history-match",
+        matchId: historyMatch.id,
+        playerAGoals: scoreA,
+        playerBGoals: scoreB,
+        playerAMmr: mmrA,
+        playerBMmr: mmrB,
+        internalNote,
+      };
+    } else if (match) {
       const scoreA = Number(playerAGoals);
       const scoreB = Number(playerBGoals);
       if (
@@ -146,7 +181,7 @@ export function SupportActionDialog({
         <div className={styles.formGrid}>
           {match ? (
             <>
-              <div className={styles.field}>
+              {!historyMatch && <div className={styles.field}>
                 <label htmlFor="support-resolution">Decisão</label>
                 <select
                   ref={firstControlRef}
@@ -159,8 +194,8 @@ export function SupportActionDialog({
                   <option value="walkover-b">Aplicar W.O. para {match.playerB.username}</option>
                   <option value="cancel">Cancelar partida</option>
                 </select>
-              </div>
-              {resolution === "confirm" && (
+              </div>}
+              {(historyMatch || resolution === "confirm") && (
                 <div className={styles.scoreGrid}>
                   <div className={styles.field}>
                     <label htmlFor="support-score-a">{match.playerA.username}</label>
@@ -170,6 +205,19 @@ export function SupportActionDialog({
                   <div className={styles.field}>
                     <label htmlFor="support-score-b">{match.playerB.username}</label>
                     <input id="support-score-b" type="number" min="0" step="1" value={playerBGoals} onChange={(event) => setPlayerBGoals(event.target.value)} />
+                  </div>
+                </div>
+              )}
+              {historyMatch && (
+                <div className={styles.scoreGrid}>
+                  <div className={styles.field}>
+                    <label htmlFor="support-mmr-a">MMR de {match.playerA.username}</label>
+                    <input id="support-mmr-a" type="number" min="800" step="1" value={playerAMmr} onChange={(event) => setPlayerAMmr(event.target.value)} />
+                  </div>
+                  <strong aria-hidden="true">•</strong>
+                  <div className={styles.field}>
+                    <label htmlFor="support-mmr-b">MMR de {match.playerB.username}</label>
+                    <input id="support-mmr-b" type="number" min="800" step="1" value={playerBMmr} onChange={(event) => setPlayerBMmr(event.target.value)} />
                   </div>
                 </div>
               )}

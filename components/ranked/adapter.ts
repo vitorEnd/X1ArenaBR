@@ -184,6 +184,12 @@ export interface RankedSupportMatch {
   } | null;
 }
 
+export interface RankedSupportHistoryMatch extends RankedSupportMatch {
+  readonly confirmedAt: string;
+  readonly playerACurrentMmr: number;
+  readonly playerBCurrentMmr: number;
+}
+
 export interface RankedSupportQueueEntry {
   readonly profileId: string;
   readonly username: string;
@@ -221,6 +227,7 @@ export interface RankedSupportResponse {
   readonly queue: readonly RankedSupportQueueEntry[];
   readonly activeLobbies: readonly RankedSupportMatch[];
   readonly frozenMatches: readonly RankedSupportMatch[];
+  readonly matchHistory: readonly RankedSupportHistoryMatch[];
   readonly accounts: readonly RankedSupportAccount[];
   readonly audit: readonly RankedSupportAuditEntry[];
 }
@@ -239,6 +246,15 @@ export type RankedMatchIntent =
     };
 
 export type RankedSupportIntent =
+  | {
+      readonly intent: "correct-history-match";
+      readonly matchId: string;
+      readonly playerAGoals: number;
+      readonly playerBGoals: number;
+      readonly playerAMmr: number;
+      readonly playerBMmr: number;
+      readonly internalNote: string;
+    }
   | {
       readonly intent: "resolve-match";
       readonly matchId: string;

@@ -4,6 +4,7 @@ import type {
   RankedMutationResponse,
   RankedSupportAuditEntry,
   RankedSupportAccount,
+  RankedSupportHistoryMatch,
   RankedSupportMatch,
   RankedSupportQueueEntry,
   RankedSupportResponse,
@@ -35,12 +36,22 @@ function emptySupport(
     queue: [],
     activeLobbies: [],
     frozenMatches: [],
+    matchHistory: [],
     accounts: [],
     audit: [],
   };
 }
 
 const supportIntentSchema = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("correct-history-match"),
+    matchId: z.string().uuid(),
+    playerAGoals: z.number().int().min(0).max(2_147_483_647),
+    playerBGoals: z.number().int().min(0).max(2_147_483_647),
+    playerAMmr: z.number().int().min(800).max(100_000),
+    playerBMmr: z.number().int().min(800).max(100_000),
+    internalNote: z.string().trim().min(5).max(1000),
+  }),
   z.object({
     intent: z.literal("resolve-match"),
     matchId: z.string().uuid(),
@@ -79,6 +90,7 @@ export async function GET(request: Request) {
     }
 
     const { admin } = await requireSupportContext();
+    const historyCutoff = new Date(Date.now() - 24 * 60 * 60 * 1_000).toISOString();
     let accountsQuery = admin
       .from("ranked_profiles")
       .select("id,username,avatar_path,mmr,placement_matches,banned_at,frozen_until")
@@ -89,6 +101,7 @@ export async function GET(request: Request) {
     const [
       queueResult,
       activeResult,
+      matchHistoryResult,
       frozenResult,
       reportsResult,
       auditResult,
@@ -115,6 +128,13 @@ export async function GET(request: Request) {
           ])
           .order("created_at", { ascending: true })
           .limit(100),
+        admin
+          .from("ranked_matches")
+          .select("*")
+          .eq("status", "confirmed")
+          .gte("confirmed_at", historyCutoff)
+          .order("confirmed_at", { ascending: false })
+          .limit(200),
         admin
           .from("ranked_matches")
           .select("*")
@@ -147,6 +167,7 @@ export async function GET(request: Request) {
       queueResult,
       activeResult,
       frozenResult,
+      matchHistoryResult,
       reportsResult,
       auditResult,
       accountsResult,
@@ -156,7 +177,11 @@ export async function GET(request: Request) {
       if (result.error) throw result.error;
     }
 
-    const matches = [...(activeResult.data ?? []), ...(frozenResult.data ?? [])];
+    const matches = [
+      ...(activeResult.data ?? []),
+      ...(frozenResult.data ?? []),
+      ...(matchHistoryResult.data ?? []),
+    ];
     const profileIds = new Set<string>();
     for (const entry of queueResult.data ?? []) profileIds.add(entry.profile_id);
     for (const account of accountsResult.data ?? []) profileIds.add(account.id);
@@ -187,6 +212,12 @@ export async function GET(request: Request) {
 
     const publicProfilesById = new Map(
       (publicProfilesResult.data ?? []).map((profile) => [
+        stringValue(profile.id),
+        profile,
+      ]),
+    );
+    const baseProfilesById = new Map(
+      (baseProfilesResult.data ?? []).map((profile) => [
         stringValue(profile.id),
         profile,
       ]),
@@ -265,6 +296,23 @@ export async function GET(request: Request) {
     const frozenMatches = (frozenResult.data ?? [])
       .map(mapMatch)
       .filter((match): match is RankedSupportMatch => match !== null);
+    const matchHistory = (matchHistoryResult.data ?? [])
+      .map((value): RankedSupportHistoryMatch | null => {
+        const mapped = mapMatch(value);
+        const match = record(value);
+        if (!mapped || !match) return null;
+        const playerAProfile = baseProfilesById.get(mapped.playerA.id);
+        const playerBProfile = baseProfilesById.get(mapped.playerB.id);
+        const confirmedAt = stringValue(match.confirmed_at);
+        if (!confirmedAt) return null;
+        return {
+          ...mapped,
+          confirmedAt,
+          playerACurrentMmr: nullableNumber(playerAProfile?.mmr) ?? 800,
+          playerBCurrentMmr: nullableNumber(playerBProfile?.mmr) ?? 800,
+        };
+      })
+      .filter((match): match is RankedSupportHistoryMatch => match !== null);
     const audit: RankedSupportAuditEntry[] = (auditResult.data ?? []).map((entry) => ({
       id: String(entry.id),
       action: entry.action,
@@ -321,10 +369,13 @@ export async function GET(request: Request) {
       queue,
       activeLobbies,
       frozenMatches,
+      matchHistory,
       accounts,
       audit,
     };
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: { "Cache-Control": "private, no-store, max-age=0" },
+    });
   } catch (error) {
     return rankedErrorResponse(error);
   }
@@ -336,7 +387,17 @@ export async function POST(request: Request) {
     if (!parsed.success) throw new RankedRequestError("Ação de suporte inválida.");
     const { supabase } = await requireSupportContext();
 
-    if (parsed.data.intent === "resolve-match") {
+    if (parsed.data.intent === "correct-history-match") {
+      const result = await supabase.rpc("ranked_support_correct_match", {
+        p_match_id: parsed.data.matchId,
+        p_player_one_score: parsed.data.playerAGoals,
+        p_player_two_score: parsed.data.playerBGoals,
+        p_player_one_mmr: parsed.data.playerAMmr,
+        p_player_two_mmr: parsed.data.playerBMmr,
+        p_note: parsed.data.internalNote,
+      });
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "resolve-match") {
       const { data: match, error } = await supabase
         .from("ranked_matches")
         .select("player_one_id,player_two_id")

@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   rankedUiAdapter,
   type RankedSupportAccount,
+  type RankedSupportHistoryMatch,
   type RankedSupportIntent,
   type RankedSupportMatch,
   type RankedSupportResponse,
@@ -49,7 +50,9 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accountQuery, setAccountQuery] = useState("");
-  const [selectedMatch, setSelectedMatch] = useState<RankedSupportMatch | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<
+    RankedSupportMatch | RankedSupportHistoryMatch | null
+  >(null);
   const [selectedAccount, setSelectedAccount] = useState<RankedSupportAccount | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
@@ -136,6 +139,8 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
     );
   }
 
+  const matchHistory = response.matchHistory ?? [];
+
   return (
     <>
       {error && <RankedError message={error} onRetry={() => void load()} />}
@@ -143,7 +148,31 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
         <div className={styles.supportStat}><span>Na fila</span><strong>{response.queue.length}</strong></div>
         <div className={styles.supportStat}><span>Lobbies ativos</span><strong>{response.activeLobbies.length}</strong></div>
         <div className={styles.supportStat}><span>Exigem decisão</span><strong>{response.frozenMatches.length}</strong></div>
+        <div className={styles.supportStat}><span>Partidas em 24h</span><strong>{matchHistory.length}</strong></div>
       </div>
+
+      <section className={`${styles.supportPanel} ${styles.supportHistoryPanel}`} aria-labelledby="match-history-title">
+        <span className={styles.microLabel}>Janela móvel de 24 horas</span>
+        <h2 id="match-history-title">Histórico de partidas</h2>
+        <p className={styles.supportPanelDescription}>
+          Partidas confirmadas saem automaticamente desta lista após 24 horas.
+        </p>
+        <div className={styles.supportHistoryList}>
+          {matchHistory.length > 0 ? matchHistory.map((match) => (
+            <article key={match.id} className={styles.supportItem}>
+              <div className={styles.supportItemHeader}>
+                <strong>Match #{match.matchNumber}</strong>
+                <span className={styles.statusPill}>{formatDate(match.confirmedAt)}</span>
+              </div>
+              <p>{match.playerA.username} {match.submittedScore?.playerAGoals ?? "—"} × {match.submittedScore?.playerBGoals ?? "—"} {match.playerB.username}</p>
+              <p>MMR atual: {match.playerA.username} {match.playerACurrentMmr} • {match.playerB.username} {match.playerBCurrentMmr}</p>
+              <button type="button" className={styles.secondaryButton} onClick={() => setSelectedMatch(match)}>
+                <Gavel size={16} aria-hidden="true" /> Corrigir resultado e MMR
+              </button>
+            </article>
+          )) : <div className={styles.emptyCompact}>Nenhuma partida confirmada nas últimas 24 horas.</div>}
+        </div>
+      </section>
 
       <div className={styles.supportGrid}>
         <section className={styles.supportPanel} aria-labelledby="frozen-title">

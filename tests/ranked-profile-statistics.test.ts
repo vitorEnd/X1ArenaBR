@@ -23,6 +23,7 @@ test("calcula gols, win rate e adversários apenas com os confrontos recebidos",
     goalsAgainst: 9,
     goalDifference: 0,
     winRate: 60,
+    winStreak: 2,
     mostBeatenOpponent: { username: "Rival A", avatarUrl: "/a.webp", matches: 2 },
     mostLostToOpponent: { username: "Rival B", avatarUrl: null, matches: 2 },
   });
@@ -44,6 +45,7 @@ test("W.O. conta na campanha sem inventar gols e estado vazio é explícito", ()
     goalsAgainst: 0,
     goalDifference: 0,
     winRate: null,
+    winStreak: 0,
     mostBeatenOpponent: null,
     mostLostToOpponent: null,
   });
