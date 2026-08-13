@@ -97,7 +97,9 @@ test("fallback público e jogadores oficiais funcionam em dois contextos isolado
       "/jogadores/itz",
     );
     await expect(desktopPage.locator('a[href^="/ranked/"]')).toHaveCount(0);
-    await expect(desktopPage.getByText(/conta ranked/i)).toHaveCount(0);
+    await expect(
+      desktopPage.locator(".player-directory").getByText(/conta ranked/i),
+    ).toHaveCount(0);
     await expectNoHorizontalOverflow(desktopPage);
   } finally {
     await Promise.all([desktopContext.close(), mobileContext.close()]);
