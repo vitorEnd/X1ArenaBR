@@ -14,11 +14,14 @@ import {
   stringValue,
   toRankedPublicProfile,
 } from "@/lib/ranked/api-server";
+import { calculateRankedProfileStatistics } from "@/lib/ranked/profile-statistics";
 import { getRankedTier } from "@/lib/ranked/ranks";
 
 export const dynamic = "force-dynamic";
 
 const usernameSchema = z.string().trim().min(3).max(24);
+const PROFILE_MATCH_PAGE_SIZE = 1_000;
+const PUBLIC_HISTORY_LIMIT = 50;
 
 export async function GET(
   _request: Request,
@@ -34,6 +37,7 @@ export async function GET(
       const response: RankedProfileResponse = {
         configured: false,
         profile: null,
+        statistics: null,
         history: [],
       };
       return NextResponse.json(response);
@@ -50,15 +54,23 @@ export async function GET(
       throw new RankedRequestError("Perfil ranked não encontrado.", 404);
     }
 
-    const { data: matches, error: historyError } = await api.supabase
-      .from("ranked_public_match_history")
-      .select("*")
-      .or(`player_one_id.eq.${profile.id},player_two_id.eq.${profile.id}`)
-      .order("confirmed_at", { ascending: false })
-      .limit(50);
-    if (historyError) throw historyError;
+    const matches: Record<string, unknown>[] = [];
+    for (let from = 0; ; from += PROFILE_MATCH_PAGE_SIZE) {
+      const { data, error: historyError } = await api.supabase
+        .from("ranked_public_match_history")
+        .select("*")
+        .or(`player_one_id.eq.${profile.id},player_two_id.eq.${profile.id}`)
+        .order("confirmed_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, from + PROFILE_MATCH_PAGE_SIZE - 1);
+      if (historyError) throw historyError;
 
-    const history: RankedHistoryEntry[] = (matches ?? []).map((match) => {
+      const page = (data ?? []) as Record<string, unknown>[];
+      matches.push(...page);
+      if (page.length < PROFILE_MATCH_PAGE_SIZE) break;
+    }
+
+    const completeHistory: RankedHistoryEntry[] = matches.map((match) => {
       const viewerIsPlayerOne = match.player_one_id === profile.id;
       const ownGoals = nullableNumber(
         viewerIsPlayerOne ? match.player_one_score : match.player_two_score,
@@ -118,9 +130,14 @@ export async function GET(
     const response: RankedProfileResponse = {
       configured: true,
       profile,
-      history,
+      statistics: calculateRankedProfileStatistics(completeHistory),
+      history: completeHistory.slice(0, PUBLIC_HISTORY_LIMIT),
     };
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        "Cache-Control": "public, max-age=0, s-maxage=30, stale-while-revalidate=60",
+      },
+    });
   } catch (error) {
     return rankedErrorResponse(error);
   }

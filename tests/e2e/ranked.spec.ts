@@ -220,6 +220,75 @@ test("Top 50 sempre oferece retorno para a fila", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("visitante vê quando a fila global está em andamento", async ({ page }) => {
+  await page.route("**/api/ranked/queue-status", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        configured: true,
+        available: true,
+        active: true,
+        playersSearching: 3,
+        checkedAt: "2026-08-13T17:00:00.000Z",
+      }),
+    });
+  });
+
+  await page.goto("/matchmaking");
+  await expect(
+    page.getByRole("heading", { name: "Filas em andamento", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Fila global ativa" })).toContainText(
+    "3 jogadores buscando adversário agora",
+  );
+  await expectNoHorizontalOverflow(page);
+});
+
+test("perfil público exibe gols, win rate e retrospecto contra adversários", async ({ page }) => {
+  await page.route("**/api/ranked/profiles/Itz", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        configured: true,
+        profile: {
+          id: "d7fad6b1-ab5a-47b1-8be8-17d44be32006",
+          username: "Itz",
+          avatarUrl: null,
+          wins: 3,
+          losses: 1,
+          mmr: null,
+          tier: null,
+          globalPosition: null,
+          placementMatchesPlayed: 4,
+          placementMatchesRequired: 5,
+          createdAt: "2026-08-13T12:00:00.000Z",
+        },
+        statistics: {
+          matches: 4,
+          wins: 3,
+          losses: 1,
+          goalsFor: 12,
+          goalsAgainst: 5,
+          goalDifference: 7,
+          winRate: 75,
+          mostBeatenOpponent: { username: "Vtzinn021", avatarUrl: null, matches: 2 },
+          mostLostToOpponent: { username: "João00325", avatarUrl: null, matches: 1 },
+        },
+        history: [],
+      }),
+    });
+  });
+
+  await page.goto("/ranked/Itz");
+  await expect(page.getByRole("heading", { name: /estatísticas ranked/i })).toBeVisible();
+  await expect(page.getByText("12", { exact: true })).toBeVisible();
+  await expect(page.getByText("75%", { exact: true })).toBeVisible();
+  const statistics = page.getByLabel("Estatísticas Ranked");
+  await expect(statistics.getByText("Vtzinn021", { exact: true })).toBeVisible();
+  await expect(statistics.getByText("João00325", { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 function foundMatchSnapshot(serverNow: string, acceptanceDeadline: string) {
   return {
     serverNow,

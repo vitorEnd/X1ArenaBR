@@ -1,3 +1,5 @@
+import type { RankedProfileStatistics } from "@/lib/ranked/profile-statistics";
+
 export type RankedTier =
   | "novato"
   | "pro"
@@ -125,6 +127,7 @@ export interface RankedHistoryEntry {
 export interface RankedProfileResponse {
   readonly configured: boolean;
   readonly profile: RankedPublicProfile | null;
+  readonly statistics: RankedProfileStatistics | null;
   readonly history: readonly RankedHistoryEntry[];
 }
 

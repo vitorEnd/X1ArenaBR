@@ -1,6 +1,17 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, Gavel, History, Settings, ShieldQuestion } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  Goal,
+  Gavel,
+  History,
+  Percent,
+  Settings,
+  ShieldQuestion,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -27,6 +38,10 @@ function formatDate(value: string) {
     year: "numeric",
     timeZone: "America/Sao_Paulo",
   }).format(new Date(value));
+}
+
+function formatGoalDifference(value: number) {
+  return value > 0 ? `+${value}` : String(value);
 }
 
 export function RankedProfileView({
@@ -80,7 +95,7 @@ export function RankedProfileView({
     );
   }
 
-  const { profile, history } = response;
+  const { profile, statistics, history } = response;
   const placementActive = profile.placementMatchesPlayed < 5;
   const tierLabel = profile.tier ? rankedTierLabels[profile.tier] : "Em colocação";
 
@@ -121,6 +136,81 @@ export function RankedProfileView({
           mmr={profile.mmr}
         />
       </article>
+
+      {statistics && (
+        <section className={styles.profilePerformance} aria-labelledby="performance-title">
+          <div className={styles.profilePerformanceHeader}>
+            <div>
+              <span className={styles.eyebrow}>Raio-X competitivo</span>
+              <h2 id="performance-title" className={styles.panelTitle}>Estatísticas <span>Ranked</span></h2>
+            </div>
+            <p>Somente partidas confirmadas. Resultados por W.O. contam na campanha, sem adicionar gols inexistentes.</p>
+          </div>
+
+          <div className={styles.profilePerformanceGrid}>
+            <article className={styles.profileMetricCard}>
+              <Goal size={22} aria-hidden="true" />
+              <span>Gols marcados</span>
+              <strong>{statistics.goalsFor}</strong>
+            </article>
+            <article className={styles.profileMetricCard}>
+              <Goal size={22} aria-hidden="true" />
+              <span>Gols sofridos</span>
+              <strong>{statistics.goalsAgainst}</strong>
+            </article>
+            <article className={styles.profileMetricCard}>
+              <TrendingUp size={22} aria-hidden="true" />
+              <span>Saldo de gols</span>
+              <strong className={statistics.goalDifference >= 0 ? styles.positive : styles.negative}>
+                {formatGoalDifference(statistics.goalDifference)}
+              </strong>
+            </article>
+            <article className={`${styles.profileMetricCard} ${styles.profileMetricHighlight}`}>
+              <Percent size={22} aria-hidden="true" />
+              <span>Win rate</span>
+              <strong>{statistics.winRate === null ? "—" : `${statistics.winRate.toLocaleString("pt-BR")}%`}</strong>
+              <small>{statistics.matches} {statistics.matches === 1 ? "partida" : "partidas"}</small>
+            </article>
+          </div>
+
+          <div className={styles.profileRivalGrid}>
+            <article className={styles.profileRivalCard}>
+              <TrendingUp size={24} aria-hidden="true" />
+              <div>
+                <span>Mais venceu contra</span>
+                {statistics.mostBeatenOpponent ? (
+                  <div className={styles.profileRivalIdentity}>
+                    <PlayerAvatar
+                      src={statistics.mostBeatenOpponent.avatarUrl}
+                      name={statistics.mostBeatenOpponent.username}
+                      size="sm"
+                    />
+                    <strong>{statistics.mostBeatenOpponent.username}</strong>
+                    <b>{statistics.mostBeatenOpponent.matches} {statistics.mostBeatenOpponent.matches === 1 ? "vitória" : "vitórias"}</b>
+                  </div>
+                ) : <p>Ainda não venceu um confronto confirmado.</p>}
+              </div>
+            </article>
+            <article className={styles.profileRivalCard}>
+              <TrendingDown size={24} aria-hidden="true" />
+              <div>
+                <span>Mais perdeu para</span>
+                {statistics.mostLostToOpponent ? (
+                  <div className={styles.profileRivalIdentity}>
+                    <PlayerAvatar
+                      src={statistics.mostLostToOpponent.avatarUrl}
+                      name={statistics.mostLostToOpponent.username}
+                      size="sm"
+                    />
+                    <strong>{statistics.mostLostToOpponent.username}</strong>
+                    <b>{statistics.mostLostToOpponent.matches} {statistics.mostLostToOpponent.matches === 1 ? "derrota" : "derrotas"}</b>
+                  </div>
+                ) : <p>Ainda não perdeu um confronto confirmado.</p>}
+              </div>
+            </article>
+          </div>
+        </section>
+      )}
 
       <section className={styles.contentSection} aria-labelledby="history-title">
         <div className={styles.sectionHeader}>
