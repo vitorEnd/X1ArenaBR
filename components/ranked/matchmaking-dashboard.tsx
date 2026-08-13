@@ -6,10 +6,12 @@ import {
   Crosshair,
   Gamepad2,
   Gauge,
+  History,
   LockKeyhole,
   Radio,
   Search,
   ShieldCheck,
+  TrendingUp,
   Trophy,
   UserRoundCog,
   Users,
@@ -53,6 +55,63 @@ function formatPenalty(expiresAt: string | null, now: number) {
   return hours > 0
     ? `${hours}h ${String(minutes).padStart(2, "0")}m`
     : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatPlayersSearching(total: number) {
+  return `${total} ${total === 1 ? "pessoa buscando" : "pessoas buscando"}`;
+}
+
+function getRankProgress(
+  mmr: number | null,
+  globalPosition: number | null,
+  placementMatchesPlayed: number,
+  placementMatchesRequired: number,
+) {
+  if (placementMatchesPlayed < placementMatchesRequired || mmr === null) {
+    const remaining = Math.max(0, placementMatchesRequired - placementMatchesPlayed);
+    return {
+      label: `${remaining} ${remaining === 1 ? "partida restante" : "partidas restantes"}`,
+      detail: "Seu MMR e Elo serão revelados ao concluir a colocação.",
+      progress: (placementMatchesPlayed / placementMatchesRequired) * 100,
+    };
+  }
+
+  const nextRanks = [
+    { min: 800, target: 1_000, label: "Pro" },
+    { min: 1_000, target: 1_250, label: "Craque" },
+    { min: 1_250, target: 1_800, label: "Desafiante" },
+    { min: 1_800, target: 2_100, label: "Immortal" },
+    { min: 2_100, target: 2_500, label: "Champion" },
+  ] as const;
+  const nextRank = nextRanks.find(({ target }) => mmr < target);
+
+  if (nextRank) {
+    const missingMmr = nextRank.target - mmr;
+    const progress = ((mmr - nextRank.min) / (nextRank.target - nextRank.min)) * 100;
+    return {
+      label: `${missingMmr.toLocaleString("pt-BR")} MMR para ${nextRank.label}`,
+      detail: nextRank.label === "Champion"
+        ? "Ao atingir 2.500 MMR, também é preciso estar no Top 10 global."
+        : `Próxima faixa começa em ${nextRank.target.toLocaleString("pt-BR")} MMR.`,
+      progress: Math.min(100, Math.max(0, progress)),
+    };
+  }
+
+  if (globalPosition === null || globalPosition > 10) {
+    return {
+      label: globalPosition
+        ? `${globalPosition - 10} ${globalPosition - 10 === 1 ? "posição" : "posições"} para o Top 10`
+        : "Entre no Top 10 global",
+      detail: "Você já possui 2.500+ MMR. A vaga no Top 10 libera o Elo Champion.",
+      progress: 100,
+    };
+  }
+
+  return {
+    label: "Rank máximo alcançado",
+    detail: `Você está no TOP ${globalPosition} da Arena.`,
+    progress: 100,
+  };
 }
 
 function DashboardFrame({ children }: { readonly children: ReactNode }) {
@@ -142,45 +201,95 @@ export function MatchmakingDashboard() {
         ? `TOP ${profile.globalPosition} • ${profile.mmr.toLocaleString("pt-BR")} MMR`
         : rankedTierLabels[profile.tier]
       : "Em colocação";
+  const playersSearching = Math.max(0, queue?.playersSearching ?? 0);
+  const rankProgress = getRankProgress(
+    profile.mmr,
+    profile.globalPosition,
+    profile.placementMatchesPlayed,
+    profile.placementMatchesRequired,
+  );
 
   if (queue?.state === "searching" || foundMatch) {
     return (
       <section className={styles.contentSectionTight} aria-labelledby="queue-title">
         <div className="page-container">
           {error && <RankedError message={error} onRetry={() => void refresh()} />}
-          <div className={styles.queueStage}>
-            <div className={styles.queueTopbar}>
-              <span className={styles.livePill}>
-                <span className={styles.liveDot} aria-hidden="true" /> Fila global ativa
-              </span>
-              <span className={styles.microLabel}>
-                {queue?.playersSearching ?? 0} buscando agora
-              </span>
-            </div>
-            <div className={styles.queueCore}>
-              <div className={styles.searchRadar} aria-hidden="true">
-                <span className={styles.searchSweep} />
-                <RankEmblem
-                  tier={profile.tier}
-                  size="lg"
-                  topPosition={profile.globalPosition}
-                  mmr={profile.mmr}
-                  showLabel={false}
-                />
+          <div className={styles.queueLayout}>
+            <div className={styles.queueStage}>
+              <div className={styles.queueTopbar}>
+                <span className={styles.livePill}>
+                  <span className={styles.liveDot} aria-hidden="true" /> Fila global ativa
+                </span>
+                <span
+                  className={styles.queueCount}
+                  aria-label={formatPlayersSearching(playersSearching)}
+                  aria-live="polite"
+                >
+                  <Users size={17} aria-hidden="true" />
+                  <strong>{playersSearching}</strong>
+                  <span>{playersSearching === 1 ? "pessoa buscando" : "pessoas buscando"}</span>
+                </span>
               </div>
-              <div className={styles.queueTimer} aria-label={`Tempo na fila ${formatQueueTimer(queue?.joinedAt ?? null, now)}`}>
-                {formatQueueTimer(queue?.joinedAt ?? null, now)}
+              <div className={styles.queueCore}>
+                <div className={styles.searchRadar} aria-hidden="true">
+                  <span className={styles.searchSweep} />
+                  <RankEmblem
+                    tier={profile.tier}
+                    size="lg"
+                    topPosition={profile.globalPosition}
+                    mmr={profile.mmr}
+                    showLabel={false}
+                  />
+                </div>
+                <div className={styles.queueTimer} aria-label={`Tempo na fila ${formatQueueTimer(queue?.joinedAt ?? null, now)}`}>
+                  {formatQueueTimer(queue?.joinedAt ?? null, now)}
+                </div>
+                <h2 id="queue-title">Buscando adversário</h2>
+                <p aria-live="polite">
+                  {queue?.searchExpandedAt && now >= new Date(queue.searchExpandedAt).getTime()
+                    ? "Busca global expandida: qualquer MMR elegível pode ser encontrado."
+                    : "Primeiro minuto: priorizando rivais com MMR próximo ao seu."}
+                </p>
+                <button type="button" className={styles.dangerButton} disabled={busy || Boolean(foundMatch)} onClick={() => void updateQueue("leave")}>
+                  Cancelar busca
+                </button>
               </div>
-              <h2 id="queue-title">Buscando adversário</h2>
-              <p aria-live="polite">
-                {queue?.searchExpandedAt && now >= new Date(queue.searchExpandedAt).getTime()
-                  ? "Busca global expandida: qualquer MMR elegível pode ser encontrado."
-                  : "Primeiro minuto: priorizando rivais com MMR próximo ao seu."}
-              </p>
-              <button type="button" className={styles.dangerButton} disabled={busy || Boolean(foundMatch)} onClick={() => void updateQueue("leave")}>
-                Cancelar busca
-              </button>
             </div>
+
+            <aside className={styles.queuePlayerPanel} aria-label="Resumo do seu perfil Ranked">
+              <span className={styles.microLabel}>Seu painel</span>
+              <h2 className={styles.queuePlayerName}>{profile.username}</h2>
+
+              <div className={styles.queuePanelBlock}>
+                <span>Ranked atual</span>
+                <strong>{profileRankLabel}</strong>
+                {!placementActive && profile.mmr !== null && profile.tier !== "champion" && (
+                  <small>{profile.mmr.toLocaleString("pt-BR")} MMR</small>
+                )}
+                {placementActive && <small>MMR oculto durante a colocação</small>}
+              </div>
+
+              <div className={styles.queuePanelBlock}>
+                <span><History size={15} aria-hidden="true" /> Histórico</span>
+                <div className={styles.queueHistoryStats}>
+                  <p><strong>{profile.wins}</strong><small>Vitórias</small></p>
+                  <p><strong>{profile.losses}</strong><small>Derrotas</small></p>
+                </div>
+              </div>
+
+              <div className={styles.queuePanelBlock}>
+                <span><TrendingUp size={15} aria-hidden="true" /> Próximo rank</span>
+                <strong>{rankProgress.label}</strong>
+                <small>{rankProgress.detail}</small>
+                <div className={styles.queueRankProgress} aria-hidden="true">
+                  <span style={{ width: `${rankProgress.progress}%` }} />
+                </div>
+              </div>
+
+              <Link href={`/ranked/${encodeURIComponent(profile.username)}`} className={styles.quietButton}>
+                Ver perfil e histórico <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            </aside>
           </div>
         </div>
 
@@ -228,7 +337,7 @@ export function MatchmakingDashboard() {
                 <div className={styles.statCell}><span>Vitórias</span><strong>{profile.wins}</strong></div>
                 <div className={styles.statCell}><span>Derrotas</span><strong>{profile.losses}</strong></div>
                 <div className={styles.statCell}><span>Pontos</span><strong>{profile.mmr === null ? "—" : profile.mmr.toLocaleString("pt-BR")}</strong></div>
-                <div className={styles.statCell}><span>Elo</span><strong>{profileRankLabel}</strong></div>
+                <div className={`${styles.statCell} ${styles.statCellElo}`}><span>Elo</span><strong>{profileRankLabel}</strong></div>
               </div>
 
               {placementActive && (
@@ -250,6 +359,13 @@ export function MatchmakingDashboard() {
               <p className={styles.placementCopy}>
                 A busca começa por MMR próximo e abre para toda a fila após um minuto.
               </p>
+              <div className={styles.queueAvailability} aria-live="polite">
+                <Users size={18} aria-hidden="true" />
+                <div>
+                  <span>Fila agora</span>
+                  <strong>{formatPlayersSearching(playersSearching)}</strong>
+                </div>
+              </div>
 
               {penalty?.active && penaltyRemaining ? (
                 <div className={styles.deadlineBox} role="alert">

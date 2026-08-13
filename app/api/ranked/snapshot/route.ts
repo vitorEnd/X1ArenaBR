@@ -144,7 +144,12 @@ export async function GET() {
         record((confirmedMatches ?? []).find((match) => !acknowledged.has(match.id))) ??
         null;
     }
-    let queue: RankedQueueView | null = null;
+    let queue: RankedQueueView | null = {
+      state: "idle",
+      joinedAt: null,
+      searchExpandedAt: null,
+      playersSearching: Number.isFinite(playersSearching) ? playersSearching : 0,
+    };
     let foundMatch: RankedFoundMatchView | null = null;
     let activeMatch: RankedLobbyView | null = null;
 

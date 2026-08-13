@@ -76,6 +76,11 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
   return (
     <>
       {error && <RankedError message={error} onRetry={() => void load()} />}
+      <div className={styles.sectionHeader}>
+        <Link href="/matchmaking" className={styles.secondaryButton}>
+          <ChevronLeft size={18} aria-hidden="true" /> Voltar para a fila
+        </Link>
+      </div>
       <div className={styles.rankingControls}>
         <div className={styles.searchField}>
           <Search size={18} aria-hidden="true" />

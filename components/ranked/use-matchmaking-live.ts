@@ -72,7 +72,13 @@ export function useMatchmakingLive({
   useEffect(() => {
     if (!snapshot?.configured || !profileId) return;
 
-    const supabase = createClient();
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch {
+      // Snapshot polling remains available if Realtime is temporarily unavailable.
+      return;
+    }
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleRefresh = () => {
       if (refreshTimer) clearTimeout(refreshTimer);
@@ -196,6 +202,12 @@ export function useMatchmakingLive({
     const fallbackInterval = setInterval(() => void refresh(), refreshDelay);
     return () => clearInterval(fallbackInterval);
   }, [needsLiveUpdates, refresh, snapshot?.activeMatch]);
+
+  useEffect(() => {
+    if (!profileId || snapshot?.queue?.state !== "idle") return;
+    const queueCountInterval = setInterval(() => void refresh(), 10_000);
+    return () => clearInterval(queueCountInterval);
+  }, [profileId, refresh, snapshot?.queue?.state]);
 
   useEffect(() => {
     if (snapshot?.queue?.state !== "searching") return;

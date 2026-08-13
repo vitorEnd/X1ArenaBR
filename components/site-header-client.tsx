@@ -63,6 +63,9 @@ export function SiteHeaderClient({
   const mobileNavRef = useRef<HTMLElement>(null);
   const returnPath = pathname.startsWith("/auth") ? "/matchmaking" : pathname;
   const loginHref = `/auth/entrar?next=${encodeURIComponent(returnPath)}`;
+  const accountHref = account?.hasRankedProfile
+    ? `/ranked/${encodeURIComponent(account.name)}`
+    : "/conta/perfil";
 
   function closeMenu(restoreFocus = true) {
     setOpen(false);
@@ -150,14 +153,18 @@ export function SiteHeaderClient({
         <div className="header-actions">
           {account ? (
             <Link
-              href="/conta"
+              href={accountHref}
               className="header-account"
-              aria-label={`Abrir minha conta: ${account.name}`}
+              aria-label={
+                account.hasRankedProfile
+                  ? `Abrir meu perfil público: ${account.name}`
+                  : `Completar meu perfil ranked: ${account.name}`
+              }
             >
               <AccountAvatar account={account} />
               <span className="header-account__copy">
                 <small>
-                  {account.hasRankedProfile ? "Minha conta" : "Completar perfil"}
+                  {account.hasRankedProfile ? "Meu perfil" : "Completar perfil"}
                 </small>
                 <strong>{account.name}</strong>
               </span>
@@ -226,14 +233,14 @@ export function SiteHeaderClient({
             <div className="mobile-nav__links page-container">
               {account ? (
                 <Link
-                  href="/conta"
+                  href={accountHref}
                   className="mobile-nav__account"
                   onClick={() => closeMenu(false)}
                 >
                   <AccountAvatar account={account} />
                   <span className="mobile-nav__account-copy">
                     <small>
-                      {account.hasRankedProfile ? "Minha conta ranked" : "Completar perfil"}
+                      {account.hasRankedProfile ? "Meu perfil ranked" : "Completar perfil"}
                     </small>
                     <strong>{account.name}</strong>
                     {account.email && <span>{account.email}</span>}

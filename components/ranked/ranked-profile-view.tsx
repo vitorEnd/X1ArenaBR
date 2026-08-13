@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, History, ShieldQuestion } from "lucide-react";
+import { CalendarDays, ChevronLeft, History, Settings, ShieldQuestion } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -15,6 +15,7 @@ import { RankedConfigurationNotice, RankedError, RankedLoading } from "./ui-feed
 
 interface RankedProfileViewProps {
   readonly username: string;
+  readonly isOwner?: boolean;
   readonly adapter?: RankedUiAdapter;
 }
 
@@ -27,7 +28,11 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function RankedProfileView({ username, adapter = rankedUiAdapter }: RankedProfileViewProps) {
+export function RankedProfileView({
+  username,
+  isOwner = false,
+  adapter = rankedUiAdapter,
+}: RankedProfileViewProps) {
   const [response, setResponse] = useState<RankedProfileResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +93,13 @@ export function RankedProfileView({ username, adapter = rankedUiAdapter }: Ranke
           <p>
             <CalendarDays size={15} aria-hidden="true" /> Na Arena desde {formatDate(profile.createdAt)}
           </p>
+          {isOwner && (
+            <div className={styles.actionStack}>
+              <Link href="/conta" className={styles.secondaryButton}>
+                <Settings size={17} aria-hidden="true" /> Configurações da conta
+              </Link>
+            </div>
+          )}
           <div className={styles.profileStats}>
             <div className={styles.statCell}><span>Vitórias</span><strong>{profile.wins}</strong></div>
             <div className={styles.statCell}><span>Derrotas</span><strong>{profile.losses}</strong></div>

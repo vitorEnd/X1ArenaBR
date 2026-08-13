@@ -196,6 +196,7 @@
 .feedbackPanel,
 .loadingState,
 .queueStage,
+.queuePlayerPanel,
 .lobbyPanel,
 .rankingPanel,
 .profileHero,
@@ -210,6 +211,7 @@
 .surface::before,
 .dashboardCard::before,
 .queueStage::before,
+.queuePlayerPanel::before,
 .lobbyPanel::before,
 .rankingPanel::before,
 .profileHero::before,
@@ -324,6 +326,14 @@
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.statCellElo strong {
+  overflow: visible;
+  font-size: clamp(1.25rem, 2vw, 1.85rem);
+  line-height: 1.08;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .placementTrack {
@@ -511,6 +521,13 @@
   margin-left: auto;
 }
 
+.queueLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.38fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
 .queueStage {
   min-height: 520px;
   overflow: hidden;
@@ -536,6 +553,28 @@
   justify-content: space-between;
   gap: 20px;
   text-align: left;
+}
+
+.queueCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #d2d2d2;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.queueCount svg,
+.queueCount strong {
+  color: var(--ranked-gold-light);
+}
+
+.queueCount strong {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .livePill,
@@ -639,6 +678,153 @@
 
 .queueCore .dangerButton {
   margin-top: 25px;
+}
+
+.queuePlayerPanel {
+  display: flex;
+  min-width: 0;
+  min-height: 520px;
+  flex-direction: column;
+  padding: clamp(24px, 3vw, 36px);
+}
+
+.queuePlayerName {
+  overflow-wrap: anywhere;
+  margin: 10px 0 25px;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: clamp(2.25rem, 4vw, 3.65rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.queuePanelBlock {
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 18px 0;
+}
+
+.queuePanelBlock > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #898989;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.queuePanelBlock > span svg {
+  color: var(--ranked-gold);
+}
+
+.queuePanelBlock > strong {
+  color: var(--ranked-white);
+  font-family: var(--font-barlow), sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  font-weight: 900;
+  line-height: 1.08;
+  text-transform: uppercase;
+}
+
+.queuePanelBlock > small {
+  color: #989898;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.queueHistoryStats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  margin-top: 3px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.queueHistoryStats p {
+  margin: 0;
+  padding: 12px;
+  background: #090909;
+}
+
+.queueHistoryStats strong,
+.queueHistoryStats small {
+  display: block;
+}
+
+.queueHistoryStats strong {
+  color: var(--ranked-gold-light);
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 1.65rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.queueHistoryStats small {
+  margin-top: 5px;
+  color: #838383;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.queueRankProgress {
+  height: 5px;
+  overflow: hidden;
+  margin-top: 5px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.queueRankProgress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #a97500, var(--ranked-gold-light));
+  box-shadow: 0 0 14px rgba(245, 184, 0, 0.34);
+  transition: width 300ms ease;
+}
+
+.queuePlayerPanel > .quietButton {
+  width: 100%;
+  margin-top: auto;
+}
+
+.queueAvailability {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  margin-top: 20px;
+  border-block: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 0;
+}
+
+.queueAvailability > svg {
+  color: var(--ranked-gold);
+}
+
+.queueAvailability span,
+.queueAvailability strong {
+  display: block;
+}
+
+.queueAvailability span {
+  color: #858585;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.queueAvailability strong {
+  margin-top: 4px;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
 }
 
 .dialogBackdrop {
@@ -1641,256 +1827,6 @@
   height: clamp(82px, 12vw, 132px);
 }
 
-.emblemWrap {
-  display: inline-grid;
-  flex: 0 0 auto;
-  justify-items: center;
-  gap: 8px;
-}
-
-.emblem {
-  position: relative;
-  display: grid;
-  aspect-ratio: 0.82;
-  place-items: center;
-  isolation: isolate;
-  filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.52));
-}
-
-.emblem::before,
-.emblemPlate {
-  position: absolute;
-  inset: 9% 13% 11%;
-  z-index: -1;
-  clip-path: polygon(50% 0, 92% 16%, 100% 65%, 50% 100%, 0 65%, 8% 16%);
-  content: "";
-}
-
-.emblem::before {
-  background: linear-gradient(145deg, #6e6e6e, #161616 38%, #020202 60%, #8b8b8b);
-}
-
-.emblemPlate {
-  inset: 13% 17% 16%;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  background: linear-gradient(145deg, #3e3e3e, #111 48%, #252525);
-}
-
-.emblemHalo {
-  position: absolute;
-  inset: 4%;
-  z-index: -2;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.12), transparent 66%);
-}
-
-.emblemIcon {
-  width: 38%;
-  height: 38%;
-  color: #bfbfbf;
-  filter: drop-shadow(0 2px 2px #000);
-}
-
-.emblemCore {
-  position: absolute;
-  font-family: var(--font-barlow), sans-serif;
-  font-size: 1.25em;
-  font-weight: 900;
-}
-
-.emblemWingLeft,
-.emblemWingRight {
-  position: absolute;
-  top: 42%;
-  z-index: -2;
-  width: 27%;
-  height: 26%;
-  opacity: 0;
-}
-
-.emblemWingLeft {
-  left: 0;
-  clip-path: polygon(100% 0, 100% 100%, 0 64%, 20% 36%);
-}
-
-.emblemWingRight {
-  right: 0;
-  clip-path: polygon(0 0, 100% 36%, 80% 64%, 0 100%);
-}
-
-.emblemOrnament {
-  position: absolute;
-  width: 15%;
-  height: 15%;
-  color: currentColor;
-  filter: drop-shadow(0 2px 2px #000);
-}
-
-.emblemOrnamentOne {
-  bottom: 14%;
-  left: 27%;
-}
-
-.emblemOrnamentTwo {
-  right: 27%;
-  bottom: 14%;
-}
-
-.emblemOrnamentThree {
-  top: 5%;
-  width: 19%;
-  height: 19%;
-}
-
-.emblemOrnamentFour {
-  top: 25%;
-  right: 7%;
-}
-
-.emblemLaurel {
-  position: absolute;
-  bottom: 4%;
-  color: #ffe078;
-  font-size: 0.68em;
-  letter-spacing: 0.25em;
-  text-shadow: 0 0 12px rgba(255, 212, 71, 0.8);
-}
-
-.emblemLabel {
-  max-width: 180px;
-  overflow: hidden;
-  color: #d9d9d9;
-  font-family: var(--font-barlow), sans-serif;
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.emblemSize_sm .emblem {
-  width: 44px;
-}
-
-.emblemSize_sm .emblemLabel {
-  display: none;
-}
-
-.emblemSize_md .emblem {
-  width: 72px;
-}
-
-.emblemSize_lg .emblem {
-  width: 112px;
-}
-
-.emblemSize_hero .emblem {
-  width: clamp(130px, 17vw, 205px);
-}
-
-.emblemPlacement::before {
-  background: linear-gradient(145deg, #555, #131313 55%, #292929);
-}
-
-.emblem_novato::before {
-  background: linear-gradient(145deg, #707070, #171717 46%, #050505 65%, #555);
-}
-
-.emblem_pro::before {
-  background: linear-gradient(145deg, #fff, #797979 32%, #282828 68%, #b9b9b9);
-}
-
-.emblem_pro .emblemPlate {
-  background: linear-gradient(145deg, #606060, #151515 55%, #3f3f3f);
-}
-
-.emblem_craque::before {
-  background: linear-gradient(145deg, #f2f2f2, #b88a18 37%, #292929 65%, #d5a21f);
-}
-
-.emblem_craque .emblemPlate {
-  background: linear-gradient(145deg, #554720, #101010 50%, #725a17);
-}
-
-.emblem_craque .emblemIcon,
-.emblem_craque .emblemOrnament {
-  color: #ffd766;
-}
-
-.emblem_desafiante::before {
-  background: linear-gradient(145deg, #fff1a8, #c58b00 33%, #211700 66%, #ffd447);
-}
-
-.emblem_desafiante .emblemPlate {
-  background: linear-gradient(145deg, #8a630a, #130e02 54%, #684800);
-}
-
-.emblem_desafiante .emblemIcon,
-.emblem_desafiante .emblemOrnament {
-  color: #ffe080;
-}
-
-.emblem_desafiante .emblemWingLeft,
-.emblem_desafiante .emblemWingRight,
-.emblem_immortal .emblemWingLeft,
-.emblem_immortal .emblemWingRight,
-.emblem_champion .emblemWingLeft,
-.emblem_champion .emblemWingRight {
-  opacity: 1;
-  background: linear-gradient(145deg, #e9b52f, #2c1d00);
-}
-
-.emblem_immortal::before {
-  background: linear-gradient(145deg, #ffdf68, #171717 33%, #000 64%, #f5b800);
-  box-shadow: inset 0 0 18px rgba(255, 212, 71, 0.22);
-}
-
-.emblem_immortal .emblemPlate {
-  background: radial-gradient(circle at 50% 38%, #5d4408, #050505 66%);
-}
-
-.emblem_immortal .emblemIcon,
-.emblem_immortal .emblemOrnament {
-  color: #ffd95b;
-}
-
-.emblem_immortal .emblemHalo,
-.emblem_champion .emblemHalo {
-  background: radial-gradient(circle, rgba(255, 212, 71, 0.28), transparent 66%);
-}
-
-.emblem_champion {
-  animation: championFloat 3.4s ease-in-out infinite;
-}
-
-.emblem_champion::before {
-  inset: 6% 9% 8%;
-  background: linear-gradient(145deg, #fff6b8, #f5b800 28%, #1c1200 62%, #ffd447);
-  box-shadow: 0 0 26px rgba(245, 184, 0, 0.22);
-}
-
-.emblem_champion .emblemPlate {
-  inset: 11% 14% 13%;
-  background:
-    radial-gradient(circle at 50% 32%, rgba(255, 212, 71, 0.38), transparent 30%),
-    linear-gradient(145deg, #6b4d05, #070500 55%, #8a6100);
-}
-
-.emblem_champion .emblemIcon,
-.emblem_champion .emblemOrnament {
-  color: #fff0a3;
-}
-
-.emblem_champion .emblemWingLeft,
-.emblem_champion .emblemWingRight {
-  top: 35%;
-  width: 32%;
-  height: 38%;
-  background: linear-gradient(145deg, #ffe785, #9c6d00 48%, #2b1c00);
-}
-
 @keyframes rankedSpin {
   to { transform: rotate(360deg); }
 }
@@ -1907,13 +1843,10 @@
   50% { opacity: 0.5; box-shadow: 0 0 0 8px rgba(245, 184, 0, 0.03); }
 }
 
-@keyframes championFloat {
-  50% { filter: drop-shadow(0 20px 26px rgba(245, 184, 0, 0.22)); transform: translateY(-3px); }
-}
-
 @media (max-width: 900px) {
   .heroGrid,
   .dashboardGrid,
+  .queueLayout,
   .roomGrid,
   .supportGrid {
     grid-template-columns: 1fr;
@@ -1940,6 +1873,10 @@
 
   .profileStats {
     overflow-x: auto;
+  }
+
+  .queuePlayerPanel {
+    min-height: auto;
   }
 
   .rankLadder {
@@ -2007,6 +1944,10 @@
   .queueStage {
     min-height: 490px;
     padding: 24px 18px;
+  }
+
+  .queueCount {
+    justify-content: flex-start;
   }
 
   .dialogCountdown {
@@ -2207,8 +2148,7 @@
   .loadingState svg,
   .queueStage::after,
   .searchSweep,
-  .liveDot,
-  .emblem_champion {
+  .liveDot {
     animation: none;
   }
 
@@ -2217,6 +2157,10 @@
   .dangerButton,
   .quietButton,
   .placementTrackBar span {
+    transition: none;
+  }
+
+  .queueRankProgress span {
     transition: none;
   }
 }

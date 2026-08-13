@@ -1,28 +1,32 @@
 import {
-  Award,
   Crown,
+  Flag,
   Gem,
   Shield,
   ShieldCheck,
   Sparkles,
   Star,
   Swords,
-  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import type { RankedTier } from "./adapter";
-import styles from "./ranked.module.css";
+import styles from "./rank-emblem.module.css";
 
 const tierPresentation: Record<
   RankedTier,
-  { readonly label: string; readonly icon: LucideIcon; readonly ornaments: number }
+  {
+    readonly label: string;
+    readonly icon: LucideIcon;
+    readonly accentIcon: LucideIcon;
+    readonly stars: number;
+  }
 > = {
-  novato: { label: "Novato", icon: Shield, ornaments: 0 },
-  pro: { label: "Pro", icon: ShieldCheck, ornaments: 1 },
-  craque: { label: "Craque", icon: Star, ornaments: 2 },
-  desafiante: { label: "Desafiante", icon: Swords, ornaments: 3 },
-  immortal: { label: "Immortal", icon: Gem, ornaments: 4 },
-  champion: { label: "Champion", icon: Crown, ornaments: 5 },
+  novato: { label: "Novato", icon: Shield, accentIcon: Shield, stars: 0 },
+  pro: { label: "Pro", icon: ShieldCheck, accentIcon: ShieldCheck, stars: 1 },
+  craque: { label: "Craque", icon: Star, accentIcon: Star, stars: 2 },
+  desafiante: { label: "Desafiante", icon: Swords, accentIcon: Swords, stars: 3 },
+  immortal: { label: "Immortal", icon: Gem, accentIcon: Sparkles, stars: 4 },
+  champion: { label: "Champion", icon: Crown, accentIcon: Crown, stars: 5 },
 };
 
 export const rankedTierLabels = Object.fromEntries(
@@ -49,52 +53,65 @@ export function RankEmblem({
 }: RankEmblemProps) {
   if (!tier) {
     return (
-      <div className={`${styles.emblemWrap} ${styles[`emblemSize_${size}`]}`}>
-        <div className={`${styles.emblem} ${styles.emblemPlacement}`} aria-hidden="true">
-          <span className={styles.emblemHalo} />
-          <Award className={styles.emblemIcon} strokeWidth={1.4} />
-          <span className={styles.emblemCore}>?</span>
+      <div className={`${styles.wrap} ${styles[`size_${size}`]}`}>
+        <div
+          className={`${styles.badge} ${styles.placement}`}
+          aria-label="Elo em colocação"
+          role="img"
+        >
+          <span className={styles.aura} aria-hidden="true" />
+          <span className={styles.frame} aria-hidden="true" />
+          <span className={styles.plate} aria-hidden="true" />
+          <Flag className={styles.mainIcon} strokeWidth={1.7} aria-hidden="true" />
+          <span className={styles.placementDots} aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
         </div>
-        {showLabel && <span className={styles.emblemLabel}>Em colocação</span>}
+        {showLabel && <span className={styles.label}>Em colocação</span>}
       </div>
     );
   }
 
   const presentation = tierPresentation[tier];
   const Icon = presentation.icon;
+  const AccentIcon = presentation.accentIcon;
   const championLabel =
     tier === "champion" && topPosition && mmr !== null
       ? `TOP ${topPosition} • ${new Intl.NumberFormat("pt-BR").format(mmr)} MMR`
       : presentation.label;
 
   return (
-    <div className={`${styles.emblemWrap} ${styles[`emblemSize_${size}`]}`}>
+    <div className={`${styles.wrap} ${styles[`size_${size}`]}`}>
       <div
-        className={`${styles.emblem} ${styles[`emblem_${tier}`]}`}
+        className={`${styles.badge} ${styles[tier]}`}
         aria-label={`Elo ${championLabel}`}
         role="img"
       >
-        <span className={styles.emblemHalo} />
-        <span className={styles.emblemWingLeft} />
-        <span className={styles.emblemWingRight} />
-        <span className={styles.emblemPlate} />
-        <Icon className={styles.emblemIcon} strokeWidth={1.4} aria-hidden="true" />
-        {presentation.ornaments >= 1 && (
-          <Star className={`${styles.emblemOrnament} ${styles.emblemOrnamentOne}`} aria-hidden="true" />
-        )}
-        {presentation.ornaments >= 2 && (
-          <Star className={`${styles.emblemOrnament} ${styles.emblemOrnamentTwo}`} aria-hidden="true" />
-        )}
-        {presentation.ornaments >= 3 && (
-          <Trophy className={`${styles.emblemOrnament} ${styles.emblemOrnamentThree}`} aria-hidden="true" />
-        )}
-        {presentation.ornaments >= 4 && (
-          <Sparkles className={`${styles.emblemOrnament} ${styles.emblemOrnamentFour}`} aria-hidden="true" />
-        )}
-        {presentation.ornaments >= 5 && <span className={styles.emblemLaurel} aria-hidden="true">✦</span>}
+        <span className={styles.aura} aria-hidden="true" />
+        <span className={styles.rays} aria-hidden="true" />
+        <span className={styles.wingLeft} aria-hidden="true" />
+        <span className={styles.wingRight} aria-hidden="true" />
+        <span className={styles.frame} aria-hidden="true" />
+        <span className={styles.plate} aria-hidden="true" />
+        <span className={styles.innerRing} aria-hidden="true" />
+        <Icon className={styles.mainIcon} strokeWidth={1.55} aria-hidden="true" />
+        <AccentIcon className={styles.accentIcon} strokeWidth={1.55} aria-hidden="true" />
+        <span className={styles.rankStars} aria-hidden="true">
+          {Array.from({ length: presentation.stars }, (_, index) => (
+            <Star key={index} fill="currentColor" />
+          ))}
+        </span>
+        <span className={styles.baseBars} aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
       </div>
-      {showLabel && <span className={styles.emblemLabel}>{championLabel}</span>}
+      {showLabel && <span className={styles.label}>{championLabel}</span>}
     </div>
   );
 }
-

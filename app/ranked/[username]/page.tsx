@@ -20,20 +20,25 @@ export async function generateMetadata({ params }: RankedPublicProfilePageProps)
 
 export default async function RankedPublicProfilePage({ params }: RankedPublicProfilePageProps) {
   const { username } = await params;
+  let isOwner = false;
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
-    const { data, error } = await supabase
+    const [{ data: profile, error }, { data: authData }] = await Promise.all([
+      supabase
       .from("ranked_public_profiles")
       .select("id")
       .eq("username", username)
-      .maybeSingle();
-    if (!error && !data) notFound();
+      .maybeSingle(),
+      supabase.auth.getUser(),
+    ]);
+    if (!error && !profile) notFound();
+    isOwner = Boolean(profile && authData.user?.id === profile.id);
   }
   return (
     <div className={styles.rankedPage}>
       <section className={styles.contentSection}>
         <div className="page-container">
-          <RankedProfileView username={username} />
+          <RankedProfileView username={username} isOwner={isOwner} />
         </div>
       </section>
     </div>

@@ -1,0 +1,463 @@
+.wrap {
+  --badge-size: 72px;
+  --rank-dark: #080808;
+  --rank-mid: #4b4b4b;
+  --rank-light: #c8c8c8;
+  --rank-accent: #e4e4e4;
+  --rank-glow: rgba(255, 255, 255, 0.12);
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(5px, calc(var(--badge-size) * 0.08), 12px);
+  vertical-align: middle;
+}
+
+.badge {
+  position: relative;
+  display: grid;
+  width: var(--badge-size);
+  height: calc(var(--badge-size) * 1.06);
+  flex: 0 0 auto;
+  place-items: center;
+  isolation: isolate;
+  color: var(--rank-accent);
+  filter: drop-shadow(0 calc(var(--badge-size) * 0.09) calc(var(--badge-size) * 0.09) rgba(0, 0, 0, 0.72));
+}
+
+.aura,
+.rays,
+.wingLeft,
+.wingRight,
+.frame,
+.plate,
+.innerRing,
+.mainIcon,
+.accentIcon,
+.rankStars,
+.baseBars,
+.placementDots {
+  position: absolute;
+}
+
+.aura {
+  inset: -10%;
+  z-index: -5;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--rank-glow), transparent 68%);
+  opacity: 0.82;
+}
+
+.rays {
+  inset: -2%;
+  z-index: -4;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from -9deg,
+    color-mix(in srgb, var(--rank-accent) 19%, transparent) 0deg 1deg,
+    transparent 1deg 24deg
+  );
+  mask-image: radial-gradient(circle, transparent 0 43%, #000 44% 62%, transparent 63%);
+  opacity: 0;
+}
+
+.frame,
+.plate {
+  clip-path: polygon(50% 0, 88% 13%, 100% 57%, 82% 84%, 50% 100%, 18% 84%, 0 57%, 12% 13%);
+}
+
+.frame {
+  inset: 2% 8% 3%;
+  z-index: -2;
+  background:
+    linear-gradient(122deg, rgba(255, 255, 255, 0.85), transparent 15% 56%, rgba(255, 255, 255, 0.32) 69%, transparent 76%),
+    linear-gradient(145deg, var(--rank-light), var(--rank-mid) 27%, #050505 57%, var(--rank-mid) 80%, var(--rank-light));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 0 calc(var(--badge-size) * 0.16) var(--rank-glow);
+}
+
+.frame::after {
+  position: absolute;
+  inset: 6%;
+  clip-path: inherit;
+  background: #050505;
+  content: "";
+}
+
+.plate {
+  inset: 10% 15% 13%;
+  z-index: -1;
+  border: 1px solid color-mix(in srgb, var(--rank-light) 45%, transparent);
+  background:
+    radial-gradient(circle at 50% 27%, color-mix(in srgb, var(--rank-light) 22%, transparent), transparent 29%),
+    linear-gradient(150deg, color-mix(in srgb, var(--rank-mid) 72%, #111), var(--rank-dark) 47%, #020202 68%, color-mix(in srgb, var(--rank-mid) 52%, #050505));
+  box-shadow: inset 0 0 calc(var(--badge-size) * 0.17) rgba(0, 0, 0, 0.72);
+}
+
+.innerRing {
+  top: 27%;
+  left: 50%;
+  z-index: 0;
+  width: 45%;
+  aspect-ratio: 1;
+  transform: translateX(-50%) rotate(45deg);
+  border: max(1px, calc(var(--badge-size) * 0.018)) solid color-mix(in srgb, var(--rank-accent) 48%, transparent);
+  background: color-mix(in srgb, var(--rank-dark) 78%, transparent);
+  box-shadow:
+    inset 0 0 calc(var(--badge-size) * 0.1) rgba(0, 0, 0, 0.75),
+    0 0 calc(var(--badge-size) * 0.08) var(--rank-glow);
+}
+
+.mainIcon {
+  top: 31%;
+  left: 50%;
+  z-index: 3;
+  width: 34%;
+  height: 34%;
+  transform: translateX(-50%);
+  color: var(--rank-accent);
+  filter:
+    drop-shadow(0 2px 1px rgba(0, 0, 0, 0.9))
+    drop-shadow(0 0 calc(var(--badge-size) * 0.045) var(--rank-glow));
+}
+
+.accentIcon {
+  top: 9%;
+  left: 50%;
+  z-index: 3;
+  width: 17%;
+  height: 17%;
+  transform: translateX(-50%);
+  color: var(--rank-light);
+  filter: drop-shadow(0 2px 1px #000);
+}
+
+.rankStars {
+  right: 0;
+  bottom: 14%;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  min-height: 10%;
+  align-items: center;
+  justify-content: center;
+  gap: 2%;
+  color: var(--rank-accent);
+}
+
+.rankStars svg {
+  width: clamp(3px, calc(var(--badge-size) * 0.075), 13px);
+  height: clamp(3px, calc(var(--badge-size) * 0.075), 13px);
+  filter: drop-shadow(0 1px 1px #000);
+}
+
+.baseBars {
+  right: 25%;
+  bottom: 6.5%;
+  left: 25%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3%;
+}
+
+.baseBars i {
+  display: block;
+  width: 25%;
+  height: max(1px, calc(var(--badge-size) * 0.014));
+  transform: skewX(-28deg);
+  background: color-mix(in srgb, var(--rank-accent) 82%, transparent);
+  box-shadow: 0 0 calc(var(--badge-size) * 0.035) var(--rank-glow);
+}
+
+.wingLeft,
+.wingRight {
+  top: 36%;
+  z-index: -3;
+  width: 29%;
+  height: 34%;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 16%, rgba(0, 0, 0, 0.4) 17% 22%),
+    linear-gradient(135deg, var(--rank-light), var(--rank-mid) 45%, #080808);
+  opacity: 0;
+}
+
+.wingLeft {
+  left: -7%;
+  clip-path: polygon(100% 0, 100% 100%, 0 80%, 45% 53%, 7% 27%);
+}
+
+.wingRight {
+  right: -7%;
+  clip-path: polygon(0 0, 100% 27%, 55% 53%, 100% 80%, 0 100%);
+}
+
+.label {
+  display: block;
+  width: max-content;
+  max-width: min(100%, 270px);
+  color: var(--rank-accent);
+  font-family: var(--font-barlow), sans-serif;
+  font-size: clamp(0.66rem, calc(var(--badge-size) * 0.1), 0.9rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: 0.07em;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-shadow: 0 1px 2px #000;
+  text-transform: uppercase;
+}
+
+.size_sm {
+  --badge-size: 42px;
+  gap: 4px;
+}
+
+.size_sm .label {
+  max-width: 92px;
+  font-size: 0.58rem;
+  letter-spacing: 0.045em;
+}
+
+.size_md {
+  --badge-size: 72px;
+}
+
+.size_md .label {
+  max-width: 150px;
+}
+
+.size_lg {
+  --badge-size: 112px;
+}
+
+.size_lg .label {
+  max-width: 190px;
+}
+
+.size_hero {
+  --badge-size: clamp(126px, 16vw, 198px);
+}
+
+.size_hero .label {
+  max-width: min(250px, 30vw);
+  font-size: clamp(0.72rem, 1.15vw, 0.94rem);
+}
+
+.placement {
+  --rank-dark: #090a0b;
+  --rank-mid: #373a3d;
+  --rank-light: #7b7e82;
+  --rank-accent: #b7babf;
+  --rank-glow: rgba(167, 167, 167, 0.12);
+}
+
+.placement .frame {
+  opacity: 0.82;
+}
+
+.placement .mainIcon {
+  top: 30%;
+  width: 31%;
+  height: 31%;
+}
+
+.placementDots {
+  right: 22%;
+  bottom: 17%;
+  left: 22%;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  gap: 6%;
+}
+
+.placementDots i {
+  width: 7%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #65686b;
+}
+
+.placementDots i:first-child {
+  background: #f5b800;
+  box-shadow: 0 0 7px rgba(245, 184, 0, 0.5);
+}
+
+.novato {
+  --rank-dark: #090909;
+  --rank-mid: #514d49;
+  --rank-light: #8e8983;
+  --rank-accent: #b5b0aa;
+  --rank-glow: rgba(181, 176, 170, 0.12);
+}
+
+.novato .accentIcon {
+  display: none;
+}
+
+.novato .innerRing {
+  border-radius: 3px;
+}
+
+.pro {
+  --rank-dark: #0b0c0d;
+  --rank-mid: #737981;
+  --rank-light: #edf1f3;
+  --rank-accent: #d3d9dd;
+  --rank-glow: rgba(220, 229, 234, 0.18);
+}
+
+.pro .accentIcon {
+  top: 10%;
+  width: 14%;
+  height: 14%;
+}
+
+.pro .frame {
+  clip-path: polygon(50% 0, 91% 17%, 92% 69%, 50% 100%, 8% 69%, 9% 17%);
+}
+
+.craque {
+  --rank-dark: #0e0c07;
+  --rank-mid: #8c6a20;
+  --rank-light: #e1c36f;
+  --rank-accent: #ffd765;
+  --rank-glow: rgba(245, 184, 0, 0.23);
+}
+
+.craque .frame,
+.craque .plate {
+  clip-path: polygon(50% 0, 62% 17%, 87% 10%, 84% 39%, 100% 58%, 79% 76%, 72% 100%, 50% 89%, 28% 100%, 21% 76%, 0 58%, 16% 39%, 13% 10%, 38% 17%);
+}
+
+.craque .innerRing {
+  transform: translateX(-50%) rotate(18deg);
+}
+
+.desafiante {
+  --rank-dark: #100b03;
+  --rank-mid: #96690e;
+  --rank-light: #f7da79;
+  --rank-accent: #ffd447;
+  --rank-glow: rgba(255, 196, 28, 0.26);
+}
+
+.desafiante .wingLeft,
+.desafiante .wingRight,
+.immortal .wingLeft,
+.immortal .wingRight,
+.champion .wingLeft,
+.champion .wingRight {
+  opacity: 1;
+}
+
+.desafiante .accentIcon {
+  width: 18%;
+  height: 18%;
+}
+
+.immortal {
+  --rank-dark: #080b0b;
+  --rank-mid: #837443;
+  --rank-light: #fff2bd;
+  --rank-accent: #fff0a2;
+  --rank-glow: rgba(255, 229, 123, 0.32);
+}
+
+.immortal .frame {
+  clip-path: polygon(50% 0, 80% 8%, 100% 31%, 91% 73%, 65% 100%, 35% 100%, 9% 73%, 0 31%, 20% 8%);
+  background:
+    linear-gradient(130deg, #fff9d9, transparent 18% 55%, rgba(255, 255, 255, 0.72) 68%, transparent 75%),
+    linear-gradient(145deg, var(--rank-light), #7a6a32 26%, #111 58%, #bea94e 82%, #fff7d0);
+}
+
+.immortal .innerRing {
+  transform: translateX(-50%) rotate(45deg) scale(1.08);
+  border-color: #fff0a2;
+}
+
+.immortal .rays,
+.champion .rays {
+  opacity: 0.72;
+}
+
+.champion {
+  --rank-dark: #100900;
+  --rank-mid: #a36b00;
+  --rank-light: #fff0a0;
+  --rank-accent: #ffd447;
+  --rank-glow: rgba(255, 196, 0, 0.42);
+  animation: championFloat 3.4s ease-in-out infinite;
+}
+
+.champion .frame {
+  inset: -1% 4% 1%;
+  clip-path: polygon(50% 0, 63% 13%, 88% 4%, 85% 30%, 100% 48%, 89% 76%, 66% 83%, 50% 100%, 34% 83%, 11% 76%, 0 48%, 15% 30%, 12% 4%, 37% 13%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 0 calc(var(--badge-size) * 0.24) var(--rank-glow);
+}
+
+.champion .plate {
+  inset: 7% 12% 11%;
+  clip-path: polygon(50% 0, 90% 18%, 100% 61%, 76% 88%, 50% 100%, 24% 88%, 0 61%, 10% 18%);
+}
+
+.champion .wingLeft,
+.champion .wingRight {
+  top: 29%;
+  width: 35%;
+  height: 43%;
+}
+
+.champion .wingLeft {
+  left: -13%;
+}
+
+.champion .wingRight {
+  right: -13%;
+}
+
+.champion .accentIcon {
+  top: 4%;
+  width: 22%;
+  height: 22%;
+}
+
+.champion .mainIcon {
+  top: 32%;
+  width: 36%;
+  height: 36%;
+}
+
+.champion .rays {
+  inset: -11%;
+}
+
+@keyframes championFloat {
+  50% {
+    filter: drop-shadow(0 calc(var(--badge-size) * 0.13) calc(var(--badge-size) * 0.15) rgba(245, 184, 0, 0.26));
+    transform: translateY(-3px);
+  }
+}
+
+@media (max-width: 720px) {
+  .size_hero {
+    --badge-size: clamp(116px, 34vw, 166px);
+  }
+
+  .size_hero .label {
+    max-width: min(230px, 76vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .champion {
+    animation: none;
+  }
+}
