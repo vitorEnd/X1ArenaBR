@@ -159,7 +159,15 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
     <>
       {error && <RankedError message={error} onRetry={() => void load()} />}
       <div className={styles.supportToolbar}>
-        <button type="button" className={styles.dangerButton} onClick={() => setResetOpen(true)}>
+        <button
+          type="button"
+          className={styles.dangerButton}
+          onClick={() => {
+            setError(null);
+            setResetPassword("");
+            setResetOpen(true);
+          }}
+        >
           <Trash2 size={16} aria-hidden="true" /> Resetar ranked
         </button>
       </div>
@@ -357,6 +365,7 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
                   onChange={(event) => setResetPassword(event.target.value)}
                 />
               </div>
+              {error && <p className={styles.formError} role="alert">{error}</p>}
               <button type="button" className={styles.dangerButton} disabled={busy || resetPassword.length === 0} onClick={() => void resetRanked()}>
                 <Trash2 size={17} aria-hidden="true" /> Confirmar reset da Ranked
               </button>
