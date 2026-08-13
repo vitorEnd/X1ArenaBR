@@ -21,12 +21,12 @@ const tierPresentation: Record<
     readonly stars: number;
   }
 > = {
-  novato: { label: "Novato", icon: Shield, accentIcon: Shield, stars: 0 },
+  novato: { label: "Novato", icon: Shield, accentIcon: Shield, stars: 1 },
   pro: { label: "Pro", icon: ShieldCheck, accentIcon: ShieldCheck, stars: 1 },
   craque: { label: "Craque", icon: Star, accentIcon: Star, stars: 2 },
-  desafiante: { label: "Desafiante", icon: Swords, accentIcon: Swords, stars: 3 },
-  immortal: { label: "Immortal", icon: Gem, accentIcon: Sparkles, stars: 4 },
-  champion: { label: "Champion", icon: Crown, accentIcon: Crown, stars: 5 },
+  desafiante: { label: "Desafiante", icon: Swords, accentIcon: Gem, stars: 2 },
+  immortal: { label: "Immortal", icon: Gem, accentIcon: Gem, stars: 2 },
+  champion: { label: "Champion", icon: Crown, accentIcon: Sparkles, stars: 3 },
 };
 
 export const rankedTierLabels = Object.fromEntries(
@@ -93,10 +93,19 @@ export function RankEmblem({
       >
         <span className={styles.aura} aria-hidden="true" />
         <span className={styles.rays} aria-hidden="true" />
+        <span className={styles.energySweep} aria-hidden="true" />
+        <span className={styles.particles} aria-hidden="true">
+          {Array.from({ length: 12 }, (_, index) => (
+            <i key={index} />
+          ))}
+        </span>
         <span className={styles.wingLeft} aria-hidden="true" />
         <span className={styles.wingRight} aria-hidden="true" />
+        <span className={styles.shoulderLeft} aria-hidden="true" />
+        <span className={styles.shoulderRight} aria-hidden="true" />
         <span className={styles.frame} aria-hidden="true" />
         <span className={styles.plate} aria-hidden="true" />
+        <span className={styles.frameInset} aria-hidden="true" />
         <span className={styles.innerRing} aria-hidden="true" />
         <Icon className={styles.mainIcon} strokeWidth={1.55} aria-hidden="true" />
         <AccentIcon className={styles.accentIcon} strokeWidth={1.55} aria-hidden="true" />

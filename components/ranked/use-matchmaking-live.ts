@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { calculateServerClockOffset } from "@/lib/ranked/server-clock";
 import {
   rankedUiAdapter,
   type MatchmakingSnapshotResponse,
@@ -21,6 +22,7 @@ export function useMatchmakingLive({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
   const mountedRef = useRef(true);
   const refreshControllerRef = useRef<AbortController | null>(null);
 
@@ -28,10 +30,19 @@ export function useMatchmakingLive({
     refreshControllerRef.current?.abort();
     const controller = new AbortController();
     refreshControllerRef.current = controller;
+    const requestStartedAt = Date.now();
 
     try {
       const nextSnapshot = await adapter.getSnapshot(controller.signal);
+      const responseReceivedAt = Date.now();
       if (!mountedRef.current) return;
+      setClockOffsetMs(
+        calculateServerClockOffset(
+          nextSnapshot.serverNow,
+          requestStartedAt,
+          responseReceivedAt,
+        ),
+      );
       setSnapshot(nextSnapshot);
       setError(null);
     } catch (refreshError) {
@@ -266,6 +277,7 @@ export function useMatchmakingLive({
     refresh,
     updateQueue,
     updateMatch,
+    clockOffsetMs,
   };
 }
 

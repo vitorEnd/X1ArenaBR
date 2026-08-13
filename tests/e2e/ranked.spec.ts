@@ -219,3 +219,173 @@ test("Top 50 sempre oferece retorno para a fila", async ({ page }) => {
   );
   await expectNoHorizontalOverflow(page);
 });
+
+function foundMatchSnapshot(serverNow: string, acceptanceDeadline: string) {
+  return {
+    serverNow,
+    configured: true,
+    authenticated: true,
+    profileComplete: true,
+    profile: {
+      id: "00000000-0000-4000-8000-000000000001",
+      username: "Itz",
+      avatarUrl: null,
+      wins: 0,
+      losses: 0,
+      mmr: null,
+      tier: null,
+      globalPosition: null,
+      placementMatchesPlayed: 0,
+      placementMatchesRequired: 5,
+      createdAt: "2026-08-13T12:00:00.000Z",
+    },
+    queue: {
+      state: "match_found",
+      joinedAt: serverNow,
+      searchExpandedAt: serverNow,
+      playersSearching: 0,
+    },
+    foundMatch: {
+      matchId: "00000000-0000-4000-8000-000000000099",
+      acceptanceDeadline,
+      ownAccepted: false,
+      opponentAccepted: false,
+      opponent: {
+        id: "00000000-0000-4000-8000-000000000002",
+        username: "Vtzinn021",
+        avatarUrl: null,
+        mmr: null,
+        tier: null,
+        globalPosition: null,
+      },
+    },
+    activeMatch: null,
+    penalty: {
+      active: false,
+      expiresAt: null,
+      missedAcceptances: 0,
+      progressionLevel: 0,
+    },
+  };
+}
+
+test("permite aceitar com 15 segundos mesmo quando o relógio local está 45s adiantado", async ({
+  page,
+}) => {
+  const skewMs = 45_000;
+  const deadline = Date.now() - skewMs + 15_000;
+  let receivedIntent: string | null = null;
+
+  await page.route("**/api/ranked/snapshot", async (route) => {
+    const serverNow = new Date(Date.now() - skewMs).toISOString();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(foundMatchSnapshot(serverNow, new Date(deadline).toISOString())),
+    });
+  });
+  await page.route("**/api/ranked/matches/*", async (route) => {
+    receivedIntent = (await route.request().postDataJSON()).intent;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, message: "Partida atualizada." }),
+    });
+  });
+
+  await page.goto("/matchmaking");
+  const acceptButton = page.getByRole("button", { name: /aceitar partida/i });
+  await expect(acceptButton).toBeEnabled();
+  await expect(page.getByRole("button", { name: /recusar/i })).toBeEnabled();
+  await acceptButton.click();
+  await expect.poll(() => receivedIntent).toBe("accept");
+});
+
+test("permite recusar com 15 segundos mesmo quando o relógio local está 45s adiantado", async ({
+  page,
+}) => {
+  const skewMs = 45_000;
+  const deadline = Date.now() - skewMs + 15_000;
+  let receivedIntent: string | null = null;
+
+  await page.route("**/api/ranked/snapshot", async (route) => {
+    const serverNow = new Date(Date.now() - skewMs).toISOString();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(foundMatchSnapshot(serverNow, new Date(deadline).toISOString())),
+    });
+  });
+  await page.route("**/api/ranked/matches/*", async (route) => {
+    receivedIntent = (await route.request().postDataJSON()).intent;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, message: "Partida atualizada." }),
+    });
+  });
+
+  await page.goto("/matchmaking");
+  const declineButton = page.getByRole("button", { name: /recusar/i });
+  await expect(declineButton).toBeEnabled();
+  await declineButton.click();
+  await expect.poll(() => receivedIntent).toBe("decline");
+});
+
+for (const failure of [
+  { status: 409, message: "O prazo de aceite foi encerrado." },
+  { status: 500, message: "A Arena não conseguiu registrar sua resposta." },
+]) {
+  test(`mantém erro ${failure.status} visível no modal e reabilita as ações`, async ({
+    page,
+  }) => {
+    const skewMs = 45_000;
+    const deadline = Date.now() - skewMs + 15_000;
+    const pageErrors: string[] = [];
+    page.on("pageerror", (pageError) => pageErrors.push(pageError.message));
+
+    await page.route("**/api/ranked/snapshot", async (route) => {
+      const serverNow = new Date(Date.now() - skewMs).toISOString();
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify(foundMatchSnapshot(serverNow, new Date(deadline).toISOString())),
+      });
+    });
+    await page.route("**/api/ranked/matches/*", async (route) => {
+      await route.fulfill({
+        status: failure.status,
+        contentType: "application/json",
+        body: JSON.stringify({ message: failure.message }),
+      });
+    });
+
+    await page.goto("/matchmaking");
+    const dialog = page.getByRole("dialog", { name: /partida encontrada/i });
+    const acceptButton = dialog.getByRole("button", { name: /aceitar partida/i });
+    const declineButton = dialog.getByRole("button", { name: /recusar/i });
+
+    await acceptButton.click();
+    await expect(dialog.getByRole("alert")).toHaveText(failure.message);
+    await expect(acceptButton).toBeEnabled();
+    await expect(declineButton).toBeEnabled();
+    expect(pageErrors).toEqual([]);
+  });
+}
+
+test("bloqueia aceite depois do prazo do relógio autoritativo", async ({ page }) => {
+  const skewMs = 45_000;
+  const serverNow = Date.now() - skewMs;
+
+  await page.route("**/api/ranked/snapshot", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(
+        foundMatchSnapshot(
+          new Date(serverNow).toISOString(),
+          new Date(serverNow - 1_000).toISOString(),
+        ),
+      ),
+    });
+  });
+
+  await page.goto("/matchmaking");
+  await expect(page.getByRole("button", { name: /aceitar partida/i })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /recusar/i })).toBeDisabled();
+  await expect(page.getByText(/tempo encerrado/i)).toBeVisible();
+});

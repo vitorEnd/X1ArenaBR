@@ -948,6 +948,17 @@
   font-size: 0.84rem;
 }
 
+.matchDialogError {
+  margin: 16px auto 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(239, 104, 104, 0.58);
+  background: rgba(170, 33, 33, 0.16);
+  color: #ffb0b0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .lobbyShell {
   display: grid;
   gap: 18px;

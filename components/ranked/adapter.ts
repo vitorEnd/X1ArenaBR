@@ -94,6 +94,8 @@ export interface RankedLobbyView {
 }
 
 export interface MatchmakingSnapshotResponse {
+  /** Authoritative database time captured while this snapshot was generated. */
+  readonly serverNow?: string;
   readonly configured: boolean;
   readonly authenticated: boolean;
   readonly profileComplete: boolean;

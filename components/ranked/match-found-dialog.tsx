@@ -2,6 +2,7 @@
 
 import { Check, ShieldX, Swords } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { getAuthoritativeNow, getRemainingSeconds } from "@/lib/ranked/server-clock";
 import type { RankedFoundMatchView, RankedPublicProfile } from "./adapter";
 import { PlayerAvatar } from "./player-avatar";
 import { RankEmblem, rankedTierLabels } from "./rank-emblem";
@@ -12,12 +13,10 @@ interface MatchFoundDialogProps {
   readonly match: RankedFoundMatchView;
   readonly profile: RankedPublicProfile;
   readonly busy: boolean;
+  readonly error: string | null;
+  readonly clockOffsetMs: number;
   readonly onAccept: () => Promise<unknown>;
   readonly onDecline: () => Promise<unknown>;
-}
-
-function getRemainingSeconds(deadline: string) {
-  return Math.max(0, Math.ceil((new Date(deadline).getTime() - Date.now()) / 1_000));
 }
 
 function formatRank(profile: Pick<RankedPublicProfile, "tier" | "mmr" | "placementMatchesPlayed">) {
@@ -31,21 +30,43 @@ export function MatchFoundDialog({
   match,
   profile,
   busy,
+  error,
+  clockOffsetMs,
   onAccept,
   onDecline,
 }: MatchFoundDialogProps) {
-  const [seconds, setSeconds] = useState(() => getRemainingSeconds(match.acceptanceDeadline));
+  const [seconds, setSeconds] = useState(() =>
+    getRemainingSeconds(
+      match.acceptanceDeadline,
+      getAuthoritativeNow(Date.now(), clockOffsetMs),
+    ),
+  );
   const acceptButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useDialogFocusTrap<HTMLElement>(true);
+
+  const runAction = async (action: () => Promise<unknown>) => {
+    try {
+      await action();
+    } catch {
+      // The parent keeps the server message in `error`; consuming the rejection
+      // here prevents a failed 15-second action from becoming an unhandled one.
+    }
+  };
 
   useEffect(() => {
     acceptButtonRef.current?.focus();
     const interval = setInterval(
-      () => setSeconds(getRemainingSeconds(match.acceptanceDeadline)),
+      () =>
+        setSeconds(
+          getRemainingSeconds(
+            match.acceptanceDeadline,
+            getAuthoritativeNow(Date.now(), clockOffsetMs),
+          ),
+        ),
       250,
     );
     return () => clearInterval(interval);
-  }, [match.acceptanceDeadline]);
+  }, [clockOffsetMs, match.acceptanceDeadline]);
 
   return (
     <div className={styles.dialogBackdrop} role="presentation">
@@ -106,7 +127,7 @@ export function MatchFoundDialog({
             type="button"
             className={styles.primaryButton}
             disabled={busy || match.ownAccepted || seconds === 0}
-            onClick={() => void onAccept()}
+            onClick={() => void runAction(onAccept)}
           >
             <Check size={18} aria-hidden="true" />
             {match.ownAccepted ? "Aceito — aguardando rival" : "Aceitar partida"}
@@ -115,11 +136,17 @@ export function MatchFoundDialog({
             type="button"
             className={styles.dangerButton}
             disabled={busy || match.ownAccepted || seconds === 0}
-            onClick={() => void onDecline()}
+            onClick={() => void runAction(onDecline)}
           >
             <ShieldX size={18} aria-hidden="true" /> Recusar
           </button>
         </div>
+
+        {error && (
+          <p className={styles.matchDialogError} role="alert">
+            {error}
+          </p>
+        )}
 
         <p id="match-found-status" className={styles.dialogStatus} aria-live="assertive">
           {match.ownAccepted

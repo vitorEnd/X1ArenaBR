@@ -27,6 +27,7 @@ function emptySnapshot(
   authenticated: boolean,
 ): MatchmakingSnapshotResponse {
   return {
+    serverNow: new Date().toISOString(),
     configured,
     authenticated,
     profileComplete: false,
@@ -242,7 +243,11 @@ export async function GET() {
       progressionLevel: profile.noAcceptPenaltyLevel,
     };
 
+    const serverClockResult = await supabase.rpc("ranked_server_now");
+    assertNoSupabaseError(serverClockResult);
+
     const response: MatchmakingSnapshotResponse = {
+      serverNow: stringValue(serverClockResult.data),
       configured: true,
       authenticated: true,
       profileComplete: true,

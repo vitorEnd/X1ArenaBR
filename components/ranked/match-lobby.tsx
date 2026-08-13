@@ -15,6 +15,7 @@ import {
   Square,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { getAuthoritativeNow } from "@/lib/ranked/server-clock";
 import type { RankedLobbyView, RankedMatchIntent } from "./adapter";
 import { PlayerAvatar } from "./player-avatar";
 import { RankEmblem, rankedTierLabels } from "./rank-emblem";
@@ -24,6 +25,7 @@ import styles from "./ranked.module.css";
 interface MatchLobbyProps {
   readonly match: RankedLobbyView;
   readonly busy: boolean;
+  readonly clockOffsetMs: number;
   readonly onAction: (payload: RankedMatchIntent) => Promise<unknown>;
 }
 
@@ -36,14 +38,14 @@ function getDeadlineLabel(deadline: string | null, now = Date.now()) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-function useDeadline(deadline: string | null) {
+function useDeadline(deadline: string | null, clockOffsetMs: number) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!deadline) return;
     const timer = setInterval(() => setNow(Date.now()), 250);
     return () => clearInterval(timer);
   }, [deadline]);
-  return getDeadlineLabel(deadline, now);
+  return getDeadlineLabel(deadline, getAuthoritativeNow(now, clockOffsetMs));
 }
 
 function stateLabel(state: RankedLobbyView["state"]) {
@@ -69,12 +71,12 @@ function playerRankLabel(player: RankedLobbyView["playerA"]) {
   return `${rankedTierLabels[player.tier]} • ${player.mmr.toLocaleString("pt-BR")} MMR`;
 }
 
-export function MatchLobby({ match, busy, onAction }: MatchLobbyProps) {
+export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyProps) {
   const [scoreOpen, setScoreOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const scoreDeadline = useDeadline(match.scoreSubmissionDeadline);
-  const confirmationDeadline = useDeadline(match.confirmationDeadline);
+  const scoreDeadline = useDeadline(match.scoreSubmissionDeadline, clockOffsetMs);
+  const confirmationDeadline = useDeadline(match.confirmationDeadline, clockOffsetMs);
   const viewerIsCreator = match.creatorId === match.viewerId;
   const creator = match.playerA.id === match.creatorId ? match.playerA : match.playerB;
   const canReport = ["lobby", "in_progress", "awaiting_score", "awaiting_confirmation"].includes(match.state);

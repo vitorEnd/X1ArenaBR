@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { getAuthoritativeNow } from "@/lib/ranked/server-clock";
 import { MatchFoundDialog } from "./match-found-dialog";
 import { MatchLobby } from "./match-lobby";
 import { RankEmblem, rankedTierLabels } from "./rank-emblem";
@@ -131,6 +132,7 @@ export function MatchmakingDashboard() {
     refresh,
     updateQueue,
     updateMatch,
+    clockOffsetMs,
   } = useMatchmakingLive();
   const [now, setNow] = useState(() => Date.now());
   const foundMatchId = snapshot?.foundMatch?.matchId ?? null;
@@ -142,9 +144,10 @@ export function MatchmakingDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  const authoritativeNow = getAuthoritativeNow(now, clockOffsetMs);
   const penaltyRemaining = useMemo(
-    () => formatPenalty(snapshot?.penalty?.expiresAt ?? null, now),
-    [now, snapshot?.penalty?.expiresAt],
+    () => formatPenalty(snapshot?.penalty?.expiresAt ?? null, authoritativeNow),
+    [authoritativeNow, snapshot?.penalty?.expiresAt],
   );
 
   const joinQueue = async () => {
@@ -188,6 +191,7 @@ export function MatchmakingDashboard() {
         <MatchLobby
           match={activeMatch}
           busy={busy}
+          clockOffsetMs={clockOffsetMs}
           onAction={(payload) => updateMatch(activeMatch.matchId, payload)}
         />
       </>
@@ -241,12 +245,12 @@ export function MatchmakingDashboard() {
                     showLabel={false}
                   />
                 </div>
-                <div className={styles.queueTimer} aria-label={`Tempo na fila ${formatQueueTimer(queue?.joinedAt ?? null, now)}`}>
-                  {formatQueueTimer(queue?.joinedAt ?? null, now)}
+                <div className={styles.queueTimer} aria-label={`Tempo na fila ${formatQueueTimer(queue?.joinedAt ?? null, authoritativeNow)}`}>
+                  {formatQueueTimer(queue?.joinedAt ?? null, authoritativeNow)}
                 </div>
                 <h2 id="queue-title">Buscando adversário</h2>
                 <p aria-live="polite">
-                  {queue?.searchExpandedAt && now >= new Date(queue.searchExpandedAt).getTime()
+                  {queue?.searchExpandedAt && authoritativeNow >= new Date(queue.searchExpandedAt).getTime()
                     ? "Busca global expandida: qualquer MMR elegível pode ser encontrado."
                     : "Primeiro minuto: priorizando rivais com MMR próximo ao seu."}
                 </p>
@@ -298,6 +302,8 @@ export function MatchmakingDashboard() {
             match={foundMatch}
             profile={profile}
             busy={busy}
+            error={error}
+            clockOffsetMs={clockOffsetMs}
             onAccept={() => updateMatch(foundMatch.matchId, { intent: "accept" })}
             onDecline={() => updateMatch(foundMatch.matchId, { intent: "decline" })}
           />
