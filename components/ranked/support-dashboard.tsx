@@ -9,8 +9,10 @@ import {
   Search,
   ShieldOff,
   Swords,
+  Trash2,
   UserCog,
   Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -54,6 +56,8 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
     RankedSupportMatch | RankedSupportHistoryMatch | null
   >(null);
   const [selectedAccount, setSelectedAccount] = useState<RankedSupportAccount | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -116,6 +120,16 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
     }
   };
 
+  const resetRanked = async () => {
+    try {
+      await mutate({ intent: "reset-ranked", password: resetPassword });
+      setResetPassword("");
+      setResetOpen(false);
+    } catch {
+      // O erro seguro do servidor já aparece no painel.
+    }
+  };
+
   if (loading && !response) return <RankedLoading label="Abrindo central do suporte" />;
   if (error && !response) return <RankedError message={error} onRetry={() => void load()} />;
   if (!response?.configured) return <RankedConfigurationNotice />;
@@ -144,6 +158,11 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
   return (
     <>
       {error && <RankedError message={error} onRetry={() => void load()} />}
+      <div className={styles.supportToolbar}>
+        <button type="button" className={styles.dangerButton} onClick={() => setResetOpen(true)}>
+          <Trash2 size={16} aria-hidden="true" /> Resetar ranked
+        </button>
+      </div>
       <div className={styles.supportStats}>
         <div className={styles.supportStat}><span>Na fila</span><strong>{response.queue.length}</strong></div>
         <div className={styles.supportStat}><span>Lobbies ativos</span><strong>{response.activeLobbies.length}</strong></div>
@@ -310,6 +329,40 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
           }}
           onSubmit={mutate}
         />
+      )}
+
+      {resetOpen && (
+        <div className={styles.dialogBackdrop} role="presentation">
+          <section className={styles.formDialog} role="dialog" aria-modal="true" aria-labelledby="reset-ranked-title">
+            <div className={styles.formDialogHeader}>
+              <div>
+                <span className={styles.microLabel}>Ação irreversível</span>
+                <h2 id="reset-ranked-title">Resetar toda a Ranked?</h2>
+              </div>
+              <button type="button" className={styles.iconButton} disabled={busy} onClick={() => setResetOpen(false)} aria-label="Fechar">
+                <X aria-hidden="true" />
+              </button>
+            </div>
+            <div className={styles.formGrid}>
+              <p className={styles.formHint}>
+                Contas, nomes e avatares serão preservados. Partidas, vitórias, derrotas, colocações e MMR serão zerados.
+              </p>
+              <div className={styles.field}>
+                <label htmlFor="ranked-reset-password">Senha de confirmação</label>
+                <input
+                  id="ranked-reset-password"
+                  type="password"
+                  autoComplete="off"
+                  value={resetPassword}
+                  onChange={(event) => setResetPassword(event.target.value)}
+                />
+              </div>
+              <button type="button" className={styles.dangerButton} disabled={busy || resetPassword.length === 0} onClick={() => void resetRanked()}>
+                <Trash2 size={17} aria-hidden="true" /> Confirmar reset da Ranked
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </>
   );

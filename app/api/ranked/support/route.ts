@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import type {
   RankedMutationResponse,
@@ -43,6 +44,10 @@ function emptySupport(
 }
 
 const supportIntentSchema = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("reset-ranked"),
+    password: z.string().min(1).max(128),
+  }),
   z.object({
     intent: z.literal("correct-history-match"),
     matchId: z.string().uuid(),
@@ -385,9 +390,23 @@ export async function POST(request: Request) {
   try {
     const parsed = supportIntentSchema.safeParse(await request.json());
     if (!parsed.success) throw new RankedRequestError("Ação de suporte inválida.");
-    const { supabase } = await requireSupportContext();
+    const { supabase, admin, user } = await requireSupportContext();
 
-    if (parsed.data.intent === "correct-history-match") {
+    if (parsed.data.intent === "reset-ranked") {
+      const configuredPassword = process.env.RANKED_RESET_PASSWORD?.trim();
+      if (!configuredPassword) {
+        throw new RankedRequestError("O reset global ainda não foi configurado.", 503);
+      }
+      const suppliedHash = createHash("sha256").update(parsed.data.password).digest();
+      const expectedHash = createHash("sha256").update(configuredPassword).digest();
+      if (!timingSafeEqual(suppliedHash, expectedHash)) {
+        throw new RankedRequestError("Senha de reset incorreta.", 403);
+      }
+      const result = await admin.rpc("ranked_support_reset_all", {
+        p_support_user_id: user.id,
+      });
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "correct-history-match") {
       const result = await supabase.rpc("ranked_support_correct_match", {
         p_match_id: parsed.data.matchId,
         p_player_one_score: parsed.data.playerAGoals,

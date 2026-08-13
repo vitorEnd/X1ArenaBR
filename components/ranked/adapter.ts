@@ -247,6 +247,10 @@ export type RankedMatchIntent =
 
 export type RankedSupportIntent =
   | {
+      readonly intent: "reset-ranked";
+      readonly password: string;
+    }
+  | {
       readonly intent: "correct-history-match";
       readonly matchId: string;
       readonly playerAGoals: number;

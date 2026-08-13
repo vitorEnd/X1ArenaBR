@@ -1641,6 +1641,12 @@
   margin-bottom: 18px;
 }
 
+.supportToolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 .supportHistoryPanel {
   margin-bottom: 18px;
 }
