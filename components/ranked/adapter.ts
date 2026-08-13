@@ -8,6 +8,12 @@ export type RankedTier =
   | "immortal"
   | "champion";
 
+export type RankedLeaderboardFilter =
+  | RankedTier
+  | "all"
+  | "placement"
+  | "no-matches";
+
 export type RankedMatchState =
   | "awaiting_acceptance"
   | "lobby"
@@ -95,6 +101,27 @@ export interface RankedLobbyView {
   } | null;
 }
 
+export type RankedPostMatchRankChange =
+  | "promoted"
+  | "demoted"
+  | "unchanged"
+  | "placement_revealed";
+
+/** Private result projection returned only to the authenticated participant. */
+export interface RankedPostMatchResult {
+  readonly matchId: string;
+  readonly matchNumber: number;
+  readonly outcome: "win" | "loss";
+  /** True while MMR must remain hidden during the first four placements. */
+  readonly placementPending: boolean;
+  readonly oldMmr: number | null;
+  readonly newMmr: number | null;
+  readonly mmrDelta: number | null;
+  readonly previousTier: RankedTier | null;
+  readonly nextTier: RankedTier | null;
+  readonly rankChange: RankedPostMatchRankChange;
+}
+
 export interface MatchmakingSnapshotResponse {
   /** Authoritative database time captured while this snapshot was generated. */
   readonly serverNow?: string;
@@ -105,6 +132,7 @@ export interface MatchmakingSnapshotResponse {
   readonly queue: RankedQueueView | null;
   readonly foundMatch: RankedFoundMatchView | null;
   readonly activeMatch: RankedLobbyView | null;
+  readonly postMatchResult: RankedPostMatchResult | null;
   readonly penalty: RankedPenaltyView | null;
 }
 
@@ -131,9 +159,7 @@ export interface RankedProfileResponse {
   readonly history: readonly RankedHistoryEntry[];
 }
 
-export interface RankedLeaderboardEntry extends RankedPublicProfile {
-  readonly globalPosition: number;
-}
+export type RankedLeaderboardEntry = RankedPublicProfile;
 
 export interface RankedLeaderboardResponse {
   readonly configured: boolean;
@@ -284,7 +310,7 @@ export interface RankedUiAdapter {
   updateMatch(matchId: string, payload: RankedMatchIntent): Promise<RankedMutationResponse>;
   getLeaderboard(
     query: string,
-    rank: RankedTier | "all",
+    rank: RankedLeaderboardFilter,
     page: number,
     signal?: AbortSignal,
   ): Promise<RankedLeaderboardResponse>;

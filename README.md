@@ -104,7 +104,7 @@ O matchmaking começa em uma janela de ±150 MMR. Depois de 60 segundos, a busca
 
 - `/` — início;
 - `/matchmaking` — lobby e fila ranked;
-- `/matchmaking/ranking` — Top 50 global;
+- `/matchmaking/ranking` — leaderboard global completo;
 - `/ranked/[username]` — perfil ranked público;
 - `/auth/entrar` e `/auth/cadastro` — acesso à ranked;
 - `/conta` — segurança e métodos vinculados;

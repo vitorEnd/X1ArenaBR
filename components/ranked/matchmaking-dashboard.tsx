@@ -21,6 +21,7 @@ import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { getAuthoritativeNow } from "@/lib/ranked/server-clock";
 import { MatchFoundDialog } from "./match-found-dialog";
 import { MatchLobby } from "./match-lobby";
+import { PostMatchResultStage } from "./post-match-result-stage";
 import { RankEmblem, rankedTierLabels } from "./rank-emblem";
 import styles from "./ranked.module.css";
 import {
@@ -182,7 +183,21 @@ export function MatchmakingDashboard() {
     </DashboardFrame>;
   }
 
-  const { profile, queue, foundMatch, activeMatch, penalty } = snapshot;
+  const { profile, queue, foundMatch, activeMatch, postMatchResult, penalty } = snapshot;
+
+  if (postMatchResult) {
+    return (
+      <>
+        {error && <div className="page-container"><RankedError message={error} onRetry={() => void refresh()} /></div>}
+        <PostMatchResultStage
+          result={postMatchResult}
+          busy={busy}
+          onContinue={() => updateMatch(postMatchResult.matchId, { intent: "continue" })}
+          onFinish={() => updateMatch(postMatchResult.matchId, { intent: "finish" })}
+        />
+      </>
+    );
+  }
 
   if (activeMatch) {
     return (
@@ -387,7 +402,7 @@ export function MatchmakingDashboard() {
                     <Crosshair size={19} aria-hidden="true" /> Entrar na fila
                   </button>
                   <Link href="/matchmaking/ranking" className={styles.secondaryButton}>
-                    <Trophy size={17} aria-hidden="true" /> Ver Top 50
+                    <Trophy size={17} aria-hidden="true" /> Ver leaderboard
                   </Link>
                   <Link href={`/ranked/${encodeURIComponent(profile.username)}`} className={styles.quietButton}>
                     Ver perfil público <ArrowRight size={15} aria-hidden="true" />

@@ -4,6 +4,7 @@ import type {
   RankedFoundMatchView,
   RankedLobbyView,
   RankedPenaltyView,
+  RankedPostMatchResult,
   RankedQueueView,
 } from "@/components/ranked/adapter";
 import {
@@ -19,6 +20,7 @@ import {
   toRankedOpponent,
   toRankedPublicProfile,
 } from "@/lib/ranked/api-server";
+import { buildPostMatchResult } from "@/lib/ranked/post-match-result";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +37,7 @@ function emptySnapshot(
     queue: null,
     foundMatch: null,
     activeMatch: null,
+    postMatchResult: null,
     penalty: null,
   };
 }
@@ -153,6 +156,7 @@ export async function GET() {
     };
     let foundMatch: RankedFoundMatchView | null = null;
     let activeMatch: RankedLobbyView | null = null;
+    let postMatchResult: RankedPostMatchResult | null = null;
 
     if (queueRow) {
       const joinedAt = nullableString(queueRow.joined_at);
@@ -228,6 +232,33 @@ export async function GET() {
               ? { playerAGoals: scoreOne, playerBGoals: scoreTwo }
               : null,
         };
+
+        if (status === "confirmed") {
+          const ledgerResult = await supabase
+            .from("ranked_mmr_ledger")
+            .select("old_mmr,new_mmr,delta,is_placement")
+            .eq("match_id", matchId)
+            .eq("profile_id", profile.id)
+            .maybeSingle();
+          assertNoSupabaseError(ledgerResult);
+          const ledgerRow = record(ledgerResult.data);
+          if (ledgerRow) {
+            postMatchResult = buildPostMatchResult({
+              matchId,
+              matchNumber: numberValue(matchRow.match_number),
+              viewerId: profile.id,
+              winnerProfileId: stringValue(matchRow.winner_profile_id),
+              isPlacement: ledgerRow.is_placement === true,
+              placementMatchesPlayed: publicProfile.placementMatchesPlayed,
+              placementMatchesRequired: publicProfile.placementMatchesRequired,
+              currentMmr: publicProfile.mmr,
+              currentTier: publicProfile.tier,
+              oldMmr: nullableNumber(ledgerRow.old_mmr),
+              newMmr: nullableNumber(ledgerRow.new_mmr),
+              mmrDelta: nullableNumber(ledgerRow.delta),
+            });
+          }
+        }
       }
     }
 
@@ -255,6 +286,7 @@ export async function GET() {
       queue,
       foundMatch,
       activeMatch,
+      postMatchResult,
       penalty,
     };
     return NextResponse.json(response);

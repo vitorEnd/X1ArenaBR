@@ -4,8 +4,8 @@ import styles from "@/components/ranked/ranked.module.css";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata(
-  "Top 50 Ranked",
-  "Classificação global da AXB Ranked por MMR, Elo, vitórias e derrotas.",
+  "Leaderboard Ranked",
+  "Leaderboard completo da AXB Ranked com todos os jogadores, colocações, Elos, vitórias e derrotas.",
 );
 
 export default function MatchmakingRankingPage() {
@@ -15,10 +15,10 @@ export default function MatchmakingRankingPage() {
         <div className="page-container">
           <div className={styles.heroGrid}>
             <div>
-              <span className={styles.eyebrow}>Classificação global • Top 50</span>
+              <span className={styles.eyebrow}>AXB Ranked • Leaderboard global</span>
               <h1 className={styles.heroTitle}>O topo não <span>espera.</span></h1>
               <p className={styles.heroLead}>
-                A ordem é decidida por MMR, vitórias, derrotas e pelo momento em que cada marca foi alcançada.
+                Todos os jogadores da Arena em uma só classificação, incluindo quem ainda disputa as partidas de colocação.
               </p>
             </div>
             <div className={styles.heroRail}>
@@ -35,4 +35,3 @@ export default function MatchmakingRankingPage() {
     </div>
   );
 }
-

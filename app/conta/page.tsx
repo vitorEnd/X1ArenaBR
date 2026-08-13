@@ -136,7 +136,7 @@ export default async function AccountPage({
           <article className={styles.panel}>
             <h2 className={styles.panelTitle}>Nome ranked</h2>
             <p className={styles.panelText}>
-              Usado publicamente no Top 50, nos lobbies e no histórico.
+              Usado publicamente no leaderboard, nos lobbies e no histórico.
             </p>
             <UsernameForm currentName={context.profile.username} />
           </article>

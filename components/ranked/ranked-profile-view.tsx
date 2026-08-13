@@ -86,9 +86,9 @@ export function RankedProfileView({
         <div>
           <ShieldQuestion size={36} aria-hidden="true" />
           <h2>Perfil Ranked não encontrado</h2>
-          <p>Confira o nome informado ou volte para a classificação global.</p>
-          <Link href="/matchmaking/ranking" className={styles.secondaryButton}>
-            <ChevronLeft size={17} aria-hidden="true" /> Voltar ao Top 50
+            <p>Confira o nome informado ou volte para a classificação global.</p>
+            <Link href="/matchmaking/ranking" className={styles.secondaryButton}>
+              <ChevronLeft size={17} aria-hidden="true" /> Voltar ao leaderboard
           </Link>
         </div>
       </div>
@@ -222,9 +222,9 @@ export function RankedProfileView({
                 ? `Partidas de colocação: ${profile.placementMatchesPlayed}/5. Elo e MMR permanecem ocultos.`
                 : `Elo atual: ${tierLabel}. Somente resultados confirmados aparecem neste perfil.`}
             </p>
-          </div>
-          <Link href="/matchmaking/ranking" className={styles.miniLink}>
-            <ChevronLeft size={16} aria-hidden="true" /> Top 50
+            </div>
+            <Link href="/matchmaking/ranking" className={styles.miniLink}>
+              <ChevronLeft size={16} aria-hidden="true" /> Leaderboard
           </Link>
         </div>
 

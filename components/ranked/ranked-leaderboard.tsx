@@ -11,8 +11,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   rankedUiAdapter,
+  type RankedLeaderboardFilter,
   type RankedLeaderboardResponse,
-  type RankedTier,
   type RankedUiAdapter,
 } from "./adapter";
 import { PlayerAvatar } from "./player-avatar";
@@ -20,8 +20,10 @@ import { RankEmblem, rankedTierLabels } from "./rank-emblem";
 import styles from "./ranked.module.css";
 import { RankedConfigurationNotice, RankedError, RankedLoading } from "./ui-feedback";
 
-const rankOptions: readonly { value: RankedTier | "all"; label: string }[] = [
-  { value: "all", label: "Todos os Elos" },
+const rankOptions: readonly { value: RankedLeaderboardFilter; label: string }[] = [
+  { value: "all", label: "Todos os jogadores" },
+  { value: "placement", label: "Em colocação" },
+  { value: "no-matches", label: "Sem partidas" },
   { value: "novato", label: "Novato" },
   { value: "pro", label: "Pro" },
   { value: "craque", label: "Craque" },
@@ -36,7 +38,7 @@ interface RankedLeaderboardProps {
 
 export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboardProps) {
   const [query, setQuery] = useState("");
-  const [tier, setTier] = useState<RankedTier | "all">("all");
+  const [tier, setTier] = useState<RankedLeaderboardFilter>("all");
   const [page, setPage] = useState(1);
   const [response, setResponse] = useState<RankedLeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
 
   const resultCount = useMemo(() => response?.entries.length ?? 0, [response]);
 
-  if (loading && !response) return <RankedLoading label="Carregando Top 50" />;
+  if (loading && !response) return <RankedLoading label="Carregando leaderboard" />;
   if (error && !response) return <RankedError message={error} onRetry={() => void load()} />;
   if (!response?.configured) return <RankedConfigurationNotice />;
 
@@ -102,7 +104,7 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
             className={styles.filterSelect}
             value={tier}
             onChange={(event) => {
-              setTier(event.target.value as RankedTier | "all");
+              setTier(event.target.value as RankedLeaderboardFilter);
               setPage(1);
             }}
           >
@@ -117,7 +119,7 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
         {resultCount} jogador{resultCount === 1 ? "" : "es"} exibido{resultCount === 1 ? "" : "s"}.
       </p>
 
-      <section className={styles.rankingPanel} aria-label="Top 50 da Arena Ranked">
+      <section className={styles.rankingPanel} aria-label="Leaderboard da Arena Ranked">
         {response.entries.length > 0 ? (
           <>
             <div className={styles.rankingTableWrap} role="region" aria-label="Classificação com rolagem horizontal" tabIndex={0}>
@@ -125,7 +127,7 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
                 <caption className="sr-only">Classificação global da AXB Ranked</caption>
                 <thead>
                   <tr>
-                    <th>Top</th>
+                    <th>Posição</th>
                     <th>Jogador</th>
                     <th>Elo</th>
                     <th>Vitórias</th>
@@ -136,7 +138,15 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
                 <tbody>
                   {response.entries.map((entry) => (
                     <tr key={entry.id}>
-                      <td><span className={styles.rankingPosition}>#{entry.globalPosition}</span></td>
+                      <td>
+                        <span className={styles.rankingPosition}>
+                          {entry.globalPosition !== null
+                            ? `#${entry.globalPosition}`
+                            : entry.placementMatchesPlayed === 0
+                              ? "Novo"
+                              : `${entry.placementMatchesPlayed}/5`}
+                        </span>
+                      </td>
                       <td>
                         <Link href={`/ranked/${encodeURIComponent(entry.username)}`} className={styles.rankingPlayer}>
                           <PlayerAvatar src={entry.avatarUrl} name={entry.username} size="sm" />
@@ -153,7 +163,12 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
                       </td>
                       <td>{entry.wins}</td>
                       <td>{entry.losses}</td>
-                      <td><span className={styles.mmrValue}>{entry.mmr?.toLocaleString("pt-BR") ?? "Oculto"}</span></td>
+                      <td>
+                        <span className={styles.mmrValue}>
+                          {entry.mmr?.toLocaleString("pt-BR") ??
+                            (entry.placementMatchesPlayed === 0 ? "—" : "Oculto")}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -163,12 +178,24 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
             <div className={styles.rankingMobile}>
               {response.entries.map((entry) => (
                 <article key={entry.id} className={styles.rankingMobileCard}>
-                  <span className={styles.rankingPosition}>#{entry.globalPosition}</span>
+                  <span className={styles.rankingPosition}>
+                    {entry.globalPosition !== null
+                      ? `#${entry.globalPosition}`
+                      : entry.placementMatchesPlayed === 0
+                        ? "Novo"
+                        : `${entry.placementMatchesPlayed}/5`}
+                  </span>
                   <Link href={`/ranked/${encodeURIComponent(entry.username)}`} className={styles.rankingPlayer}>
                     <PlayerAvatar src={entry.avatarUrl} name={entry.username} size="sm" />
                     <span>
                       <strong>{entry.username}</strong>
-                      <small>{entry.tier ? rankedTierLabels[entry.tier] : "Em colocação"}</small>
+                      <small>
+                        {entry.tier
+                          ? rankedTierLabels[entry.tier]
+                          : entry.placementMatchesPlayed === 0
+                            ? "Sem partidas"
+                            : `Em colocação • ${entry.placementMatchesPlayed}/5`}
+                      </small>
                     </span>
                   </Link>
                   <div className={styles.rankingMobileStats}>
@@ -204,11 +231,11 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
           <div className={styles.emptyRanking}>
             <div>
               {query || tier !== "all" ? <ShieldQuestion size={34} aria-hidden="true" /> : <Trophy size={34} aria-hidden="true" />}
-              <h2>{query || tier !== "all" ? "Nenhum jogador encontrado" : "A classificação começa no primeiro X1"}</h2>
+              <h2>{query || tier !== "all" ? "Nenhum jogador encontrado" : "Leaderboard aguardando jogadores"}</h2>
               <p>
                 {query || tier !== "all"
                   ? "Ajuste a busca ou o filtro para consultar outra parte do ranking."
-                  : "Ainda não existem resultados Ranked confirmados. A classificação será formada pelos primeiros X1 válidos."}
+                  : "Assim que uma conta ranked for criada, ela aparecerá aqui — mesmo antes do primeiro X1."}
               </p>
             </div>
           </div>

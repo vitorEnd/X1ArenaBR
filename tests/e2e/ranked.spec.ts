@@ -31,7 +31,9 @@ async function expectPublicRankedFallback(page: Page) {
     page.getByRole("heading", { name: /entre\.\s*jogue\.\s*suba\./i }),
   ).toBeVisible();
   await expect(
-    page.getByRole("status").filter({ hasText: /sistema em prepara/i }),
+    page
+      .getByRole("status")
+      .filter({ hasText: /sistema em prepara|status temporariamente indisponível/i }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /entrar na fila/i }),
@@ -198,16 +200,43 @@ test("fila ativa mostra contador e painel competitivo sem cortar o Elo", async (
   await expectNoHorizontalOverflow(page);
 });
 
-test("Top 50 sempre oferece retorno para a fila", async ({ page }) => {
+test("leaderboard inclui jogadores em colocação e oferece retorno para a fila", async ({ page }) => {
   await page.route("**/api/ranked/leaderboard**", async (route) => {
     await route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         configured: true,
-        entries: [],
+        entries: [
+          {
+            id: "d7fad6b1-ab5a-47b1-8be8-17d44be32006",
+            username: "Itz",
+            avatarUrl: null,
+            wins: 2,
+            losses: 1,
+            mmr: null,
+            tier: null,
+            globalPosition: null,
+            placementMatchesPlayed: 3,
+            placementMatchesRequired: 5,
+            createdAt: "2026-08-13T12:00:00.000Z",
+          },
+          {
+            id: "24743270-70e0-4fdf-a78d-4bd46411aa4e",
+            username: "Vtzinn021",
+            avatarUrl: null,
+            wins: 0,
+            losses: 0,
+            mmr: null,
+            tier: null,
+            globalPosition: null,
+            placementMatchesPlayed: 0,
+            placementMatchesRequired: 5,
+            createdAt: "2026-08-13T12:00:00.000Z",
+          },
+        ],
         page: 1,
-        totalPages: 0,
-        totalEntries: 0,
+        totalPages: 1,
+        totalEntries: 2,
       }),
     });
   });
@@ -217,6 +246,11 @@ test("Top 50 sempre oferece retorno para a fila", async ({ page }) => {
     "href",
     "/matchmaking",
   );
+  const leaderboard = page.getByRole("region", { name: "Leaderboard da Arena Ranked" });
+  await expect(leaderboard.getByText("Itz", { exact: true })).toHaveCount(2);
+  await expect(leaderboard.getByText("Em colocação • 3/5", { exact: true })).toHaveCount(1);
+  await expect(leaderboard.getByText("Sem partidas", { exact: true })).toHaveCount(1);
+  await expect(leaderboard.getByText("Oculto", { exact: true })).toHaveCount(1);
   await expectNoHorizontalOverflow(page);
 });
 

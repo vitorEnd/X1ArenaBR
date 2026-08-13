@@ -6,7 +6,6 @@ import type {
 } from "@/components/ranked/adapter";
 import {
   getRankedApiContext,
-  numberValue,
   rankedErrorResponse,
   RankedRequestError,
   toRankedPublicProfile,
@@ -14,13 +13,23 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 const filterSchema = z.object({
   query: z.string().trim().max(24).default(""),
   rank: z
-    .enum(["all", "novato", "pro", "craque", "desafiante", "immortal", "champion"])
+    .enum([
+      "all",
+      "placement",
+      "no-matches",
+      "novato",
+      "pro",
+      "craque",
+      "desafiante",
+      "immortal",
+      "champion",
+    ])
     .default("all"),
-  page: z.coerce.number().int().min(1).max(5).default(1),
+  page: z.coerce.number().int().min(1).max(10_000).default(1),
 });
 
 export async function GET(request: Request) {
@@ -47,32 +56,34 @@ export async function GET(request: Request) {
 
     const from = (filters.data.page - 1) * PAGE_SIZE;
     let query = context.supabase
-      .from("ranked_leaderboard")
+      // This projection includes every public profile while keeping provisional
+      // MMR private until all five placement matches have been completed.
+      .from("ranked_public_profiles")
       .select("*", { count: "exact" })
-      .order("global_position", { ascending: true });
+      .order("global_position", { ascending: true, nullsFirst: false })
+      .order("placement_matches", { ascending: false })
+      .order("wins", { ascending: false })
+      .order("losses", { ascending: true })
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
     if (filters.data.query) {
       query = query.ilike("username", `%${filters.data.query}%`);
     }
-    if (filters.data.rank !== "all") {
+    if (filters.data.rank === "placement") {
+      query = query.is("tier", null).lt("placement_matches", 5);
+    } else if (filters.data.rank === "no-matches") {
+      query = query.is("tier", null).eq("placement_matches", 0);
+    } else if (filters.data.rank !== "all") {
       query = query.eq("tier", filters.data.rank);
     }
 
     const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
     const entries = (data ?? [])
-      .map((row) => {
-        const profile = toRankedPublicProfile(context.supabase!, row);
-        if (!profile || profile.globalPosition === null || profile.mmr === null) {
-          return null;
-        }
-        return {
-          ...profile,
-          globalPosition: numberValue(row.global_position),
-        } satisfies RankedLeaderboardEntry;
-      })
+      .map((row) => toRankedPublicProfile(context.supabase!, row))
       .filter((entry): entry is RankedLeaderboardEntry => entry !== null);
 
-    const totalEntries = Math.min(count ?? 0, 50);
+    const totalEntries = count ?? 0;
     const response: RankedLeaderboardResponse = {
       configured: true,
       entries,
