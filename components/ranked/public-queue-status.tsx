@@ -1,6 +1,6 @@
 "use client";
 
-import { Radio, Users } from "lucide-react";
+import { Radio, Swords, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { PublicQueueStatusResponse } from "@/lib/ranked/public-queue-status";
 import { normalizePublicQueueCount } from "@/lib/ranked/public-queue-status";
@@ -25,20 +25,21 @@ function statusCopy(status: PublicQueueStatusResponse | null, failed: boolean) {
     };
   }
 
-  if (status.active) {
-    const total = normalizePublicQueueCount(status.playersSearching);
-    return {
-      title: "Fila global ativa",
-      detail: `${total} ${total === 1 ? "jogador buscando" : "jogadores buscando"} adversário agora.`,
-      active: true,
-    };
-  }
-
   return {
-    title: "Nenhuma fila em andamento",
-    detail: "A fila global está livre. Entre e inicie a busca.",
+    title: "Monitor atualizado",
+    detail: "Acompanhe quem está buscando e os confrontos que já começaram.",
     active: false,
   };
+}
+
+function queueDetail(total: number) {
+  if (total === 0) return "Ninguém buscando adversário agora.";
+  return `${total} ${total === 1 ? "jogador buscando" : "jogadores buscando"} adversário agora.`;
+}
+
+function lobbyDetail(total: number) {
+  if (total === 0) return "Nenhuma partida acontecendo agora.";
+  return `${total} ${total === 1 ? "partida em andamento" : "partidas em andamento"}.`;
 }
 
 export function PublicQueueStatus() {
@@ -80,6 +81,13 @@ export function PublicQueueStatus() {
   }, [refresh]);
 
   const copy = statusCopy(status, failed);
+  const statusAvailable = Boolean(status?.available) && !failed;
+  const playersSearching = statusAvailable
+    ? normalizePublicQueueCount(status?.playersSearching)
+    : 0;
+  const activeLobbies = statusAvailable
+    ? normalizePublicQueueCount(status?.activeLobbies)
+    : 0;
 
   return (
     <section className={styles.publicQueueSection} aria-labelledby="public-queue-title">
@@ -90,19 +98,49 @@ export function PublicQueueStatus() {
             <h2 id="public-queue-title">Filas em andamento</h2>
           </div>
 
-          <div
-            className={`${styles.publicQueueState} ${copy.active ? styles.publicQueueStateActive : ""}`}
-            role="status"
-            aria-live="polite"
-          >
-            <span className={styles.publicQueueSignal} aria-hidden="true">
-              {copy.active ? <Radio /> : <Users />}
-            </span>
-            <span>
-              <strong>{copy.title}</strong>
-              <small>{copy.detail}</small>
-            </span>
-          </div>
+          {statusAvailable ? (
+            <div className={styles.publicQueueStates} role="status" aria-live="polite">
+              <article
+                className={`${styles.publicActivityCard} ${playersSearching > 0 ? styles.publicActivityCardActive : ""}`}
+              >
+                <span className={styles.publicQueueSignal} aria-hidden="true">
+                  <Radio />
+                </span>
+                <span className={styles.publicActivityContent}>
+                  <small>Buscando adversário</small>
+                  <strong>{playersSearching}</strong>
+                  <span>{queueDetail(playersSearching)}</span>
+                </span>
+              </article>
+
+              <article
+                className={`${styles.publicActivityCard} ${activeLobbies > 0 ? styles.publicActivityCardLive : ""}`}
+              >
+                <span className={styles.publicQueueSignal} aria-hidden="true">
+                  <Swords />
+                </span>
+                <span className={styles.publicActivityContent}>
+                  <small>Arena ao vivo</small>
+                  <strong>{activeLobbies}</strong>
+                  <span>{lobbyDetail(activeLobbies)}</span>
+                </span>
+              </article>
+            </div>
+          ) : (
+            <div
+              className={`${styles.publicQueueState} ${copy.active ? styles.publicQueueStateActive : ""}`}
+              role="status"
+              aria-live="polite"
+            >
+              <span className={styles.publicQueueSignal} aria-hidden="true">
+                <Users />
+              </span>
+              <span>
+                <strong>{copy.title}</strong>
+                <small>{copy.detail}</small>
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </section>

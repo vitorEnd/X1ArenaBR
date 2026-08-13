@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import type { PublicQueueStatusResponse } from "@/lib/ranked/public-queue-status";
-import { normalizePublicQueueCount } from "@/lib/ranked/public-queue-status";
+import {
+  hasPublicRankedActivity,
+  normalizePublicQueueCount,
+  PUBLIC_ACTIVE_LOBBY_STATUSES,
+} from "@/lib/ranked/public-queue-status";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseAdminConfigured, isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -27,21 +31,31 @@ export async function GET() {
       available: false,
       active: false,
       playersSearching: 0,
+      activeLobbies: 0,
       checkedAt,
     });
   }
 
   try {
     const admin = createAdminClient();
-    const { data, error } = await admin.rpc("ranked_get_queue_count");
-    if (error) throw error;
+    const [queueResult, lobbyResult] = await Promise.all([
+      admin.rpc("ranked_get_queue_count"),
+      admin
+        .from("ranked_matches")
+        .select("id", { count: "exact", head: true })
+        .in("status", [...PUBLIC_ACTIVE_LOBBY_STATUSES]),
+    ]);
+    if (queueResult.error) throw queueResult.error;
+    if (lobbyResult.error) throw lobbyResult.error;
 
-    const playersSearching = normalizePublicQueueCount(data);
+    const playersSearching = normalizePublicQueueCount(queueResult.data);
+    const activeLobbies = normalizePublicQueueCount(lobbyResult.count);
     return response({
       configured: true,
       available: true,
-      active: playersSearching > 0,
+      active: hasPublicRankedActivity(playersSearching, activeLobbies),
       playersSearching,
+      activeLobbies,
       checkedAt,
     });
   } catch (error) {
@@ -55,6 +69,7 @@ export async function GET() {
         available: false,
         active: false,
         playersSearching: 0,
+        activeLobbies: 0,
         checkedAt,
       },
       503,

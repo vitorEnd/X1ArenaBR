@@ -2286,7 +2286,7 @@
 
 .publicQueueFrame {
   display: grid;
-  grid-template-columns: minmax(220px, 0.7fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(220px, 0.58fr) minmax(0, 1.42fr);
   align-items: stretch;
   border: 1px solid var(--ranked-line);
   background: #101010;
@@ -2315,6 +2315,99 @@
   gap: 15px;
   padding: 18px 24px;
   background: linear-gradient(110deg, rgba(255, 255, 255, 0.018), transparent);
+}
+
+.publicQueueStates {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.publicActivityCard {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 15px;
+  overflow: hidden;
+  padding: 18px 22px;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.018), transparent 72%);
+}
+
+.publicActivityCard + .publicActivityCard {
+  border-left: 1px solid var(--ranked-line);
+}
+
+.publicActivityCard::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: transparent;
+  content: "";
+}
+
+.publicActivityContent {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 10px;
+}
+
+.publicActivityContent small {
+  grid-column: 1 / -1;
+  color: #8f8f8f;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.publicActivityContent strong {
+  color: var(--ranked-white);
+  font-family: var(--font-barlow), sans-serif;
+  font-size: clamp(2rem, 3.2vw, 2.7rem);
+  line-height: 0.95;
+}
+
+.publicActivityContent > span {
+  min-width: 0;
+  color: var(--ranked-muted);
+  font-size: 0.83rem;
+  line-height: 1.35;
+}
+
+.publicActivityCardActive,
+.publicActivityCardLive {
+  background: linear-gradient(115deg, rgba(245, 184, 0, 0.09), transparent 76%);
+}
+
+.publicActivityCardActive::before,
+.publicActivityCardLive::before {
+  background: var(--ranked-gold);
+  box-shadow: 0 0 18px rgba(245, 184, 0, 0.48);
+}
+
+.publicActivityCardActive .publicQueueSignal,
+.publicActivityCardLive .publicQueueSignal {
+  border-color: rgba(245, 184, 0, 0.52);
+  box-shadow: 0 0 28px rgba(245, 184, 0, 0.12);
+  color: var(--ranked-gold-light);
+}
+
+.publicActivityCardLive .publicQueueSignal::after {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ranked-gold-light);
+  box-shadow: 0 0 12px var(--ranked-gold);
+  content: "";
+  transform: translate(17px, -17px);
+  animation: liveDot 1.8s ease-in-out infinite;
 }
 
 .publicQueueSignal {
@@ -2370,7 +2463,7 @@
   transform: translate(17px, -17px);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .publicQueueFrame {
     grid-template-columns: 1fr;
   }
@@ -2380,8 +2473,30 @@
     border-bottom: 1px solid var(--ranked-line);
     padding: 18px;
   }
+}
+
+@media (max-width: 620px) {
+  .publicQueueStates {
+    grid-template-columns: 1fr;
+  }
+
+  .publicActivityCard {
+    min-height: 112px;
+    padding: 16px 18px;
+  }
+
+  .publicActivityCard + .publicActivityCard {
+    border-top: 1px solid var(--ranked-line);
+    border-left: 0;
+  }
 
   .publicQueueState {
     padding: 16px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publicActivityCardLive .publicQueueSignal::after {
+    animation: none;
   }
 }

@@ -220,7 +220,7 @@ test("Top 50 sempre oferece retorno para a fila", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
-test("visitante vê quando a fila global está em andamento", async ({ page }) => {
+test("visitante vê partida em andamento mesmo com a fila de busca vazia", async ({ page }) => {
   await page.route("**/api/ranked/queue-status", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -228,7 +228,8 @@ test("visitante vê quando a fila global está em andamento", async ({ page }) =
         configured: true,
         available: true,
         active: true,
-        playersSearching: 3,
+        playersSearching: 0,
+        activeLobbies: 1,
         checkedAt: "2026-08-13T17:00:00.000Z",
       }),
     });
@@ -238,9 +239,12 @@ test("visitante vê quando a fila global está em andamento", async ({ page }) =
   await expect(
     page.getByRole("heading", { name: "Filas em andamento", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("status").filter({ hasText: "Fila global ativa" })).toContainText(
-    "3 jogadores buscando adversário agora",
-  );
+  const arenaMonitor = page.getByRole("status").filter({
+    hasText: "Buscando adversário",
+  });
+  await expect(arenaMonitor).toContainText("Ninguém buscando adversário agora");
+  await expect(arenaMonitor).toContainText("Arena ao vivo");
+  await expect(arenaMonitor).toContainText("1 partida em andamento");
   await expectNoHorizontalOverflow(page);
 });
 
