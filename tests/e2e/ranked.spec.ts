@@ -389,3 +389,79 @@ test("bloqueia aceite depois do prazo do relógio autoritativo", async ({ page }
   await expect(page.getByRole("button", { name: /recusar/i })).toBeDisabled();
   await expect(page.getByText(/tempo encerrado/i)).toBeVisible();
 });
+
+test("central de suporte abre a contestação com placar e limita ban a 100 horas", async ({
+  page,
+}) => {
+  await page.route("**/api/ranked/support?**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        configured: true,
+        authenticated: true,
+        authorized: true,
+        queue: [],
+        activeLobbies: [],
+        frozenMatches: [
+          {
+            id: "3e6a7a0b-7a26-45eb-8b18-5fdfb85d348a",
+            matchNumber: 2,
+            state: "disputed",
+            playerA: {
+              id: "24743270-70e0-4fdf-a78d-4bd46411aa4e",
+              username: "Vtzinn021",
+              avatarUrl: null,
+              mmr: null,
+              tier: null,
+              globalPosition: null,
+            },
+            playerB: {
+              id: "d7fad6b1-ab5a-47b1-8be8-17d44be32006",
+              username: "Itz",
+              avatarUrl: null,
+              mmr: null,
+              tier: null,
+              globalPosition: null,
+            },
+            reportCategory: null,
+            reportObservation: null,
+            frozenAt: "2026-08-13T16:00:00.000Z",
+            submittedScore: { playerAGoals: 10, playerBGoals: 0 },
+          },
+        ],
+        accounts: [
+          {
+            profileId: "6f7d0ab5-208f-4d1c-9f3d-58aa8083a492",
+            username: "joao00325",
+            avatarUrl: null,
+            mmr: null,
+            tier: null,
+            frozen: false,
+            banned: false,
+            penaltyExpiresAt: null,
+            usernameHistory: [],
+          },
+        ],
+        audit: [],
+      }),
+    });
+  });
+
+  await page.goto("/suporte");
+  await expect(page.getByText(/placar enviado: vtzinn021 10 × 0 itz/i)).toBeVisible();
+  await page.getByRole("button", { name: /analisar e decidir/i }).click();
+  const matchDialog = page.getByRole("dialog", { name: /resolver match #2/i });
+  await expect(matchDialog.getByLabel("Vtzinn021")).toHaveValue("10");
+  await expect(matchDialog.getByLabel("Itz")).toHaveValue("0");
+  await matchDialog.getByLabel("Decisão").selectOption("cancel");
+  await expect(matchDialog.getByLabel("Decisão")).toHaveValue("cancel");
+  await matchDialog.getByRole("button", { name: "Fechar" }).click();
+
+  await page.getByRole("button", { name: /gerenciar/i }).click();
+  const accountDialog = page.getByRole("dialog", { name: /gerenciar joao00325/i });
+  const operation = accountDialog.getByLabel("Operação");
+  await operation.selectOption("ban");
+  const duration = accountDialog.getByLabel(/duração em minutos/i);
+  await expect(duration).toHaveAttribute("max", "6000");
+  await expect(operation.getByRole("option", { name: /desbanir jogador/i })).toHaveCount(1);
+});

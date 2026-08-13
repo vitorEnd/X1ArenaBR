@@ -79,6 +79,10 @@ Depois que as contas responsáveis forem criadas, copie os UUIDs de `auth.users`
 SUPABASE_SUPPORT_USER_IDS=id-um,id-dois
 ```
 
+Use a mesma lista completa em todos os ambientes que apontam para o mesmo
+projeto Supabase. Uma lista vazia não altera os suportes já cadastrados; após
+trocar a lista em produção, faça um novo deploy para sincronizar as permissões.
+
 Com a lista vazia, ninguém recebe acesso. A autorização é revalidada no servidor e todas as decisões são registradas na auditoria.
 
 ## Ranked

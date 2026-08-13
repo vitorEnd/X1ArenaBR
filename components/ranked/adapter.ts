@@ -149,6 +149,10 @@ export interface RankedSupportMatch {
   readonly reportCategory: string | null;
   readonly reportObservation: string | null;
   readonly frozenAt: string | null;
+  readonly submittedScore: {
+    readonly playerAGoals: number;
+    readonly playerBGoals: number;
+  } | null;
 }
 
 export interface RankedSupportQueueEntry {
@@ -223,7 +227,7 @@ export type RankedSupportIntent =
   | {
       readonly intent: "account-action";
       readonly profileId: string;
-      readonly action: "freeze" | "release" | "ban" | "penalize";
+      readonly action: "freeze" | "unfreeze" | "ban" | "unban" | "penalize";
       readonly durationSeconds?: number;
       readonly internalNote: string;
     };

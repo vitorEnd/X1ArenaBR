@@ -23,6 +23,10 @@ export async function syncConfiguredSupportUsers(): Promise<void> {
   const admin = createAdminClient();
   const supportIds = getConfiguredSupportIds();
 
+  // An empty deployment allowlist must never revoke every support account in a
+  // shared database (for example, when a Preview environment is incomplete).
+  if (supportIds.length === 0) return;
+
   const { error: deactivateError } = await admin
     .from("support_users")
     .update({ is_active: false })

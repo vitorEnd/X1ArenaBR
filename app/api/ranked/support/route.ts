@@ -10,6 +10,7 @@ import type {
 } from "@/components/ranked/adapter";
 import {
   getRankedApiContext,
+  nullableNumber,
   numberValue,
   parseSupportIds,
   rankedErrorResponse,
@@ -58,7 +59,7 @@ const supportIntentSchema = z.discriminatedUnion("intent", [
   z.object({
     intent: z.literal("account-action"),
     profileId: z.string().uuid(),
-    action: z.enum(["freeze", "release", "ban", "penalize"]),
+    action: z.enum(["freeze", "unfreeze", "ban", "unban", "penalize"]),
     durationSeconds: z.number().int().min(60).max(31_536_000).optional(),
     internalNote: z.string().trim().max(1000).default(""),
   }),
@@ -221,6 +222,8 @@ export async function GET(request: Request) {
       );
       if (!playerA || !playerB) return null;
       const report = reportsByMatch.get(stringValue(match.id));
+      const playerAGoals = nullableNumber(match.player_one_score);
+      const playerBGoals = nullableNumber(match.player_two_score);
       return {
         id: stringValue(match.id),
         matchNumber: numberValue(match.match_number),
@@ -233,6 +236,10 @@ export async function GET(request: Request) {
           stringValue(match.status) === "frozen" ||
           stringValue(match.status) === "disputed"
             ? stringValue(match.updated_at)
+            : null,
+        submittedScore:
+          playerAGoals !== null && playerBGoals !== null
+            ? { playerAGoals, playerBGoals }
             : null,
       };
     };
@@ -362,27 +369,18 @@ export async function POST(request: Request) {
       });
       if (result.error) throw result.error;
     } else {
-      let action = parsed.data.action;
-      if (action === "release") {
-        const { data: profile, error } = await supabase
-          .from("ranked_profiles")
-          .select("banned_at")
-          .eq("id", parsed.data.profileId)
-          .single();
-        if (error) throw error;
-        action = profile.banned_at ? "ban" : "freeze";
-      }
-      const rpcAction =
-        parsed.data.action === "release"
-          ? action === "ban"
-            ? "unban"
-            : "unfreeze"
-          : action;
+      const rpcAction = parsed.data.action;
       if (
-        (rpcAction === "freeze" || rpcAction === "penalize") &&
+        (rpcAction === "freeze" || rpcAction === "penalize" || rpcAction === "ban") &&
         parsed.data.durationSeconds === undefined
       ) {
         throw new RankedRequestError("Informe a duração da punição.");
+      }
+      if (
+        rpcAction === "ban" &&
+        (parsed.data.durationSeconds ?? 0) > 360_000
+      ) {
+        throw new RankedRequestError("O banimento pode durar no máximo 100 horas.");
       }
       const result = await supabase.rpc("ranked_support_manage_profile", {
         p_profile_id: parsed.data.profileId,

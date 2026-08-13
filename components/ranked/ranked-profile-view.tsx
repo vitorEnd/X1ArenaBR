@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, History, Settings, ShieldQuestion } from "lucide-react";
+import { CalendarDays, ChevronLeft, Gavel, History, Settings, ShieldQuestion } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -16,6 +16,7 @@ import { RankedConfigurationNotice, RankedError, RankedLoading } from "./ui-feed
 interface RankedProfileViewProps {
   readonly username: string;
   readonly isOwner?: boolean;
+  readonly isSupport?: boolean;
   readonly adapter?: RankedUiAdapter;
 }
 
@@ -31,6 +32,7 @@ function formatDate(value: string) {
 export function RankedProfileView({
   username,
   isOwner = false,
+  isSupport = false,
   adapter = rankedUiAdapter,
 }: RankedProfileViewProps) {
   const [response, setResponse] = useState<RankedProfileResponse | null>(null);
@@ -98,6 +100,11 @@ export function RankedProfileView({
               <Link href="/conta" className={styles.secondaryButton}>
                 <Settings size={17} aria-hidden="true" /> Configurações da conta
               </Link>
+              {isSupport && (
+                <Link href="/suporte" className={styles.primaryButton}>
+                  <Gavel size={17} aria-hidden="true" /> Central de suporte
+                </Link>
+              )}
             </div>
           )}
           <div className={styles.profileStats}>

@@ -76,7 +76,13 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
 
   useEffect(() => {
     if (!response?.configured || !response.authorized) return;
-    const supabase = createClient();
+    let supabase: ReturnType<typeof createClient>;
+    try {
+      supabase = createClient();
+    } catch {
+      const fallback = setInterval(() => void load(), 15_000);
+      return () => clearInterval(fallback);
+    }
     const channel = supabase
       .channel("ranked-support")
       .on("postgres_changes", { event: "*", schema: "public", table: "ranked_notifications" }, () => void load())
@@ -151,6 +157,12 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
                   <span className={styles.statusPill}>{match.state}</span>
                 </div>
                 <p><b>{match.reportCategory ?? "Prazo ou fluxo interrompido"}</b>{match.reportObservation ? ` — ${match.reportObservation}` : ""}</p>
+                {match.submittedScore && (
+                  <p>
+                    Placar enviado: {match.playerA.username} {match.submittedScore.playerAGoals}
+                    {" × "}{match.submittedScore.playerBGoals} {match.playerB.username}
+                  </p>
+                )}
                 <p>Congelada em {formatDate(match.frozenAt)}</p>
                 <div className={styles.actionStack}>
                   <button type="button" className={styles.primaryButton} onClick={() => setSelectedMatch(match)}>
@@ -194,6 +206,9 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
                   <span className={styles.statusPill}>{account.banned ? "Banido" : account.frozen ? "Congelado" : "Ativo"}</span>
                 </div>
                 <p>MMR: {account.mmr?.toLocaleString("pt-BR") ?? "oculto"} • {account.usernameHistory.length} alteração(ões) de nome</p>
+                {(account.banned || account.frozen) && account.penaltyExpiresAt && (
+                  <p>Restrição programada até {formatDate(account.penaltyExpiresAt)}.</p>
+                )}
                 {account.usernameHistory.length > 0 && (
                   <details className={styles.usernameHistory}>
                     <summary>Consultar histórico de nomes</summary>

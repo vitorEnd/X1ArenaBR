@@ -26,9 +26,15 @@ export function SupportActionDialog({
   onSubmit,
 }: SupportActionDialogProps) {
   const [resolution, setResolution] = useState<"confirm" | "walkover-a" | "walkover-b" | "cancel">("confirm");
-  const [playerAGoals, setPlayerAGoals] = useState("0");
-  const [playerBGoals, setPlayerBGoals] = useState("0");
-  const [accountAction, setAccountAction] = useState<"freeze" | "release" | "ban" | "penalize" | "adjust-mmr">("freeze");
+  const [playerAGoals, setPlayerAGoals] = useState(() =>
+    String(match?.submittedScore?.playerAGoals ?? 0),
+  );
+  const [playerBGoals, setPlayerBGoals] = useState(() =>
+    String(match?.submittedScore?.playerBGoals ?? 0),
+  );
+  const [accountAction, setAccountAction] = useState<"freeze" | "unfreeze" | "ban" | "unban" | "penalize" | "adjust-mmr">(
+    account?.banned ? "unban" : account?.frozen ? "unfreeze" : "freeze",
+  );
   const [newMmr, setNewMmr] = useState(() => String(account?.mmr ?? 800));
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [note, setNote] = useState("");
@@ -89,17 +95,23 @@ export function SupportActionDialog({
       } else {
         const durationSeconds = Number(durationMinutes) * 60;
         if (
-          (accountAction === "freeze" || accountAction === "penalize") &&
-          (!Number.isInteger(durationSeconds) || durationSeconds < 60 || durationSeconds > 31_536_000)
+          (accountAction === "freeze" || accountAction === "penalize" || accountAction === "ban") &&
+          (!Number.isInteger(durationSeconds) ||
+            durationSeconds < 60 ||
+            durationSeconds > (accountAction === "ban" ? 360_000 : 31_536_000))
         ) {
-          setError("Informe uma duração entre 1 minuto e 365 dias.");
+          setError(
+            accountAction === "ban"
+              ? "Informe uma duração entre 1 minuto e 100 horas."
+              : "Informe uma duração entre 1 minuto e 365 dias.",
+          );
           return;
         }
         payload = {
           intent: "account-action",
           profileId: account.profileId,
           action: accountAction,
-          ...((accountAction === "freeze" || accountAction === "penalize")
+          ...((accountAction === "freeze" || accountAction === "penalize" || accountAction === "ban")
             ? { durationSeconds }
             : {}),
           internalNote,
@@ -173,10 +185,11 @@ export function SupportActionDialog({
                   onChange={(event) => setAccountAction(event.target.value as typeof accountAction)}
                 >
                   <option value="freeze">Congelar jogador</option>
-                  <option value="release">Liberar jogador</option>
+                  <option value="unfreeze">Descongelar jogador</option>
                   <option value="penalize">Aplicar punição</option>
                   <option value="adjust-mmr">Corrigir MMR</option>
-                  <option value="ban">Banir conta</option>
+                  <option value="ban">Banir jogador por tempo</option>
+                  <option value="unban">Desbanir jogador</option>
                 </select>
               </div>
               {accountAction === "adjust-mmr" && (
@@ -185,14 +198,16 @@ export function SupportActionDialog({
                   <input id="support-new-mmr" type="number" min="800" step="1" value={newMmr} onChange={(event) => setNewMmr(event.target.value)} />
                 </div>
               )}
-              {(accountAction === "freeze" || accountAction === "penalize") && (
+              {(accountAction === "freeze" || accountAction === "penalize" || accountAction === "ban") && (
                 <div className={styles.field}>
-                  <label htmlFor="support-duration">Duração em minutos</label>
+                  <label htmlFor="support-duration">
+                    Duração em minutos {accountAction === "ban" ? "(máximo de 100 horas)" : ""}
+                  </label>
                   <input
                     id="support-duration"
                     type="number"
                     min="1"
-                    max="525600"
+                    max={accountAction === "ban" ? 6000 : 525600}
                     step="1"
                     value={durationMinutes}
                     onChange={(event) => setDurationMinutes(event.target.value)}

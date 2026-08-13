@@ -6,6 +6,10 @@ const migrationRoot = new URL("../supabase/migrations/", import.meta.url);
 const schema = await readFile(new URL("202608080001_ranked_schema.sql", migrationRoot), "utf8");
 const rpcs = await readFile(new URL("202608080002_ranked_rpcs.sql", migrationRoot), "utf8");
 const security = await readFile(new URL("202608080003_ranked_security.sql", migrationRoot), "utf8");
+const temporaryBans = await readFile(
+  new URL("202608130008_ranked_temporary_support_bans.sql", migrationRoot),
+  "utf8",
+);
 
 test("keeps ranked persistence isolated from official tournament entities", () => {
   const allMigrations = `${schema}\n${rpcs}\n${security}`.toLowerCase();
@@ -65,4 +69,34 @@ test("limits avatar storage to one canonical WebP object per account", () => {
   assert.match(schema, /avatar_path = id::text \|\| '\/avatar\.webp'/i);
   assert.match(security, /name = auth\.uid\(\)::text \|\| '\/avatar\.webp'/i);
   assert.match(security, /array\['image\/webp'\]/i);
+});
+
+test("limits manual support bans to 100 hours and expires their profile guard", () => {
+  assert.match(
+    temporaryBans,
+    /v_action = 'ban'[\s\S]*p_duration_seconds > 360000/i,
+  );
+  assert.match(
+    temporaryBans,
+    /values \(p_profile_id, 'ban',[\s\S]*v_ends_at, v_support_id\)/i,
+  );
+  assert.match(
+    temporaryBans,
+    /set banned_at = null, ban_reason = null[\s\S]*pen\.kind = 'ban'[\s\S]*pen\.ends_at > clock_timestamp\(\)/i,
+  );
+  assert.match(temporaryBans, /v_action = 'unban'/i);
+});
+
+test("keeps every support RPC unavailable to anonymous callers", () => {
+  for (const signature of [
+    "ranked_is_support\\(uuid\\)",
+    "ranked_support_resolve_match\\(uuid, text, integer, integer, uuid, text\\)",
+    "ranked_support_adjust_mmr\\(uuid, integer, text\\)",
+    "ranked_support_manage_profile\\(uuid, text, integer, text\\)",
+  ]) {
+    assert.match(
+      temporaryBans,
+      new RegExp(`revoke all on function public\\.${signature}[\\s\\S]*?from public, anon`, "i"),
+    );
+  }
 });

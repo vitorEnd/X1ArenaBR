@@ -4,6 +4,7 @@ import { RankedProfileView } from "@/components/ranked/ranked-profile-view";
 import styles from "@/components/ranked/ranked.module.css";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { getConfiguredSupportIds } from "@/lib/ranked/support-sync";
 
 interface RankedPublicProfilePageProps {
   readonly params: Promise<{ username: string }>;
@@ -21,6 +22,7 @@ export async function generateMetadata({ params }: RankedPublicProfilePageProps)
 export default async function RankedPublicProfilePage({ params }: RankedPublicProfilePageProps) {
   const { username } = await params;
   let isOwner = false;
+  let isSupport = false;
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
     const [{ data: profile, error }, { data: authData }] = await Promise.all([
@@ -33,12 +35,17 @@ export default async function RankedPublicProfilePage({ params }: RankedPublicPr
     ]);
     if (!error && !profile) notFound();
     isOwner = Boolean(profile && authData.user?.id === profile.id);
+    isSupport = Boolean(
+      isOwner &&
+        authData.user &&
+        getConfiguredSupportIds().includes(authData.user.id.toLocaleLowerCase("en-US")),
+    );
   }
   return (
     <div className={styles.rankedPage}>
       <section className={styles.contentSection}>
         <div className="page-container">
-          <RankedProfileView username={username} isOwner={isOwner} />
+          <RankedProfileView username={username} isOwner={isOwner} isSupport={isSupport} />
         </div>
       </section>
     </div>
