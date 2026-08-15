@@ -216,7 +216,25 @@ export const officialPlayers = [
     status: "active",
     dataStatus: "official",
   },
-  {
+    {
+    id: "duardin",
+    slug: "duardin",
+    name: "Duardin",
+    avatarUrl: null,
+    currentCategoryId: "peso-medio",
+    status: "active",
+    dataStatus: "official",
+  },
+   {
+    id: "BG",
+    slug: "BG",
+    name: "BG",
+    avatarUrl: null,
+    currentCategoryId: "peso-medio",
+    status: "active",
+    dataStatus: "official",
+  },
+    {
     id: "vtzinn021",
     slug: "vtzinn021",
     name: "Vtzinn021",
