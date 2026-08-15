@@ -55,9 +55,9 @@ export async function GET(
     }
 
     const isOwner = api.user?.id === profile.id;
-    if (profile.anonymousMode && !isOwner) {
-      return NextResponse.json({ configured: true, profile, statistics: null, history: [] });
-    }
+    // Anonymous mode masks identity in the public view, but competitive data
+    // remains public. The owner-only override below is only needed because the
+    // authenticated private profile can contain fresher values.
 
     // The public view may hide fields for anonymous users. When the requester
     // owns the profile, replace those fields with the private profile values,
@@ -65,8 +65,10 @@ export async function GET(
     const visibleProfile = isOwner && api.profile?.id === profile.id
       ? {
           ...profile,
-          username: api.profile.username,
-          avatarUrl: getAvatarPublicUrl(api.supabase, api.profile.avatarPath, api.profile.updatedAt),
+          // Keep the public anonymous identity even for the owner. Only the
+          // owner's private competitive values are restored below.
+          username: profile.username,
+          avatarUrl: profile.avatarUrl,
           wins: api.profile.wins,
           losses: api.profile.losses,
           mmr: api.profile.placementMatches === 5 ? api.profile.mmr : null,
