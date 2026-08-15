@@ -50,7 +50,7 @@ export function RankingExplorer({
 
   const ranking = useMemo(() => {
     const categoryPlayers = officialPlayers.filter(
-      (player) => player.currentCategoryId === categoryId,
+      (player) => player.currentCategoryId === categoryId || player.id === liveChampionId,
     );
     const seededEntries: RankingEntry[] = categoryPlayers.map((player) => {
       const entry = entriesByPlayer.get(player.id);
@@ -72,7 +72,7 @@ export function RankingExplorer({
     return buildCategoryRanking(seededEntries, categoryId, {
       championPlayerId: championRecord?.playerId,
     });
-  }, [categoryId, championRecord?.playerId, entriesByPlayer]);
+  }, [categoryId, championRecord?.playerId, entriesByPlayer, liveChampionId]);
   const playerById = useMemo(
     () => new Map<string, Player>(officialPlayers.map((player) => [player.id, player])),
     [],
@@ -134,7 +134,13 @@ export function RankingExplorer({
         </div>
         <div>
           <span>Campeão da categoria</span>
-          <strong>{championPlayer?.name ?? "Cinturão a definir"}</strong>
+          {championPlayer ? (
+            <Link href={`/jogadores/${championPlayer.slug}`} className="ranking-player champion-row__link">
+              <strong>{championPlayer.name}</strong>
+            </Link>
+          ) : (
+            <strong>Cinturão a definir</strong>
+          )}
         </div>
         <span className="champion-row__status">{championPlayer ? championRecord?.type === "interim" ? "CAMPEÃO INTERINO" : "CAMPEÃO OFICIAL" : "CINTURÃO VAGO"}</span>
       </div>

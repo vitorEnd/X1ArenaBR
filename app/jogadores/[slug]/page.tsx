@@ -3,14 +3,18 @@ import { ArrowLeft, Crown, History, Shield, UserRound } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MatchCard } from "@/components/match-card";
+import type { Event } from "@/lib/types";
 import {
   categories,
   officialBeltHistory,
   officialEvents,
-  officialMatches,
   officialPlayers,
 } from "@/data/arena";
-import { getPublicPlayerMatchHistory, getPublicPlayerRankingEntries } from "@/lib/arena-cards-server";
+import {
+  getPublicPlayerBeltHistory,
+  getPublicPlayerMatchHistory,
+  getPublicPlayerRankingEntries,
+} from "@/lib/arena-cards-server";
 import {
   buildCategoryRanking,
   calculateGoalDifference,
@@ -72,8 +76,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     (item) => item.playerId === player.id,
   );
   const history = await getPublicPlayerMatchHistory(player.id);
-  const beltHistory = officialBeltHistory.filter(
+  const storedBeltHistory = officialBeltHistory.filter(
     (record) => record.playerId === player.id,
+  );
+  const liveBeltHistory = await getPublicPlayerBeltHistory(player.id);
+  const beltHistory = [...storedBeltHistory, ...liveBeltHistory].filter(
+    (record, index, records) => records.findIndex((item) => item.id === record.id) === index,
   );
   const points = entry
     ? calculateRankingPoints(entry.wins, entry.losses)
@@ -157,12 +165,20 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           {history.length ? (
             <div className="matches-grid">
               {history.map((match) => {
-                const event = officialEvents.find(
+                const event: Event = officialEvents.find(
                   (item) => item.id === match.eventId,
-                );
-                return event ? (
-                  <MatchCard key={match.id} match={match} event={event} />
-                ) : null;
+                ) ?? {
+                  id: match.eventId,
+                  slug: match.eventId,
+                  name: "Card oficial",
+                  startsAt: match.scheduledAt ?? new Date(0).toISOString(),
+                  timeZone: "America/Sao_Paulo",
+                  venue: "Park",
+                  status: "finished",
+                  matchIds: [match.id],
+                  dataStatus: "official",
+                };
+                return <MatchCard key={match.id} match={match} event={event} />;
               })}
             </div>
           ) : (

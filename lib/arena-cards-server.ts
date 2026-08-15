@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { ArenaCard, ArenaCardMatch } from "./arena-card-types";
-import type { Match, MatchOutcome, RankingEntry } from "./types";
+import type { BeltHistory, Match, MatchOutcome, RankingEntry } from "./types";
 import { createAdminClient } from "./supabase/admin";
 import { isSupabaseAdminConfigured } from "./supabase/env";
 
@@ -143,6 +143,37 @@ export async function getPublicPlayerRankingEntries(): Promise<readonly RankingE
     recentForm: [...entry.recentForm],
     knockouts: entry.knockouts,
   }));
+}
+
+export async function getPublicPlayerBeltHistory(playerId: string): Promise<readonly BeltHistory[]> {
+  const cards = await getPublicArenaCards();
+  const history: BeltHistory[] = [];
+
+  for (const card of cards) {
+    for (const match of card.matches) {
+      if (
+        match.type !== "belt" ||
+        match.status !== "finished" ||
+        match.winnerPlayerId !== playerId
+      ) continue;
+
+      history.push({
+        id: `${match.id}:won`,
+        categoryId: match.categoryId,
+        playerId,
+        championType: "official",
+        action: "won",
+        occurredAt: match.scheduledAt ?? card.updatedAt,
+        matchId: match.id,
+        dataStatus: "official",
+      });
+    }
+  }
+
+  return history.sort(
+    (first, second) =>
+      new Date(second.occurredAt).getTime() - new Date(first.occurredAt).getTime(),
+  );
 }
 
 export async function getPublicPlayerMatchHistory(playerId: string): Promise<readonly Match[]> {
