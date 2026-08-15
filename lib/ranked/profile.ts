@@ -17,6 +17,8 @@ export interface RankedPrivateProfile {
   readonly banReason: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly anonymousMode: boolean;
+  readonly anonymousNumber: number | null;
 }
 
 type ProfileRecord = Record<string, unknown>;
@@ -57,6 +59,8 @@ export function normalizeRankedProfile(
     banReason: nullableString(row.ban_reason),
     createdAt: nullableString(row.created_at) ?? new Date(0).toISOString(),
     updatedAt: nullableString(row.updated_at) ?? new Date(0).toISOString(),
+    anonymousMode: row.anonymous_mode === true,
+    anonymousNumber: numberValue(row.anonymous_number, 0) || null,
   };
 }
 

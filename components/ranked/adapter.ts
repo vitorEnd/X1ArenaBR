@@ -49,6 +49,8 @@ export interface RankedPublicProfile {
   readonly placementMatchesPlayed: number;
   readonly placementMatchesRequired: 5;
   readonly createdAt: string;
+  readonly anonymousMode?: boolean;
+  readonly anonymousNumber?: number | null;
 }
 
 export interface RankedOpponent {

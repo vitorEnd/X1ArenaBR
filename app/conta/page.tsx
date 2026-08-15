@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   AccountPasswordForm,
   AvatarUploader,
+  AnonymousModeForm,
   DiscordIdentityButton,
   UsernameForm,
 } from "@/components/auth/account-forms";
@@ -131,6 +132,12 @@ export default async function AccountPage({
                 </span>
               </div>
             </div>
+          </article>
+
+          <article className={styles.panel}>
+            <h2 className={styles.panelTitle}>Modo Anônimo</h2>
+            <p className={styles.panelText}>Oculte seus dados competitivos de qualquer pessoa que não seja você.</p>
+            <AnonymousModeForm enabled={context.profile.anonymousMode} />
           </article>
 
           <article className={styles.panel}>

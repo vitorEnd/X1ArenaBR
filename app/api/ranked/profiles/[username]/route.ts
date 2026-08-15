@@ -54,6 +54,22 @@ export async function GET(
       throw new RankedRequestError("Perfil ranked não encontrado.", 404);
     }
 
+    const isOwner = api.user?.id === profile.id;
+    if (profile.anonymousMode && !isOwner) {
+      return NextResponse.json({ configured: true, profile, statistics: null, history: [] });
+    }
+
+    const visibleProfile = isOwner && api.profile?.id === profile.id && profile.anonymousMode
+      ? {
+          ...profile,
+          username: api.profile.username,
+          avatarUrl: getAvatarPublicUrl(api.supabase, api.profile.avatarPath, api.profile.updatedAt),
+          wins: api.profile.wins,
+          losses: api.profile.losses,
+          mmr: api.profile.placementMatches === 5 ? api.profile.mmr : null,
+          anonymousMode: true,
+        }
+      : profile;
     const matches: Record<string, unknown>[] = [];
     for (let from = 0; ; from += PROFILE_MATCH_PAGE_SIZE) {
       const { data, error: historyError } = await api.supabase
@@ -129,7 +145,7 @@ export async function GET(
 
     const response: RankedProfileResponse = {
       configured: true,
-      profile,
+      profile: visibleProfile,
       statistics: calculateRankedProfileStatistics(completeHistory),
       history: completeHistory.slice(0, PUBLIC_HISTORY_LIMIT),
     };

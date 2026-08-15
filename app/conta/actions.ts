@@ -39,6 +39,12 @@ function databaseMessage(message: string, code?: string): string {
   if (normalized.includes("not authenticated") || code === "42501") {
     return "Sua sessão expirou. Entre novamente.";
   }
+  if (code === "PGRST202" || normalized.includes("ranked_set_anonymous_mode")) {
+    return "O banco ainda não recebeu a atualização do Modo Anônimo. Aplique as migrations 202608150003 e 202608150004 no Supabase e tente novamente.";
+  }
+  if (code === "42703" || normalized.includes("anonymous_mode") || normalized.includes("anonymous_number")) {
+    return "O banco ainda não possui as colunas do Modo Anônimo. Aplique a migration 202608150004 no Supabase.";
+  }
   return "Não foi possível salvar a alteração. Tente novamente.";
 }
 
@@ -103,6 +109,21 @@ export async function updateRankedUsernameAction(
   revalidatePath("/conta");
   revalidatePath("/ranked", "layout");
   return { status: "success", message: "Nome ranked atualizado." };
+}
+
+export async function setRankedAnonymousModeAction(
+  _previousState: AccountActionState,
+  formData: FormData,
+): Promise<AccountActionState> {
+  const enabled = textValue(formData, "anonymousMode") === "on";
+  const auth = await getAuthenticatedClient();
+  if (!auth) return { status: "error", message: "Sua sessão expirou. Entre novamente." };
+  const { error } = await auth.supabase.rpc("ranked_set_anonymous_mode", { p_enabled: enabled });
+  if (error) return { status: "error", message: databaseMessage(error.message, error.code) };
+  revalidatePath("/conta");
+  revalidatePath("/matchmaking/ranking");
+  revalidatePath("/ranked", "layout");
+  return { status: "success", message: enabled ? "Modo Anônimo ativado." : "Modo Anônimo desativado." };
 }
 
 export async function setAccountPasswordAction(

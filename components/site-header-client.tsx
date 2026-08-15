@@ -63,9 +63,10 @@ export function SiteHeaderClient({
   const mobileNavRef = useRef<HTMLElement>(null);
   const returnPath = pathname.startsWith("/auth") ? "/matchmaking" : pathname;
   const loginHref = `/auth/entrar?next=${encodeURIComponent(returnPath)}`;
-  const accountHref = account?.hasRankedProfile
-    ? `/ranked/${encodeURIComponent(account.name)}`
-    : "/conta/perfil";
+  // The account control must always open the private account area. In anonymous
+  // mode the public profile name intentionally changes to AnonimoXXXX, so the
+  // old username URL is no longer a reliable way to reach the owner's account.
+  const accountHref = account?.hasRankedProfile ? "/conta" : "/conta/perfil";
 
   function closeMenu(restoreFocus = true) {
     setOpen(false);

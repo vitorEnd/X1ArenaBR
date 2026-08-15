@@ -98,6 +98,7 @@ export function RankedProfileView({
 
   const { profile, statistics, history } = response;
   const placementActive = profile.placementMatchesPlayed < 5;
+  const isAnonymous = profile.anonymousMode === true;
   const tierLabel = profile.tier ? rankedTierLabels[profile.tier] : "Em colocação";
 
   return (
@@ -124,8 +125,8 @@ export function RankedProfileView({
             </div>
           )}
           <div className={styles.profileStats}>
-            <div className={styles.statCell}><span>Vitórias</span><strong>{profile.wins}</strong></div>
-            <div className={styles.statCell}><span>Derrotas</span><strong>{profile.losses}</strong></div>
+            <div className={styles.statCell}><span>Vitórias</span><strong>{isAnonymous ? "Oculto" : profile.wins}</strong></div>
+            <div className={styles.statCell}><span>Derrotas</span><strong>{isAnonymous ? "Oculto" : profile.losses}</strong></div>
             <div className={styles.statCell}><span>MMR</span><strong>{placementActive ? "Oculto" : profile.mmr?.toLocaleString("pt-BR") ?? "—"}</strong></div>
             <div className={styles.statCell}><span>Posição</span><strong>{profile.globalPosition ? `#${profile.globalPosition}` : "—"}</strong></div>
           </div>
@@ -138,7 +139,7 @@ export function RankedProfileView({
         />
       </article>
 
-      {statistics && (
+      {statistics && !isAnonymous && (
         <section className={styles.profilePerformance} aria-labelledby="performance-title">
           <div className={styles.profilePerformanceHeader}>
             <div>
@@ -235,7 +236,9 @@ export function RankedProfileView({
           </Link>
         </div>
 
-        {history.length > 0 ? (
+        {isAnonymous ? (
+          <div className={styles.emptyRanking}><div><ShieldQuestion size={34} aria-hidden="true" /><h2>Perfil em Modo Anônimo</h2><p>MMR, estatísticas e histórico estão visíveis somente para o dono da conta.</p></div></div>
+        ) : history.length > 0 ? (
           <div className={styles.historyList}>
             {history.map((entry) => (
               <article key={entry.id} className={styles.historyCard}>

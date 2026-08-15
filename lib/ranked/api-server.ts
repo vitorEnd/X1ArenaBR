@@ -191,6 +191,7 @@ export function toRankedPublicProfile(
     placementMatchesPlayed,
     placementMatchesRequired: 5,
     createdAt: stringValue(row.created_at ?? row.createdAt, new Date(0).toISOString()),
+    anonymousMode: row.anonymous_mode === true,
   };
 }
 

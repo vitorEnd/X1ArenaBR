@@ -14,6 +14,7 @@ import {
   setAccountPasswordAction,
   updateAvatarAction,
   updateRankedUsernameAction,
+  setRankedAnonymousModeAction,
 } from "@/app/conta/actions";
 import {
   INITIAL_ACCOUNT_ACTION_STATE,
@@ -98,6 +99,21 @@ export function UsernameForm({ currentName }: { readonly currentName: string }) 
         <Save size={17} aria-hidden="true" />
         Salvar novo nome
       </SubmitButton>
+    </form>
+  );
+}
+
+export function AnonymousModeForm({ enabled }: { readonly enabled: boolean }) {
+  const [state, formAction] = useActionState(setRankedAnonymousModeAction, INITIAL_ACCOUNT_ACTION_STATE);
+  return (
+    <form action={formAction} className={styles.form}>
+      <label className={styles.provider}>
+        <span><input type="checkbox" name="anonymousMode" defaultChecked={enabled} /> Modo Anônimo</span>
+        <span className={styles.profileMeta}>Privacidade Ranked</span>
+      </label>
+      <p className={styles.finePrint}>Oculta MMR, vitórias, derrotas, estatísticas e histórico. No leaderboard, seu nome vira Anonimo0001.</p>
+      <FormFeedback state={state} />
+      <SubmitButton pendingLabel="Salvando…"><Save size={17} aria-hidden="true" /> Salvar privacidade</SubmitButton>
     </form>
   );
 }
