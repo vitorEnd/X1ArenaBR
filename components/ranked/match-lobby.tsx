@@ -81,12 +81,6 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
   const canReport = ["lobby", "in_progress", "awaiting_score", "awaiting_confirmation"].includes(match.state);
   const viewerIsPlayerA = match.playerA.id === match.viewerId;
 
-  useEffect(() => {
-    if (match.state === "awaiting_score" && viewerIsCreator) {
-      setScoreOpen(true);
-    }
-  }, [match.state, viewerIsCreator]);
-
   const copyText = async (label: string, value: string) => {
     try {
       await navigator.clipboard.writeText(value);
@@ -243,12 +237,11 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
                     className={styles.primaryButton}
                     disabled={busy}
                     onClick={async () => {
+                      // Primeiro muda o estado no servidor para awaiting_score. Só depois
+                      // abrimos o formulário; caso contrário o usuário pode enviar o
+                      // placar enquanto a partida ainda está em lobby/in_progress.
+                      await onAction({ intent: "end" });
                       setScoreOpen(true);
-                      try {
-                        await onAction({ intent: "end" });
-                      } catch {
-                        // Erro já foi tratado e mostrado na UI via error state
-                      }
                     }}
                   >
                     <Square size={16} aria-hidden="true" /> Finalizar partida
