@@ -1,4 +1,5 @@
 import { CheckCircle2, LogOut, Mail, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   AccountPasswordForm,
@@ -72,12 +73,17 @@ export default async function AccountPage({
               perfil ranked permanece separado dos jogadores dos torneios oficiais.
             </p>
           </div>
-          <form action={logoutAction}>
-            <button className={styles.danger} type="submit">
-              <LogOut size={17} aria-hidden="true" />
-              Sair da conta
-            </button>
-          </form>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <Link href="/matchmaking" className={styles.secondaryButton}>
+              Voltar ao matchmaking
+            </Link>
+            <form action={logoutAction}>
+              <button className={styles.danger} type="submit">
+                <LogOut size={17} aria-hidden="true" />
+                Sair da conta
+              </button>
+            </form>
+          </div>
         </header>
 
         {((params.linked === "discord" && discordConnected) ||

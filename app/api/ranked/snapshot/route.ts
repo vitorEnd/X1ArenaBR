@@ -123,6 +123,20 @@ export async function GET() {
         createdAt: profile.createdAt,
       };
 
+    // The public view deliberately masks anonymous players. This endpoint is
+    // authenticated and belongs to the player, so the matchmaking dashboard
+    // must show the owner's real identity and private statistics.
+    const ownProfile = profile.anonymousMode
+      ? {
+          ...publicProfile,
+          username: profile.username,
+          avatarUrl: getAvatarPublicUrl(supabase, profile.avatarPath, profile.updatedAt),
+          wins: profile.wins,
+          losses: profile.losses,
+          mmr: profile.placementMatches === 5 ? profile.mmr : null,
+        }
+      : publicProfile;
+
     const queueRow = record(queueResult.data);
     let matchRow = record(matchResult.data);
     if (!matchRow) {
@@ -250,10 +264,10 @@ export async function GET() {
               viewerId: profile.id,
               winnerProfileId: stringValue(matchRow.winner_profile_id),
               isPlacement: ledgerRow.is_placement === true,
-              placementMatchesPlayed: publicProfile.placementMatchesPlayed,
-              placementMatchesRequired: publicProfile.placementMatchesRequired,
-              currentMmr: publicProfile.mmr,
-              currentTier: publicProfile.tier,
+              placementMatchesPlayed: ownProfile.placementMatchesPlayed,
+              placementMatchesRequired: ownProfile.placementMatchesRequired,
+              currentMmr: ownProfile.mmr,
+              currentTier: ownProfile.tier,
               oldMmr: nullableNumber(ledgerRow.old_mmr),
               newMmr: nullableNumber(ledgerRow.new_mmr),
               mmrDelta: nullableNumber(ledgerRow.delta),
@@ -283,7 +297,7 @@ export async function GET() {
       configured: true,
       authenticated: true,
       profileComplete: true,
-      profile: publicProfile,
+      profile: ownProfile,
       queue,
       foundMatch,
       activeMatch,
