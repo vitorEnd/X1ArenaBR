@@ -243,8 +243,12 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
                     className={styles.primaryButton}
                     disabled={busy}
                     onClick={async () => {
-                      await onAction({ intent: "end" });
                       setScoreOpen(true);
+                      try {
+                        await onAction({ intent: "end" });
+                      } catch {
+                        // Erro já foi tratado e mostrado na UI via error state
+                      }
                     }}
                   >
                     <Square size={16} aria-hidden="true" /> Finalizar partida
