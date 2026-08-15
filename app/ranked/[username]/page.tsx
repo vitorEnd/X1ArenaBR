@@ -41,7 +41,9 @@ export default async function RankedPublicProfilePage({ params }: RankedPublicPr
         .rpc("ranked_get_my_profile")
         .maybeSingle();
       const ownProfile = privateProfile as { id?: string; username?: string } | null;
-      if (ownProfile?.id === authData.user.id && ownProfile.username === username) {
+      if (ownProfile?.id === authData.user.id) {
+        // The old URL may contain the former public username. This is
+        // especially common after anonymous mode replaces it with AnonimoXXXX.
         redirect("/conta");
       }
     }
