@@ -28,6 +28,7 @@ import {
 } from "./adapter";
 import { RankEmblem } from "./rank-emblem";
 import styles from "./ranked.module.css";
+import { ArenaCardManager } from "./arena-card-manager";
 import { SupportActionDialog } from "./support-action-dialog";
 import { RankedConfigurationNotice, RankedError, RankedLoading } from "./ui-feedback";
 
@@ -97,6 +98,8 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
       .on("postgres_changes", { event: "*", schema: "public", table: "ranked_queue_entries" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "ranked_match_reports" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "support_audit_log" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "arena_cards" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "arena_card_matches" }, () => void load())
       .subscribe();
     const fallback = setInterval(() => void load(), 15_000);
     return () => {
@@ -177,6 +180,8 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
         <div className={styles.supportStat}><span>Exigem decisão</span><strong>{response.frozenMatches.length}</strong></div>
         <div className={styles.supportStat}><span>Partidas em 24h</span><strong>{matchHistory.length}</strong></div>
       </div>
+
+      <ArenaCardManager cards={response.arenaCards} busy={busy} onSubmit={mutate} />
 
       <section className={`${styles.supportPanel} ${styles.supportHistoryPanel}`} aria-labelledby="match-history-title">
         <span className={styles.microLabel}>Janela móvel de 24 horas</span>

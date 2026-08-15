@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { officialPlayers } from "@/data/arena";
+import type { ArenaCard, ArenaCardMatch } from "@/lib/arena-card-types";
 import type {
   RankedMutationResponse,
   RankedSupportAuditEntry,
@@ -40,10 +42,54 @@ function emptySupport(
     matchHistory: [],
     accounts: [],
     audit: [],
+    arenaCards: [],
   };
 }
 
 const supportIntentSchema = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("create-arena-card"),
+    name: z.string().trim().min(3).max(80),
+    startsAt: z.string().datetime({ offset: true }).nullable(),
+  }),
+  z.object({
+    intent: z.literal("update-arena-card"),
+    cardId: z.string().uuid(),
+    name: z.string().trim().min(3).max(80),
+    startsAt: z.string().datetime({ offset: true }).nullable(),
+  }),
+  z.object({
+    intent: z.literal("delete-arena-card"),
+    cardId: z.string().uuid(),
+  }),
+  z.object({
+    intent: z.literal("start-arena-card"),
+    cardId: z.string().uuid(),
+  }),
+  z.object({
+    intent: z.literal("upsert-arena-card-match"),
+    cardId: z.string().uuid(),
+    matchId: z.string().uuid().optional(),
+    categoryId: z.enum(["peso-pena", "peso-medio", "peso-pesado"]),
+    playerAId: z.string().min(1).max(80),
+    playerBId: z.string().min(1).max(80),
+    matchType: z.enum(["normal", "belt"]),
+    scheduledAt: z.string().datetime({ offset: true }).nullable(),
+  }),
+  z.object({
+    intent: z.literal("delete-arena-card-match"),
+    cardId: z.string().uuid(),
+    matchId: z.string().uuid(),
+  }),
+  z.object({
+    intent: z.literal("finish-arena-card"),
+    cardId: z.string().uuid(),
+    results: z.array(z.object({
+      matchId: z.string().uuid(),
+      playerAScore: z.number().int().min(0).max(999),
+      playerBScore: z.number().int().min(0).max(999),
+    })).min(1).max(100),
+  }),
   z.object({
     intent: z.literal("reset-ranked"),
     password: z.string().min(1).max(128),
@@ -81,6 +127,8 @@ const supportIntentSchema = z.discriminatedUnion("intent", [
   }),
 ]);
 
+const officialPlayerIds = new Set<string>(officialPlayers.map((player) => player.id));
+
 export async function GET(request: Request) {
   try {
     const queryValue = new URL(request.url).searchParams.get("query")?.trim() ?? "";
@@ -113,6 +161,8 @@ export async function GET(request: Request) {
       accountsResult,
       historyResult,
       penaltiesResult,
+      arenaCardsResult,
+      arenaCardMatchesResult,
     ] =
       await Promise.all([
         admin
@@ -167,6 +217,14 @@ export async function GET(request: Request) {
           .select("profile_id,ends_at")
           .eq("status", "active")
           .order("created_at", { ascending: false }),
+        admin
+          .from("arena_cards")
+          .select("id,name,status,starts_at,venue,created_at,updated_at")
+          .order("created_at", { ascending: false }),
+        admin
+          .from("arena_card_matches")
+          .select("id,card_id,position,category_id,player_a_id,player_b_id,match_type,status,scheduled_at,player_a_score,player_b_score,winner_player_id")
+          .order("position", { ascending: true }),
       ]);
     for (const result of [
       queueResult,
@@ -178,6 +236,8 @@ export async function GET(request: Request) {
       accountsResult,
       historyResult,
       penaltiesResult,
+      arenaCardsResult,
+      arenaCardMatchesResult,
     ]) {
       if (result.error) throw result.error;
     }
@@ -366,6 +426,36 @@ export async function GET(request: Request) {
         };
       },
     );
+    const arenaMatchesByCard = new Map<string, ArenaCardMatch[]>();
+    for (const match of arenaCardMatchesResult.data ?? []) {
+      const mapped: ArenaCardMatch = {
+        id: String(match.id),
+        cardId: String(match.card_id),
+        position: Number(match.position),
+        categoryId: match.category_id as ArenaCardMatch["categoryId"],
+        playerAId: String(match.player_a_id),
+        playerBId: String(match.player_b_id),
+        type: match.match_type as ArenaCardMatch["type"],
+        status: match.status as ArenaCardMatch["status"],
+        scheduledAt: match.scheduled_at,
+        playerAScore: match.player_a_score,
+        playerBScore: match.player_b_score,
+        winnerPlayerId: match.winner_player_id,
+      };
+      const current = arenaMatchesByCard.get(mapped.cardId) ?? [];
+      current.push(mapped);
+      arenaMatchesByCard.set(mapped.cardId, current);
+    }
+    const arenaCards: ArenaCard[] = (arenaCardsResult.data ?? []).map((card) => ({
+      id: String(card.id),
+      name: String(card.name),
+      status: card.status as ArenaCard["status"],
+      startsAt: card.starts_at,
+      venue: "Park",
+      createdAt: String(card.created_at),
+      updatedAt: String(card.updated_at),
+      matches: arenaMatchesByCard.get(String(card.id)) ?? [],
+    }));
 
     const response: RankedSupportResponse = {
       configured: true,
@@ -377,6 +467,7 @@ export async function GET(request: Request) {
       matchHistory,
       accounts,
       audit,
+      arenaCards,
     };
     return NextResponse.json(response, {
       headers: { "Cache-Control": "private, no-store, max-age=0" },
@@ -392,7 +483,136 @@ export async function POST(request: Request) {
     if (!parsed.success) throw new RankedRequestError("Ação de suporte inválida.");
     const { supabase, admin, user } = await requireSupportContext();
 
-    if (parsed.data.intent === "reset-ranked") {
+    if (parsed.data.intent === "create-arena-card") {
+      const cardResult = await admin
+        .from("arena_cards")
+        .insert({
+          name: parsed.data.name,
+          status: "announced",
+          starts_at: parsed.data.startsAt,
+          venue: "Park",
+          created_by: user.id,
+          updated_by: user.id,
+        })
+        .select("id")
+        .single();
+      if (cardResult.error) throw cardResult.error;
+      const auditResult = await admin.from("support_audit_log").insert({
+        support_user_id: user.id,
+        action: "create_card",
+        target_type: "arena_card",
+        target_id: cardResult.data.id,
+        next_state: { name: parsed.data.name, status: "announced" },
+        note: "Card criado pela central de suporte.",
+      });
+      if (auditResult.error) throw auditResult.error;
+    } else if (parsed.data.intent === "update-arena-card") {
+      const result = await admin
+        .from("arena_cards")
+        .update({ name: parsed.data.name, starts_at: parsed.data.startsAt, updated_by: user.id })
+        .eq("id", parsed.data.cardId)
+        .in("status", ["draft", "announced"])
+        .select("id")
+        .single();
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "delete-arena-card") {
+      const result = await admin.from("arena_cards").delete().eq("id", parsed.data.cardId);
+      if (result.error) throw result.error;
+      const auditResult = await admin.from("support_audit_log").insert({
+        support_user_id: user.id,
+        action: "delete_card",
+        target_type: "arena_card",
+        target_id: parsed.data.cardId,
+        note: "Card excluído pela central de suporte.",
+      });
+      if (auditResult.error) throw auditResult.error;
+    } else if (parsed.data.intent === "start-arena-card") {
+      const result = await admin.rpc("arena_support_start_card", {
+        p_card_id: parsed.data.cardId,
+        p_support_user_id: user.id,
+      });
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "upsert-arena-card-match") {
+      if (
+        parsed.data.playerAId === parsed.data.playerBId ||
+        !officialPlayerIds.has(parsed.data.playerAId) ||
+        !officialPlayerIds.has(parsed.data.playerBId)
+      ) {
+        throw new RankedRequestError("Selecione dois jogadores oficiais diferentes.");
+      }
+      const cardResult = await admin
+        .from("arena_cards")
+        .select("status")
+        .eq("id", parsed.data.cardId)
+        .single();
+      if (cardResult.error) throw cardResult.error;
+      if (!cardResult.data || !["draft", "announced"].includes(cardResult.data.status)) {
+        throw new RankedRequestError("Um card iniciado ou finalizado não pode ser editado.", 409);
+      }
+
+      if (parsed.data.matchId) {
+        const result = await admin
+          .from("arena_card_matches")
+          .update({
+            category_id: parsed.data.categoryId,
+            player_a_id: parsed.data.playerAId,
+            player_b_id: parsed.data.playerBId,
+            match_type: parsed.data.matchType,
+            scheduled_at: parsed.data.scheduledAt,
+          })
+          .eq("id", parsed.data.matchId)
+          .eq("card_id", parsed.data.cardId)
+          .select("id")
+          .single();
+        if (result.error) throw result.error;
+      } else {
+        const lastPositionResult = await admin
+          .from("arena_card_matches")
+          .select("position")
+          .eq("card_id", parsed.data.cardId)
+          .order("position", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (lastPositionResult.error) throw lastPositionResult.error;
+        const result = await admin.from("arena_card_matches").insert({
+          card_id: parsed.data.cardId,
+          position: (lastPositionResult.data?.position ?? 0) + 1,
+          category_id: parsed.data.categoryId,
+          player_a_id: parsed.data.playerAId,
+          player_b_id: parsed.data.playerBId,
+          match_type: parsed.data.matchType,
+          scheduled_at: parsed.data.scheduledAt,
+          status: "announced",
+        });
+        if (result.error) throw result.error;
+      }
+    } else if (parsed.data.intent === "delete-arena-card-match") {
+      const cardResult = await admin
+        .from("arena_cards")
+        .select("status")
+        .eq("id", parsed.data.cardId)
+        .single();
+      if (cardResult.error) throw cardResult.error;
+      if (!cardResult.data || !["draft", "announced"].includes(cardResult.data.status)) {
+        throw new RankedRequestError("Um card iniciado ou finalizado não pode ser editado.", 409);
+      }
+      const result = await admin
+        .from("arena_card_matches")
+        .delete()
+        .eq("id", parsed.data.matchId)
+        .eq("card_id", parsed.data.cardId);
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "finish-arena-card") {
+      if (parsed.data.results.some((result) => result.playerAScore === result.playerBScore)) {
+        throw new RankedRequestError("Os confrontos não podem terminar empatados.");
+      }
+      const result = await admin.rpc("arena_support_finish_card", {
+        p_card_id: parsed.data.cardId,
+        p_results: parsed.data.results,
+        p_support_user_id: user.id,
+      });
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "reset-ranked") {
       const configuredPassword = process.env.RANKED_RESET_PASSWORD?.trim();
       if (!configuredPassword) {
         throw new RankedRequestError("O reset global ainda não foi configurado.", 503);

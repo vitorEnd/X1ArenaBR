@@ -17,10 +17,11 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { creators, howItWorks, officialEvents, officialMatches } from "@/data/arena";
+import { creators, howItWorks } from "@/data/arena";
+import type { ArenaCard } from "@/lib/arena-card-types";
 import { DISCORD_URL } from "@/lib/site";
+import { ArenaCardView } from "./arena-card-view";
 import { BrandMark } from "./brand-mark";
-import { MatchCard } from "./match-card";
 import { SectionHeading } from "./section-heading";
 
 function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string }) {
@@ -75,11 +76,10 @@ export function ArenaStats() {
   );
 }
 
-export function NextEventSection() {
-  const nextOfficialEvent = officialEvents.find((event) => event.status !== "finished");
-  const hasOfficialEvent = Boolean(nextOfficialEvent);
-  const nextOfficialMatches = nextOfficialEvent ? officialMatches.filter((match) => nextOfficialEvent.matchIds.includes(match.id)) : [];
-  const eventDate = nextOfficialEvent ? new Date(nextOfficialEvent.startsAt) : null;
+export function NextEventSection({ cards }: { readonly cards: readonly ArenaCard[] }) {
+  const nextOfficialCard = cards.find((card) => card.status === "live")
+    ?? cards.find((card) => card.status === "announced");
+  const hasOfficialEvent = Boolean(nextOfficialCard);
   return (
     <section id="proximo-evento" className="section next-event-section">
       <div className="page-container">
@@ -114,17 +114,7 @@ export function NextEventSection() {
             </a>
           </motion.div>
         )}
-        {nextOfficialEvent && <div className="official-event-card">
-          <div className="event-card-heading">
-            <div><span>Card oficial</span><h3>{nextOfficialEvent.name}</h3></div>
-            <dl>
-              <div><dt>Data</dt><dd>{eventDate?.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", timeZone: nextOfficialEvent.timeZone })}</dd></div>
-              <div><dt>Início</dt><dd>{eventDate?.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: nextOfficialEvent.timeZone })}</dd></div>
-              <div><dt>Local</dt><dd>{nextOfficialEvent.venue}</dd></div>
-            </dl>
-          </div>
-          {nextOfficialMatches.length ? <div className="matches-grid">{nextOfficialMatches.map((match) => <MatchCard key={match.id} match={match} event={nextOfficialEvent} />)}</div> : <div className="empty-state"><CalendarClock size={34} /><h3>Confrontos a confirmar</h3><p>O evento foi anunciado, mas o card ainda não foi preenchido.</p></div>}
-        </div>}
+        {nextOfficialCard && <ArenaCardView card={nextOfficialCard} />}
       </div>
     </section>
   );

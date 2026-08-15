@@ -1896,6 +1896,86 @@ img {
   margin-top: 48px;
 }
 
+.arena-cards-stack {
+  display: grid;
+  gap: 62px;
+}
+
+.arena-card-view {
+  position: relative;
+}
+
+.arena-card-view--live::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 90px;
+  height: 3px;
+  background: #e22;
+  box-shadow: 0 0 20px rgba(238, 34, 34, 0.7);
+  content: "";
+}
+
+.arena-card-categories {
+  display: grid;
+  gap: 38px;
+}
+
+.arena-card-category {
+  display: grid;
+  gap: 16px;
+}
+
+.arena-card-category__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  border-left: 4px solid var(--gold);
+  padding: 4px 0 4px 16px;
+}
+
+.arena-card-category__heading h3 {
+  order: -1;
+  margin: 0;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.arena-card-category__heading span {
+  color: #777;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arena-match-card--belt {
+  border-color: rgba(245, 184, 0, 0.5);
+  background: linear-gradient(135deg, rgba(245, 184, 0, 0.09), transparent 42%), #111;
+}
+
+.arena-match-type,
+.event-card-heading dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arena-match-card .match-card__versus a {
+  font-family: var(--font-barlow), sans-serif;
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.arena-match-card .match-card__versus a:hover {
+  color: var(--gold-light);
+}
+
 .event-card-heading dl {
   display: flex;
   margin: 0;

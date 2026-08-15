@@ -1,0 +1,62 @@
+import "server-only";
+
+import type { ArenaCard, ArenaCardMatch } from "./arena-card-types";
+import { createAdminClient } from "./supabase/admin";
+import { isSupabaseAdminConfigured } from "./supabase/env";
+
+function mapMatch(row: Record<string, unknown>): ArenaCardMatch {
+  return {
+    id: String(row.id),
+    cardId: String(row.card_id),
+    position: Number(row.position),
+    categoryId: row.category_id as ArenaCardMatch["categoryId"],
+    playerAId: String(row.player_a_id),
+    playerBId: String(row.player_b_id),
+    type: row.match_type as ArenaCardMatch["type"],
+    status: row.status as ArenaCardMatch["status"],
+    scheduledAt: typeof row.scheduled_at === "string" ? row.scheduled_at : null,
+    playerAScore: typeof row.player_a_score === "number" ? row.player_a_score : null,
+    playerBScore: typeof row.player_b_score === "number" ? row.player_b_score : null,
+    winnerPlayerId: typeof row.winner_player_id === "string" ? row.winner_player_id : null,
+  };
+}
+
+export async function getPublicArenaCards(): Promise<readonly ArenaCard[]> {
+  if (!isSupabaseAdminConfigured()) return [];
+  const admin = createAdminClient();
+  const [cardsResult, matchesResult] = await Promise.all([
+    admin
+      .from("arena_cards")
+      .select("id,name,status,starts_at,venue,created_at,updated_at")
+      .neq("status", "draft")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("arena_card_matches")
+      .select("id,card_id,position,category_id,player_a_id,player_b_id,match_type,status,scheduled_at,player_a_score,player_b_score,winner_player_id")
+      .order("position", { ascending: true }),
+  ]);
+
+  if (cardsResult.error || matchesResult.error) {
+    console.error("Arena cards read failed", cardsResult.error ?? matchesResult.error);
+    return [];
+  }
+
+  const matchesByCard = new Map<string, ArenaCardMatch[]>();
+  for (const row of matchesResult.data ?? []) {
+    const match = mapMatch(row);
+    const current = matchesByCard.get(match.cardId) ?? [];
+    current.push(match);
+    matchesByCard.set(match.cardId, current);
+  }
+
+  return (cardsResult.data ?? []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    status: row.status as ArenaCard["status"],
+    startsAt: typeof row.starts_at === "string" ? row.starts_at : null,
+    venue: "Park",
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    matches: matchesByCard.get(String(row.id)) ?? [],
+  }));
+}

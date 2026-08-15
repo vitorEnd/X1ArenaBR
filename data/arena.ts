@@ -261,15 +261,6 @@ export const officialPlayers = [
     status: "active",
     dataStatus: "official",
   },
-     {
-    id: "Zeys",
-    slug: "Zeys",
-    name: "Zeys",
-    avatarUrl: null,
-    currentCategoryId: null,
-    status: "active",
-    dataStatus: "official",
-  },
        {
     id: "ShotColt",
     slug: "ShotColt",
@@ -283,6 +274,15 @@ export const officialPlayers = [
     id: "Jilson",
     slug: "Jilson",
     name: "Jilson",
+    avatarUrl: null,
+        currentCategoryId: "peso-pena",
+    status: "active",
+    dataStatus: "official",
+  },
+  {
+    id: "rodry",
+    slug: "rodry",
+    name: "Rodry",
     avatarUrl: null,
     currentCategoryId: "peso-pena",
     status: "active",
@@ -336,7 +336,7 @@ export const officialPlayers = [
    {
     id: "pero",
     slug: "pero",
-    name: "pero",
+    name: "Pero",
     avatarUrl: null,
     currentCategoryId: "peso-pena",
     status: "active",
@@ -345,7 +345,7 @@ export const officialPlayers = [
    {
     id: "kakaleb",
     slug: "kakaleb",
-    name: "kakaleb",
+    name: "Kakaleb",
     avatarUrl: null,
     currentCategoryId: "peso-pena",
     status: "active",
@@ -354,7 +354,7 @@ export const officialPlayers = [
    {
     id: "zeys",
     slug: "zeys",
-    name: "zeys",
+    name: "Zeys",
     avatarUrl: null,
     currentCategoryId: "peso-pena",
     status: "active",
@@ -363,8 +363,8 @@ export const officialPlayers = [
 ] as const satisfies readonly Player[];
 
 /**
- * A Arena ainda não publicou resultados, ranking, campeões, cards ou históricos.
- * As coleções ficam vazias até que os primeiros registros oficiais sejam enviados.
+ * Cards e resultados de eventos são administrados no Supabase. Estas coleções
+ * permanecem como contratos de compatibilidade para ranking e perfis oficiais.
  */
 export const officialChampions: readonly Champion[] = [];
 export const officialEvents: readonly Event[] = [];

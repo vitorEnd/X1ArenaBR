@@ -7,6 +7,7 @@ import { HomeHero } from "@/components/home-hero";
 import { RankingExplorer } from "@/components/ranking-explorer";
 import { SectionHeading } from "@/components/section-heading";
 import { Ticker } from "@/components/ticker";
+import { getPublicArenaCards } from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata(
@@ -15,14 +16,17 @@ export const metadata = createPageMetadata(
   true,
 );
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const arenaCards = await getPublicArenaCards();
   return (
     <>
       <HomeHero />
       <Ticker />
       <ArenaStats />
 
-      <NextEventSection />
+      <NextEventSection cards={arenaCards} />
 
       <section className="section section--graphite">
         <div className="page-container">

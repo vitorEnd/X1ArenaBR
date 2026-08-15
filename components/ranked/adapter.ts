@@ -1,4 +1,5 @@
 import type { RankedProfileStatistics } from "@/lib/ranked/profile-statistics";
+import type { ArenaCard, ArenaCardMatchType } from "@/lib/arena-card-types";
 
 export type RankedTier =
   | "novato"
@@ -230,6 +231,7 @@ export interface RankedSupportResponse {
   readonly matchHistory: readonly RankedSupportHistoryMatch[];
   readonly accounts: readonly RankedSupportAccount[];
   readonly audit: readonly RankedSupportAuditEntry[];
+  readonly arenaCards: readonly ArenaCard[];
 }
 
 export type RankedMatchIntent =
@@ -246,6 +248,45 @@ export type RankedMatchIntent =
     };
 
 export type RankedSupportIntent =
+  | {
+      readonly intent: "create-arena-card";
+      readonly name: string;
+      readonly startsAt: string | null;
+    }
+  | {
+      readonly intent: "update-arena-card";
+      readonly cardId: string;
+      readonly name: string;
+      readonly startsAt: string | null;
+    }
+  | {
+      readonly intent: "delete-arena-card" | "start-arena-card";
+      readonly cardId: string;
+    }
+  | {
+      readonly intent: "upsert-arena-card-match";
+      readonly cardId: string;
+      readonly matchId?: string;
+      readonly categoryId: "peso-pena" | "peso-medio" | "peso-pesado";
+      readonly playerAId: string;
+      readonly playerBId: string;
+      readonly matchType: ArenaCardMatchType;
+      readonly scheduledAt: string | null;
+    }
+  | {
+      readonly intent: "delete-arena-card-match";
+      readonly cardId: string;
+      readonly matchId: string;
+    }
+  | {
+      readonly intent: "finish-arena-card";
+      readonly cardId: string;
+      readonly results: readonly {
+        readonly matchId: string;
+        readonly playerAScore: number;
+        readonly playerBScore: number;
+      }[];
+    }
   | {
       readonly intent: "reset-ranked";
       readonly password: string;

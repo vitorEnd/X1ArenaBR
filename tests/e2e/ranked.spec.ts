@@ -550,6 +550,7 @@ test("central de suporte abre a contestação com placar e limita ban a 100 hora
             usernameHistory: [],
           },
         ],
+        arenaCards: [],
         audit: [],
       }),
     });

@@ -1831,6 +1831,148 @@
   margin-top: 15px;
 }
 
+.arenaCardManager {
+  margin-bottom: 18px;
+  border-color: rgba(245, 184, 0, 0.28);
+}
+
+.arenaCardManagerHeader,
+.arenaCardAdminSummary,
+.arenaCardActions,
+.arenaPlayerSelects {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.arenaCardManagerHeader,
+.arenaCardAdminSummary {
+  justify-content: space-between;
+}
+
+.arenaCardManagerHeader p,
+.arenaCardAdminSummary p {
+  margin: 8px 0 0;
+  color: #8d8d8d;
+  font-size: 0.8rem;
+}
+
+.arenaCardsAdminList,
+.arenaMatchAdminList {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.arenaCardAdminItem {
+  border: 1px solid var(--ranked-line);
+  background: #090909;
+}
+
+.arenaCardAdminSummary {
+  padding: 18px;
+}
+
+.arenaCardAdminSummary h3 {
+  margin: 8px 0 0;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 1.7rem;
+  text-transform: uppercase;
+}
+
+.arenaCardActions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.arenaCardEditor {
+  border-top: 1px solid var(--ranked-line);
+  padding: 18px;
+  background: #101010;
+}
+
+.arenaCardMetaEditor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.7fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.arenaMatchAdminItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--ranked-line);
+  padding: 12px;
+  background: #080808;
+}
+
+.arenaMatchAdminItem strong,
+.arenaMatchAdminItem span {
+  display: block;
+}
+
+.arenaMatchAdminItem strong {
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+}
+
+.arenaMatchAdminItem span {
+  margin-top: 4px;
+  color: #858585;
+  font-size: 0.67rem;
+  text-transform: uppercase;
+}
+
+.arenaPlayerSelects > * {
+  flex: 1;
+}
+
+.formDialogWide {
+  width: min(100%, 900px);
+}
+
+.arenaResultsGrid {
+  display: grid;
+  gap: 8px;
+  max-height: min(54vh, 560px);
+  overflow-y: auto;
+}
+
+.arenaResultRow {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) 74px auto 74px minmax(100px, 1fr);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--ranked-line);
+  padding: 10px;
+  background: #080808;
+}
+
+.arenaResultRow label {
+  font-family: var(--font-barlow), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.arenaResultRow label:last-child {
+  text-align: right;
+}
+
+.arenaResultRow input {
+  width: 74px;
+  min-height: 48px;
+  border: 1px solid var(--ranked-line);
+  background: #111;
+  color: var(--ranked-white);
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-align: center;
+}
+
 .auditList {
   display: grid;
   gap: 14px;
@@ -2019,6 +2161,40 @@
 }
 
 @media (max-width: 720px) {
+  .arenaCardManagerHeader,
+  .arenaCardAdminSummary,
+  .arenaPlayerSelects {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .arenaCardActions {
+    justify-content: flex-start;
+  }
+
+  .arenaCardActions > button {
+    flex: 1;
+  }
+
+  .arenaCardMetaEditor {
+    grid-template-columns: 1fr;
+  }
+
+  .arenaResultRow {
+    grid-template-columns: minmax(70px, 1fr) 52px auto 52px minmax(70px, 1fr);
+    gap: 6px;
+  }
+
+  .arenaResultRow input {
+    width: 52px;
+  }
+
+  .arenaResultRow label {
+    overflow: hidden;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+  }
+
   .rankedHero {
     min-height: auto;
     padding: calc(var(--header-height) + 54px) 0 48px;
