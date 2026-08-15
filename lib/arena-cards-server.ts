@@ -74,6 +74,24 @@ type MutablePlayerRankingSummary = {
   dataStatus: "official";
 };
 
+export async function getPublicChampionIdsByCategory(): Promise<ReadonlyMap<ArenaCardMatch["categoryId"], string>> {
+  const cards = await getPublicArenaCards();
+  const champions = new Map<ArenaCardMatch["categoryId"], { playerId: string; at: number }>();
+
+  for (const card of cards) {
+    for (const match of card.matches) {
+      if (match.type !== "belt" || match.status !== "finished" || !match.winnerPlayerId) continue;
+      const at = Date.parse(match.scheduledAt ?? card.startsAt ?? card.updatedAt);
+      const current = champions.get(match.categoryId);
+      if (!current || at >= current.at) {
+        champions.set(match.categoryId, { playerId: match.winnerPlayerId, at });
+      }
+    }
+  }
+
+  return new Map([...champions].map(([categoryId, value]) => [categoryId, value.playerId]));
+}
+
 export async function getPublicPlayerRankingEntries(): Promise<readonly RankingEntry[]> {
   const cards = await getPublicArenaCards();
   const summaryByPlayer = new Map<string, MutablePlayerRankingSummary>();

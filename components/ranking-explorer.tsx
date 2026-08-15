@@ -15,6 +15,7 @@ import type { CategoryId, Player, RankingEntry } from "@/lib/types";
 type RankingExplorerProps = {
   compact?: boolean;
   entriesByPlayer?: ReadonlyMap<string, RankingEntry>;
+  championIdsByCategory?: ReadonlyMap<CategoryId, string>;
 };
 
 function FormDots({ form }: { form: readonly ("win" | "loss")[] }) {
@@ -33,12 +34,19 @@ function FormDots({ form }: { form: readonly ("win" | "loss")[] }) {
   );
 }
 
-export function RankingExplorer({ compact = false, entriesByPlayer = new Map() }: RankingExplorerProps) {
+export function RankingExplorer({
+  compact = false,
+  entriesByPlayer = new Map(),
+  championIdsByCategory = new Map(),
+}: RankingExplorerProps) {
   const [categoryId, setCategoryId] = useState<CategoryId>("peso-pena");
   const [query, setQuery] = useState("");
-  const championRecord = officialChampions.find(
-    (champion) => champion.categoryId === categoryId && champion.type === "official",
-  );
+  const liveChampionId = championIdsByCategory.get(categoryId);
+  const championRecord = liveChampionId
+    ? { categoryId, playerId: liveChampionId, type: "official" as const }
+    : officialChampions.find(
+        (champion) => champion.categoryId === categoryId && champion.type === "official",
+      );
 
   const ranking = useMemo(() => {
     const categoryPlayers = officialPlayers.filter(
