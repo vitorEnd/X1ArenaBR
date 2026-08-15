@@ -59,7 +59,10 @@ export async function GET(
       return NextResponse.json({ configured: true, profile, statistics: null, history: [] });
     }
 
-    const visibleProfile = isOwner && api.profile?.id === profile.id && profile.anonymousMode
+    // The public view may hide fields for anonymous users. When the requester
+    // owns the profile, replace those fields with the private profile values,
+    // regardless of whether anonymous mode is enabled.
+    const visibleProfile = isOwner && api.profile?.id === profile.id
       ? {
           ...profile,
           username: api.profile.username,
@@ -67,7 +70,7 @@ export async function GET(
           wins: api.profile.wins,
           losses: api.profile.losses,
           mmr: api.profile.placementMatches === 5 ? api.profile.mmr : null,
-          anonymousMode: true,
+          anonymousMode: api.profile.anonymousMode,
         }
       : profile;
     const matches: Record<string, unknown>[] = [];

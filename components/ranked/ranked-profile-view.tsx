@@ -125,9 +125,9 @@ export function RankedProfileView({
             </div>
           )}
           <div className={styles.profileStats}>
-            <div className={styles.statCell}><span>Vitórias</span><strong>{isAnonymous ? "Oculto" : profile.wins}</strong></div>
-            <div className={styles.statCell}><span>Derrotas</span><strong>{isAnonymous ? "Oculto" : profile.losses}</strong></div>
-            <div className={styles.statCell}><span>MMR</span><strong>{placementActive ? "Oculto" : profile.mmr?.toLocaleString("pt-BR") ?? "—"}</strong></div>
+            <div className={styles.statCell}><span>Vitórias</span><strong>{profile.wins}</strong></div>
+            <div className={styles.statCell}><span>Derrotas</span><strong>{profile.losses}</strong></div>
+            <div className={styles.statCell}><span>MMR</span><strong>{placementActive ? "Em colocação" : profile.mmr?.toLocaleString("pt-BR") ?? "—"}</strong></div>
             <div className={styles.statCell}><span>Posição</span><strong>{profile.globalPosition ? `#${profile.globalPosition}` : "—"}</strong></div>
           </div>
         </div>
@@ -139,7 +139,7 @@ export function RankedProfileView({
         />
       </article>
 
-      {statistics && !isAnonymous && (
+      {statistics && (!isAnonymous || isOwner) && (
         <section className={styles.profilePerformance} aria-labelledby="performance-title">
           <div className={styles.profilePerformanceHeader}>
             <div>
@@ -227,7 +227,7 @@ export function RankedProfileView({
             <h2 id="history-title" className={styles.sectionTitle}>Histórico <span>Ranked</span></h2>
             <p className={styles.sectionDescription}>
               {placementActive
-                ? `Partidas de colocação: ${profile.placementMatchesPlayed}/5. Elo e MMR permanecem ocultos.`
+                ? `Partidas de colocação: ${profile.placementMatchesPlayed}/5. O MMR será exibido após as 5 partidas.`
                 : `Elo atual: ${tierLabel}. Somente resultados confirmados aparecem neste perfil.`}
             </p>
             </div>
@@ -236,7 +236,7 @@ export function RankedProfileView({
           </Link>
         </div>
 
-        {isAnonymous ? (
+        {isAnonymous && !isOwner ? (
           <div className={styles.emptyRanking}><div><ShieldQuestion size={34} aria-hidden="true" /><h2>Perfil em Modo Anônimo</h2><p>MMR, estatísticas e histórico estão visíveis somente para o dono da conta.</p></div></div>
         ) : history.length > 0 ? (
           <div className={styles.historyList}>

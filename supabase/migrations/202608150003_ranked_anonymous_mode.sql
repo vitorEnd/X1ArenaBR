@@ -70,7 +70,7 @@ select p.id,
   case when p.anonymous_mode then null else p.avatar_path end as avatar_path,
   case when p.anonymous_mode then 0 else p.wins end as wins,
   case when p.anonymous_mode then 0 else p.losses end as losses,
-  null::integer as mmr,
+  case when p.anonymous_mode then null else p.mmr end as mmr,
   p.placement_matches, p.placement_wins, case when p.anonymous_mode then null else g.global_position end as global_position,
   case when p.anonymous_mode then null else g.tier end as tier,
   p.created_at, p.updated_at, p.anonymous_mode
