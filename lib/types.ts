@@ -28,6 +28,13 @@ export interface Category {
 }
 
 export type PlayerStatus = "active" | "inactive";
+export type PlayerNicknameColor = "purple" | "gold" | "red";
+
+export interface PlayerNickname {
+  readonly playerId: PlayerId;
+  readonly nickname: string;
+  readonly color: PlayerNicknameColor;
+}
 
 export interface Player {
   readonly id: PlayerId;

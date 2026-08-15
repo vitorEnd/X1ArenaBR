@@ -3,7 +3,22 @@ import "server-only";
 import type { ArenaCard, ArenaCardMatch } from "./arena-card-types";
 import type { BeltHistory, Match, MatchOutcome, RankingEntry } from "./types";
 import { createAdminClient } from "./supabase/admin";
+import type { PlayerNickname, PlayerNicknameColor } from "./types";
 import { isSupabaseAdminConfigured } from "./supabase/env";
+
+export async function getPublicPlayerNicknames(): Promise<ReadonlyMap<string, PlayerNickname>> {
+  if (!isSupabaseAdminConfigured()) return new Map();
+  const admin = createAdminClient();
+  const result = await admin.from("arena_player_nicknames").select("player_id,nickname,color");
+  if (result.error) {
+    console.error("Player nicknames read failed", result.error);
+    return new Map();
+  }
+  return new Map((result.data ?? []).map((row) => [
+    String(row.player_id),
+    { playerId: String(row.player_id), nickname: String(row.nickname), color: row.color as PlayerNicknameColor },
+  ]));
+}
 
 function mapMatch(row: Record<string, unknown>): ArenaCardMatch {
   return {

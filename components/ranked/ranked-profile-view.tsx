@@ -105,6 +105,7 @@ export function RankedProfileView({
       {error && <RankedError message={error} onRetry={() => void load()} />}
       <article className={styles.profileHero}>
         <PlayerAvatar src={profile.avatarUrl} name={profile.username} size="lg" />
+          {profile.nickname && <div className={`${styles.nicknameBadge} ${styles[`nickname${profile.nickname.color}`]}`}>{profile.nickname}</div>}
         <div className={styles.profileMeta}>
           <span className={styles.microLabel}>Perfil público Ranked</span>
           <h1 className={styles.profileName}>{profile.username}</h1>

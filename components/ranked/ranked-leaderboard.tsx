@@ -150,7 +150,7 @@ export function RankedLeaderboard({ adapter = rankedUiAdapter }: RankedLeaderboa
                       <td>
                         <Link href={`/ranked/${encodeURIComponent(entry.username)}`} className={styles.rankingPlayer}>
                           <PlayerAvatar src={entry.avatarUrl} name={entry.username} size="sm" />
-                          <span><strong>{entry.username}</strong><small>Perfil público</small></span>
+                          <span><strong>{entry.username}{entry.nickname && <em className={`${styles.nicknameBadge} ${styles[`nickname${entry.nickname.color}`]}`}>{entry.nickname}</em>}</strong><small>Perfil público</small></span>
                         </Link>
                       </td>
                       <td>
