@@ -26,9 +26,7 @@ export function SupportActionDialog({
   onClose,
   onSubmit,
 }: SupportActionDialogProps) {
-  const [resolution, setResolution] = useState<"force-start" | "confirm" | "walkover-a" | "walkover-b" | "cancel">(
-    match?.state === "lobby" ? "force-start" : "confirm",
-  );
+  const [resolution, setResolution] = useState<"confirm" | "walkover-a" | "walkover-b" | "cancel">("confirm");
   const [playerAGoals, setPlayerAGoals] = useState(() =>
     String(match?.submittedScore?.playerAGoals ?? 0),
   );
@@ -100,13 +98,6 @@ export function SupportActionDialog({
         internalNote,
       };
     } else if (match) {
-      if (resolution === "force-start") {
-        payload = {
-          intent: "support-start-match",
-          matchId: match.id,
-          internalNote,
-        };
-      } else {
       const scoreA = Number(playerAGoals);
       const scoreB = Number(playerBGoals);
       if (
@@ -123,7 +114,6 @@ export function SupportActionDialog({
         ...(resolution === "confirm" ? { playerAGoals: scoreA, playerBGoals: scoreB } : {}),
         internalNote,
       };
-      }
     } else if (account) {
       if (accountAction === "adjust-mmr") {
         const parsedMmr = Number(newMmr);
@@ -199,9 +189,6 @@ export function SupportActionDialog({
                   value={resolution}
                   onChange={(event) => setResolution(event.target.value as typeof resolution)}
                 >
-                  {match.state === "lobby" && (
-                    <option value="force-start">Iniciar partida pelo suporte</option>
-                  )}
                   <option value="confirm">Confirmar com placar corrigido</option>
                   <option value="walkover-a">Aplicar W.O. para {match.playerA.username}</option>
                   <option value="walkover-b">Aplicar W.O. para {match.playerB.username}</option>

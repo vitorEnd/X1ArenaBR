@@ -235,7 +235,7 @@ export interface RankedSupportResponse {
 }
 
 export type RankedMatchIntent =
-  | { readonly intent: "accept" | "decline" | "start" | "end" | "confirm" | "contest" | "continue" | "finish" }
+  | { readonly intent: "accept" | "decline" | "end" | "confirm" | "contest" | "continue" | "finish" }
   | {
       readonly intent: "submit-score";
       readonly playerAGoals: number;
@@ -248,11 +248,6 @@ export type RankedMatchIntent =
     };
 
 export type RankedSupportIntent =
-  | {
-      readonly intent: "support-start-match";
-      readonly matchId: string;
-      readonly internalNote: string;
-    }
   | {
       readonly intent: "create-arena-card";
       readonly name: string;
@@ -282,6 +277,13 @@ export type RankedSupportIntent =
       readonly intent: "delete-arena-card-match";
       readonly cardId: string;
       readonly matchId: string;
+    }
+  | {
+      readonly intent: "update-arena-card-match-result";
+      readonly cardId: string;
+      readonly matchId: string;
+      readonly playerAScore: number;
+      readonly playerBScore: number;
     }
   | {
       readonly intent: "finish-arena-card";

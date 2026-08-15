@@ -128,6 +128,7 @@ export function PlayerDirectory() {
               const goalDifference = entry
                 ? entry.goalsFor - entry.goalsAgainst
                 : 0;
+              const knockouts = entry?.knockouts ?? 0;
               return (
                 <motion.article
                   key={player.id}
@@ -168,6 +169,10 @@ export function PlayerDirectory() {
                         {goalDifference > 0 ? "+" : ""}
                         {goalDifference}
                       </dd>
+                    </div>
+                    <div>
+                      <dt>Nocautes</dt>
+                      <dd>{knockouts}</dd>
                     </div>
                   </dl>
                   <Link href={`/jogadores/${player.slug}`}>

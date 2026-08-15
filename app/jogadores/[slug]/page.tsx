@@ -118,6 +118,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
             <div><span>Derrotas</span><strong>{entry?.losses ?? 0}</strong></div>
             <div><span>Gols marcados</span><strong>{entry?.goalsFor ?? 0}</strong></div>
             <div><span>Gols sofridos</span><strong>{entry?.goalsAgainst ?? 0}</strong></div>
+            <div><span>Nocautes</span><strong>{entry?.knockouts ?? 0}</strong></div>
             <div>
               <span>Saldo de gols</span>
               <strong>

@@ -56,6 +56,7 @@ export interface RankingEntry {
   readonly losses: number;
   readonly goalsFor: number;
   readonly goalsAgainst: number;
+  readonly knockouts?: number;
   readonly recentForm: readonly MatchOutcome[];
   readonly organizationDecision?: OrganizationRankingDecision;
   readonly dataStatus: DataStatus;

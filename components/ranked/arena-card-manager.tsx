@@ -14,6 +14,7 @@ import {
 import { useMemo, useRef, useState } from "react";
 import { officialPlayers } from "@/data/arena";
 import type { ArenaCard, ArenaCardMatch } from "@/lib/arena-card-types";
+import { canAddArenaCardMatch, hasCompleteArenaCardResults } from "@/lib/arena-card-results";
 import type { RankedSupportIntent } from "./adapter";
 import styles from "./ranked.module.css";
 import { useDialogFocusTrap } from "./use-dialog-focus-trap";
@@ -65,6 +66,7 @@ export function ArenaCardManager({ cards, busy, onSubmit }: ArenaCardManagerProp
   const [matchDraft, setMatchDraft] = useState<MatchDraft | null>(null);
   const [finishingCard, setFinishingCard] = useState<ArenaCard | null>(null);
   const [scores, setScores] = useState<Record<string, { a: string; b: string }>>({});
+  const [savedResultIds, setSavedResultIds] = useState<Record<string, boolean>>({});
   const run = (task: Promise<unknown>) => { void task.catch(() => undefined); };
 
   const submitCreate = async () => {
@@ -124,6 +126,31 @@ export function ArenaCardManager({ cards, busy, onSubmit }: ArenaCardManagerProp
     ])));
   };
 
+  const saveLiveResult = async (card: ArenaCard, match: ArenaCardMatch) => {
+    const nextDraft = scores[match.id] ?? {
+      a: String(match.playerAScore ?? 0),
+      b: String(match.playerBScore ?? 0),
+    };
+    if (nextDraft.a.trim() === "" || nextDraft.b.trim() === "") {
+      return;
+    }
+    const playerAScore = Number(nextDraft.a);
+    const playerBScore = Number(nextDraft.b);
+
+    if (!Number.isInteger(playerAScore) || !Number.isInteger(playerBScore) || playerAScore < 0 || playerBScore < 0 || playerAScore === playerBScore) {
+      return;
+    }
+
+    await onSubmit({
+      intent: "update-arena-card-match-result",
+      cardId: card.id,
+      matchId: match.id,
+      playerAScore,
+      playerBScore,
+    });
+    setSavedResultIds((current) => ({ ...current, [match.id]: true }));
+  };
+
   const finishCard = async () => {
     if (!finishingCard) return;
     await onSubmit({
@@ -131,8 +158,8 @@ export function ArenaCardManager({ cards, busy, onSubmit }: ArenaCardManagerProp
       cardId: finishingCard.id,
       results: finishingCard.matches.map((match) => ({
         matchId: match.id,
-        playerAScore: Number(scores[match.id]?.a ?? 0),
-        playerBScore: Number(scores[match.id]?.b ?? 0),
+        playerAScore: Number(scores[match.id]?.a ?? match.playerAScore ?? 0),
+        playerBScore: Number(scores[match.id]?.b ?? match.playerBScore ?? 0),
       })),
     });
     setFinishingCard(null);
@@ -175,7 +202,19 @@ export function ArenaCardManager({ cards, busy, onSubmit }: ArenaCardManagerProp
                   {editable && <button type="button" className={styles.primaryButton} disabled={busy || card.matches.length === 0} onClick={() => {
                     if (window.confirm(`Iniciar ${card.name} agora?`)) run(onSubmit({ intent: "start-arena-card", cardId: card.id }));
                   }}><CirclePlay size={15} /> Iniciar Card</button>}
-                  {card.status === "live" && <button type="button" className={styles.primaryButton} disabled={busy} onClick={() => beginFinish(card)}><CheckCircle2 size={15} /> Finalizar Card</button>}
+                  {card.status === "live" && (
+                    <button
+                      type="button"
+                      className={styles.primaryButton}
+                      disabled={busy || !hasCompleteArenaCardResults(card.matches, Object.fromEntries(card.matches.map((match) => [
+                        match.id,
+                        { a: String(match.playerAScore ?? ""), b: String(match.playerBScore ?? "") },
+                      ])))}
+                      onClick={() => beginFinish(card)}
+                    >
+                      <CheckCircle2 size={15} /> Finalizar Card
+                    </button>
+                  )}
                   <button type="button" className={styles.dangerButton} disabled={busy} onClick={() => {
                     if (window.confirm(`Excluir permanentemente ${card.name}?`)) run(onSubmit({ intent: "delete-arena-card", cardId: card.id }));
                   }}><Trash2 size={15} /> Excluir</button>
@@ -201,6 +240,59 @@ export function ArenaCardManager({ cards, busy, onSubmit }: ArenaCardManagerProp
                     ))}
                     <button type="button" className={styles.secondaryButton} onClick={() => beginMatch(card)}><Plus size={16} /> Adicionar confronto</button>
                   </div>
+                </div>
+              )}
+
+              {card.status === "live" && (
+                <div>
+                  <div className={styles.arenaResultsGrid}>
+                    {card.matches.map((match) => {
+                      const draft = scores[match.id] ?? {
+                        a: String(match.playerAScore ?? 0),
+                        b: String(match.playerBScore ?? 0),
+                      };
+                      const isSaved = savedResultIds[match.id] || (match.playerAScore !== null && match.playerBScore !== null);
+                      return (
+                        <div key={`${card.id}-${match.id}`} className={styles.arenaResultRow}>
+                          <label htmlFor={`live-score-a-${match.id}`}>{playerName(match.playerAId)}</label>
+                          <input
+                            id={`live-score-a-${match.id}`}
+                            type="number"
+                            min="0"
+                            max="999"
+                            value={draft.a}
+                            onChange={(event) => {
+                              setSavedResultIds((current) => ({ ...current, [match.id]: false }));
+                              setScores({ ...scores, [match.id]: { a: event.target.value, b: draft.b } });
+                            }}
+                          />
+                          <span>×</span>
+                          <input
+                            aria-label={`Gols de ${playerName(match.playerBId)}`}
+                            type="number"
+                            min="0"
+                            max="999"
+                            value={draft.b}
+                            onChange={(event) => {
+                              setSavedResultIds((current) => ({ ...current, [match.id]: false }));
+                              setScores({ ...scores, [match.id]: { a: draft.a, b: event.target.value } });
+                            }}
+                          />
+                          <label>{playerName(match.playerBId)}</label>
+                          <button type="button" className={styles.secondaryButton} disabled={busy} onClick={() => run(saveLiveResult(card, match))}>
+                            {isSaved ? "Salvo" : "Salvar"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {canAddArenaCardMatch(card.status) && (
+                    <div style={{ marginTop: "1rem" }}>
+                      <button type="button" className={styles.secondaryButton} onClick={() => beginMatch(card)}>
+                        <Plus size={16} /> Adicionar confronto
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </article>
@@ -245,7 +337,7 @@ export function ArenaCardManager({ cards, busy, onSubmit }: ArenaCardManagerProp
               </div>
             ))}
           </div>
-          <button type="button" className={styles.primaryButton} disabled={busy} onClick={() => run(finishCard())}><CheckCircle2 size={17} /> Publicar resultados e finalizar</button>
+          <button type="button" className={styles.primaryButton} disabled={busy || !hasCompleteArenaCardResults(finishingCard.matches, scores)} onClick={() => run(finishCard())}><CheckCircle2 size={17} /> Publicar resultados e finalizar</button>
         </CardDialog>
       )}
     </section>

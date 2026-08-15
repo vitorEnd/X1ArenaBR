@@ -35,6 +35,22 @@ test("calcula Pontos de Ranking e saldo com as fórmulas oficiais", () => {
   assert.equal(calculateGoalDifference(4, 9), -5);
 });
 
+test("inclui contagem de nocaute na estatística do jogador", () => {
+  const entry = makeEntry("alpha", {
+    wins: 6,
+    losses: 1,
+    goalsFor: 18,
+    goalsAgainst: 4,
+    knockouts: 3,
+  });
+
+  const calculated = sortRankingEntries([entry])[0];
+
+  assert.equal(calculated.knockouts, 3);
+  assert.equal(calculated.points, 11);
+  assert.equal(calculated.goalDifference, 14);
+});
+
 test("ordena por pontos, saldo e menor número de derrotas", () => {
   const entries = [
     makeEntry("saldo-menor", {

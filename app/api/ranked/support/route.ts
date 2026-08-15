@@ -48,11 +48,6 @@ function emptySupport(
 
 const supportIntentSchema = z.discriminatedUnion("intent", [
   z.object({
-    intent: z.literal("support-start-match"),
-    matchId: z.string().uuid(),
-    internalNote: z.string().trim().min(5).max(1000),
-  }),
-  z.object({
     intent: z.literal("create-arena-card"),
     name: z.string().trim().min(3).max(80),
     startsAt: z.string().datetime({ offset: true }).nullable(),
@@ -85,6 +80,13 @@ const supportIntentSchema = z.discriminatedUnion("intent", [
     intent: z.literal("delete-arena-card-match"),
     cardId: z.string().uuid(),
     matchId: z.string().uuid(),
+  }),
+  z.object({
+    intent: z.literal("update-arena-card-match-result"),
+    cardId: z.string().uuid(),
+    matchId: z.string().uuid(),
+    playerAScore: z.number().int().min(0).max(999),
+    playerBScore: z.number().int().min(0).max(999),
   }),
   z.object({
     intent: z.literal("finish-arena-card"),
@@ -551,11 +553,13 @@ export async function POST(request: Request) {
         .eq("id", parsed.data.cardId)
         .single();
       if (cardResult.error) throw cardResult.error;
-      if (!cardResult.data || !["draft", "announced"].includes(cardResult.data.status)) {
-        throw new RankedRequestError("Um card iniciado ou finalizado não pode ser editado.", 409);
-      }
-
+      const cardStatus = cardResult.data?.status;
+      const canEditExisting = cardStatus === "draft" || cardStatus === "announced";
+      const canCreateNew = cardStatus === "draft" || cardStatus === "announced" || cardStatus === "live";
       if (parsed.data.matchId) {
+        if (!canEditExisting) {
+          throw new RankedRequestError("Um card iniciado ou finalizado não pode ter confrontos editados.", 409);
+        }
         const result = await admin
           .from("arena_card_matches")
           .update({
@@ -571,6 +575,9 @@ export async function POST(request: Request) {
           .single();
         if (result.error) throw result.error;
       } else {
+        if (!canCreateNew) {
+          throw new RankedRequestError("Um card finalizado não pode receber novos confrontos.", 409);
+        }
         const lastPositionResult = await admin
           .from("arena_card_matches")
           .select("position")
@@ -607,6 +614,34 @@ export async function POST(request: Request) {
         .eq("id", parsed.data.matchId)
         .eq("card_id", parsed.data.cardId);
       if (result.error) throw result.error;
+    } else if (parsed.data.intent === "update-arena-card-match-result") {
+      if (parsed.data.playerAScore === parsed.data.playerBScore) {
+        throw new RankedRequestError("Os confrontos não podem terminar empatados.");
+      }
+      const cardResult = await admin
+        .from("arena_cards")
+        .select("status")
+        .eq("id", parsed.data.cardId)
+        .single();
+      if (cardResult.error) throw cardResult.error;
+      if (!cardResult.data || cardResult.data.status !== "live") {
+        throw new RankedRequestError("Só é possível registrar resultado de um card em andamento.", 409);
+      }
+      const result = await admin
+        .from("arena_card_matches")
+        .update({
+          status: "finished",
+          player_a_score: parsed.data.playerAScore,
+          player_b_score: parsed.data.playerBScore,
+          winner_player_id: parsed.data.playerAScore > parsed.data.playerBScore
+            ? (await admin.from("arena_card_matches").select("player_a_id,player_b_id").eq("id", parsed.data.matchId).eq("card_id", parsed.data.cardId).single()).data?.player_a_id ?? null
+            : (await admin.from("arena_card_matches").select("player_a_id,player_b_id").eq("id", parsed.data.matchId).eq("card_id", parsed.data.cardId).single()).data?.player_b_id ?? null,
+        })
+        .eq("id", parsed.data.matchId)
+        .eq("card_id", parsed.data.cardId)
+        .select("id")
+        .single();
+      if (result.error) throw result.error;
     } else if (parsed.data.intent === "finish-arena-card") {
       if (parsed.data.results.some((result) => result.playerAScore === result.playerBScore)) {
         throw new RankedRequestError("Os confrontos não podem terminar empatados.");
@@ -615,12 +650,6 @@ export async function POST(request: Request) {
         p_card_id: parsed.data.cardId,
         p_results: parsed.data.results,
         p_support_user_id: user.id,
-      });
-      if (result.error) throw result.error;
-    } else if (parsed.data.intent === "support-start-match") {
-      const result = await supabase.rpc("ranked_support_start_match", {
-        p_match_id: parsed.data.matchId,
-        p_note: parsed.data.internalNote,
       });
       if (result.error) throw result.error;
     } else if (parsed.data.intent === "reset-ranked") {

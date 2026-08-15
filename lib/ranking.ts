@@ -8,6 +8,7 @@ export interface CalculatedRankingEntry extends RankingEntry {
   readonly points: number;
   readonly goalDifference: number;
   readonly matchesPlayed: number;
+  readonly knockouts: number;
 }
 
 export interface RankedStanding extends CalculatedRankingEntry {
@@ -59,6 +60,7 @@ export function calculateRankingEntry(
 ): CalculatedRankingEntry {
   return {
     ...entry,
+    knockouts: entry.knockouts ?? 0,
     points: calculateRankingPoints(entry.wins, entry.losses),
     goalDifference: calculateGoalDifference(
       entry.goalsFor,

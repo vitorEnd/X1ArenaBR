@@ -43,6 +43,7 @@ export function MatchFoundDialog({
   );
   const acceptButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useDialogFocusTrap<HTMLElement>(true);
+  const revealOpponent = match.ownAccepted;
 
   const runAction = async (action: () => Promise<unknown>) => {
     try {
@@ -99,26 +100,34 @@ export function MatchFoundDialog({
             <span>{formatRank(profile)}</span>
           </div>
           <div className={styles.versusMark} aria-label="versus">VS</div>
-          <div className={styles.versusPlayer}>
-            <PlayerAvatar
-              src={match.opponent.avatarUrl}
-              name={match.opponent.username}
-              size="lg"
-            />
-            <RankEmblem
-              tier={match.opponent.tier}
-              size="sm"
-              topPosition={match.opponent.globalPosition}
-              mmr={match.opponent.mmr}
-              showLabel={false}
-            />
-            <strong>{match.opponent.username}</strong>
-            <span>
-              {match.opponent.tier && match.opponent.mmr !== null
-                ? `${rankedTierLabels[match.opponent.tier]} • ${match.opponent.mmr.toLocaleString("pt-BR")} MMR`
-                : "Em colocação"}
-            </span>
-          </div>
+          {revealOpponent ? (
+            <div className={styles.versusPlayer}>
+              <PlayerAvatar
+                src={match.opponent.avatarUrl}
+                name={match.opponent.username}
+                size="lg"
+              />
+              <RankEmblem
+                tier={match.opponent.tier}
+                size="sm"
+                topPosition={match.opponent.globalPosition}
+                mmr={match.opponent.mmr}
+                showLabel={false}
+              />
+              <strong>{match.opponent.username}</strong>
+              <span>
+                {match.opponent.tier && match.opponent.mmr !== null
+                  ? `${rankedTierLabels[match.opponent.tier]} • ${match.opponent.mmr.toLocaleString("pt-BR")} MMR`
+                  : "Em colocação"}
+              </span>
+            </div>
+          ) : (
+            <div className={styles.versusPlayer} aria-live="polite">
+              <div aria-hidden="true" style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
+              <strong>Adversário oculto</strong>
+              <span>Será revelado após você aceitar.</span>
+            </div>
+          )}
         </div>
 
         <div className={styles.dialogActions}>

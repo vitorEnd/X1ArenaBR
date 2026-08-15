@@ -9,7 +9,6 @@ import {
   Flag,
   KeyRound,
   LockKeyhole,
-  Play,
   RotateCcw,
   ShieldAlert,
   Square,
@@ -232,11 +231,6 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
 
             <div className={styles.lobbyActions}>
               <div>
-                {viewerIsCreator && match.state === "lobby" && (
-                  <button type="button" className={styles.primaryButton} disabled={busy} onClick={() => void onAction({ intent: "start" })}>
-                    <Play size={17} aria-hidden="true" /> Iniciar partida
-                  </button>
-                )}
                 {viewerIsCreator && match.state === "in_progress" && (
                   <button type="button" className={styles.primaryButton} disabled={busy} onClick={() => void onAction({ intent: "end" })}>
                     <Square size={16} aria-hidden="true" /> Encerrar partida

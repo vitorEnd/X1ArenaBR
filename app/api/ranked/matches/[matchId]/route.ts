@@ -13,7 +13,6 @@ const matchIntentSchema = z.discriminatedUnion("intent", [
     intent: z.enum([
       "accept",
       "decline",
-      "start",
       "end",
       "confirm",
       "contest",
@@ -68,9 +67,6 @@ export async function POST(
             p_accept: payload.data.intent === "accept",
           }),
         );
-        break;
-      case "start":
-        assertNoSupabaseError(await supabase.rpc("ranked_start_match", params));
         break;
       case "end":
         assertNoSupabaseError(await supabase.rpc("ranked_end_match", params));
