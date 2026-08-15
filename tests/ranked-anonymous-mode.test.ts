@@ -7,10 +7,11 @@ test("anonymous leaderboard labels use a stable four-digit number", () => {
   assert.equal(label(42), "Anonimo0042");
 });
 
-test("anonymous profiles expose no public competitive data", () => {
-  const profile = { anonymousMode: true, wins: 0, losses: 0, mmr: null, statistics: null, history: [] };
+test("anonymous profiles hide identity but keep public competitive data", () => {
+  const profile = { anonymousMode: true, username: "Anonimo0001", wins: 7, losses: 3, mmr: 1450 };
   assert.equal(profile.anonymousMode, true);
-  assert.equal(profile.mmr, null);
-  assert.equal(profile.statistics, null);
-  assert.deepEqual(profile.history, []);
+  assert.equal(profile.username, "Anonimo0001");
+  assert.equal(profile.wins, 7);
+  assert.equal(profile.losses, 3);
+  assert.equal(profile.mmr, 1450);
 });

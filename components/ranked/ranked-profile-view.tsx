@@ -240,7 +240,7 @@ export function RankedProfileView({
         </div>
 
         {isAnonymous && !isOwner ? (
-          <div className={styles.emptyRanking}><div><ShieldQuestion size={34} aria-hidden="true" /><h2>Perfil em Modo Anônimo</h2><p>MMR, estatísticas e histórico estão visíveis somente para o dono da conta.</p></div></div>
+          <div className={styles.emptyRanking}><div><ShieldQuestion size={34} aria-hidden="true" /><h2>Perfil em Modo Anônimo</h2><p>Seu nome permanece anônimo. MMR, estatísticas e histórico continuam públicos.</p></div></div>
         ) : history.length > 0 ? (
           <div className={styles.historyList}>
             {history.map((entry) => (
