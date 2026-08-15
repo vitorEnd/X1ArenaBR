@@ -7,6 +7,8 @@ import { MobileDiscordCta } from "@/components/mobile-discord-cta";
 import { PageTransition } from "@/components/page-transition";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { GlobalRankedQueue } from "@/components/ranked/global-ranked-queue";
+import { MatchmakingLiveProvider } from "@/components/ranked/matchmaking-live-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -108,14 +110,17 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${inter.variable} ${barlow.variable}`}>
         <MotionProvider>
-          <IntroSplash />
-          <a className="skip-link" href="#conteudo-principal">
-            Pular para o conteúdo
-          </a>
-          <SiteHeader />
-          <main id="conteudo-principal"><PageTransition>{children}</PageTransition></main>
-          <SiteFooter />
-          <MobileDiscordCta />
+          <MatchmakingLiveProvider>
+            <IntroSplash />
+            <a className="skip-link" href="#conteudo-principal">
+              Pular para o conteúdo
+            </a>
+            <SiteHeader />
+            <main id="conteudo-principal"><PageTransition>{children}</PageTransition></main>
+            <SiteFooter />
+            <MobileDiscordCta />
+            <GlobalRankedQueue />
+          </MatchmakingLiveProvider>
         </MotionProvider>
       </body>
     </html>

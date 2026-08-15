@@ -48,6 +48,11 @@ function emptySupport(
 
 const supportIntentSchema = z.discriminatedUnion("intent", [
   z.object({
+    intent: z.literal("support-start-match"),
+    matchId: z.string().uuid(),
+    internalNote: z.string().trim().min(5).max(1000),
+  }),
+  z.object({
     intent: z.literal("create-arena-card"),
     name: z.string().trim().min(3).max(80),
     startsAt: z.string().datetime({ offset: true }).nullable(),
@@ -610,6 +615,12 @@ export async function POST(request: Request) {
         p_card_id: parsed.data.cardId,
         p_results: parsed.data.results,
         p_support_user_id: user.id,
+      });
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "support-start-match") {
+      const result = await supabase.rpc("ranked_support_start_match", {
+        p_match_id: parsed.data.matchId,
+        p_note: parsed.data.internalNote,
       });
       if (result.error) throw result.error;
     } else if (parsed.data.intent === "reset-ranked") {

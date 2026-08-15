@@ -302,6 +302,9 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
               <article key={match.id} className={styles.supportItem}>
                 <div className={styles.supportItemHeader}><strong>Match #{match.matchNumber}</strong><span className={styles.statusPill}>{match.state}</span></div>
                 <p>{match.playerA.username} × {match.playerB.username}</p>
+                <button type="button" className={styles.secondaryButton} onClick={() => setSelectedMatch(match)}>
+                  <Gavel size={16} aria-hidden="true" /> {match.state === "lobby" ? "Iniciar ou intervir" : "Intervir no lobby"}
+                </button>
               </article>
             )) : <div className={styles.emptyCompact}>Nenhum lobby em andamento.</div>}
           </div>

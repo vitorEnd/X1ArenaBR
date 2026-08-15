@@ -15,7 +15,7 @@ interface UseMatchmakingLiveOptions {
   readonly adapter?: RankedUiAdapter;
 }
 
-export function useMatchmakingLive({
+export function useMatchmakingLiveController({
   adapter = rankedUiAdapter,
 }: UseMatchmakingLiveOptions = {}) {
   const [snapshot, setSnapshot] = useState<MatchmakingSnapshotResponse | null>(null);

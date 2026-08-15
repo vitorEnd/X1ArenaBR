@@ -203,7 +203,7 @@ export const officialPlayers = [
     slug: "itz",
     name: "Itz",
     avatarUrl: null,
-    currentCategoryId: "peso-pena",
+    currentCategoryId: "peso-medio",
     status: "active",
     dataStatus: "official",
   },

@@ -10,6 +10,10 @@ const temporaryBans = await readFile(
   new URL("202608130008_ranked_temporary_support_bans.sql", migrationRoot),
   "utf8",
 );
+const supportStartMatch = await readFile(
+  new URL("202608140015_ranked_support_start_match.sql", migrationRoot),
+  "utf8",
+);
 
 test("keeps ranked persistence isolated from official tournament entities", () => {
   const allMigrations = `${schema}\n${rpcs}\n${security}`.toLowerCase();
@@ -99,4 +103,18 @@ test("keeps every support RPC unavailable to anonymous callers", () => {
       new RegExp(`revoke all on function public\\.${signature}[\\s\\S]*?from public, anon`, "i"),
     );
   }
+});
+
+test("allows only authenticated support to start a stalled lobby", () => {
+  assert.match(supportStartMatch, /if not public\.ranked_is_support\(v_support_id\)/i);
+  assert.match(supportStartMatch, /v_match\.status <> 'lobby'/i);
+  assert.match(supportStartMatch, /set status = 'in_progress'/i);
+  assert.match(
+    supportStartMatch,
+    /revoke all on function public\.ranked_support_start_match\(uuid, text\) from public, anon/i,
+  );
+  assert.match(
+    supportStartMatch,
+    /grant execute on function public\.ranked_support_start_match\(uuid, text\) to authenticated/i,
+  );
 });

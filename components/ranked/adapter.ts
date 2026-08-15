@@ -249,6 +249,11 @@ export type RankedMatchIntent =
 
 export type RankedSupportIntent =
   | {
+      readonly intent: "support-start-match";
+      readonly matchId: string;
+      readonly internalNote: string;
+    }
+  | {
       readonly intent: "create-arena-card";
       readonly name: string;
       readonly startsAt: string | null;

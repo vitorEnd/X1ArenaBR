@@ -30,7 +30,8 @@ import {
   RankedLoading,
   RankedLoginNotice,
 } from "./ui-feedback";
-import { useMatchFoundAlert, useMatchmakingLive } from "./use-matchmaking-live";
+import { useMatchmakingLive } from "./matchmaking-live-provider";
+import { useMatchFoundAlert } from "./use-matchmaking-live";
 
 const rankLadder = [
   "novato",
@@ -152,6 +153,7 @@ export function MatchmakingDashboard() {
   );
 
   const joinQueue = async () => {
+    window.dispatchEvent(new Event("axb:prepare-ranked-alerts"));
     await prepareAlerts();
     await updateQueue("join");
   };
