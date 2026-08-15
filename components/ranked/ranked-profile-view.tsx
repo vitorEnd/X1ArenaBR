@@ -117,6 +117,9 @@ export function RankedProfileView({
               <Link href="/conta" className={styles.secondaryButton}>
                 <Settings size={17} aria-hidden="true" /> Configurações da conta
               </Link>
+              <Link href="/matchmaking" className={styles.secondaryButton}>
+                <ChevronLeft size={17} aria-hidden="true" /> Voltar ao matchmaking
+              </Link>
               {isSupport && (
                 <Link href="/suporte" className={styles.primaryButton}>
                   <Gavel size={17} aria-hidden="true" /> Central de suporte

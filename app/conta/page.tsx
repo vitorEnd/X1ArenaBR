@@ -77,6 +77,9 @@ export default async function AccountPage({
             <Link href="/matchmaking" className={styles.secondaryButton}>
               Voltar ao matchmaking
             </Link>
+            <Link href={`/ranked/${encodeURIComponent(context.profile.username)}`} className={styles.secondaryButton}>
+              Ver meu perfil público
+            </Link>
             <form action={logoutAction}>
               <button className={styles.danger} type="submit">
                 <LogOut size={17} aria-hidden="true" />
