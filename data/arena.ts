@@ -225,6 +225,15 @@ export const officialPlayers = [
     status: "active",
     dataStatus: "official",
   },
+    {
+    id: "invisivel99",
+    slug: "invisivel99",
+    name: "Invisível99",
+    avatarUrl: null,
+    currentCategoryId: "peso-pena",
+    status: "active",
+    dataStatus: "official",
+  },
    {
     id: "BG",
     slug: "BG",
