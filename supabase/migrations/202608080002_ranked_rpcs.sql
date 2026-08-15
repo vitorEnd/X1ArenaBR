@@ -1046,11 +1046,13 @@ begin
   set status = 'awaiting_score',
       ended_at = clock_timestamp(),
       score_deadline = clock_timestamp() + interval '3 minutes'
-  where id = p_match_id and creator_profile_id = auth.uid() and status = 'in_progress'
+  where id = p_match_id
+    and creator_profile_id = auth.uid()
+    and status in ('lobby', 'in_progress')
   returning * into v_match;
 
   if not found then
-    raise exception using errcode = 'P0001', message = 'Somente o criador pode encerrar uma partida em andamento.';
+    raise exception using errcode = 'P0001', message = 'Somente o criador pode finalizar uma partida ativa.';
   end if;
   return v_match;
 end;

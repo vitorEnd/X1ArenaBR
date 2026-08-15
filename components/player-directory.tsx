@@ -10,33 +10,27 @@ import {
   officialRankingEntries,
 } from "@/data/arena";
 import { buildCategoryRanking } from "@/lib/ranking";
-import type { CategoryId } from "@/lib/types";
+import type { CategoryId, RankingEntry } from "@/lib/types";
 
 type Filter = CategoryId | "all" | "unassigned";
 
-export function PlayerDirectory() {
+export function PlayerDirectory({ entries: externalEntries }: { readonly entries?: Map<string, RankingEntry> }) {
   const [category, setCategory] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const normalized = query.trim().toLocaleLowerCase("pt-BR");
   const hasUnassignedPlayers = officialPlayers.some(
     (player) => !player.currentCategoryId,
   );
+  const rankingEntries = externalEntries ?? new Map(officialRankingEntries.map((entry) => [entry.playerId, entry]));
   const rankingPositions = useMemo(() => {
     const map = new Map<string, string>();
     categories.forEach((item) => {
-      buildCategoryRanking(officialRankingEntries, item.id).standings.forEach(
+      buildCategoryRanking([...rankingEntries.values()], item.id).standings.forEach(
         (entry) => map.set(entry.playerId, entry.marker),
       );
     });
     return map;
-  }, []);
-  const entries = useMemo(
-    () =>
-      new Map(
-        officialRankingEntries.map((entry) => [entry.playerId, entry]),
-      ),
-    [],
-  );
+  }, [rankingEntries]);
   const visiblePlayers = officialPlayers.filter((player) => {
     const categoryMatches =
       category === "all" ||
@@ -123,7 +117,7 @@ export function PlayerDirectory() {
               const categoryData = categories.find(
                 (item) => item.id === player.currentCategoryId,
               );
-              const entry = entries.get(player.id);
+              const entry = rankingEntries.get(player.id);
               const points = entry ? entry.wins * 2 - entry.losses : 0;
               const goalDifference = entry
                 ? entry.goalsFor - entry.goalsAgainst

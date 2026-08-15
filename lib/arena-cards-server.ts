@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { ArenaCard, ArenaCardMatch } from "./arena-card-types";
+import type { MatchOutcome, RankingEntry } from "./types";
 import { createAdminClient } from "./supabase/admin";
 import { isSupabaseAdminConfigured } from "./supabase/env";
 
@@ -58,5 +59,70 @@ export async function getPublicArenaCards(): Promise<readonly ArenaCard[]> {
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     matches: matchesByCard.get(String(row.id)) ?? [],
+  }));
+}
+
+type MutablePlayerRankingSummary = {
+  playerId: string;
+  categoryId: ArenaCardMatch["categoryId"];
+  wins: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  recentForm: MatchOutcome[];
+  knockouts: number;
+  dataStatus: "official";
+};
+
+export async function getPublicPlayerRankingEntries(): Promise<readonly RankingEntry[]> {
+  const cards = await getPublicArenaCards();
+  const summaryByPlayer = new Map<string, MutablePlayerRankingSummary>();
+
+  for (const card of cards) {
+    for (const match of card.matches) {
+      if (match.status !== "finished") continue;
+      if (match.playerAScore === null || match.playerBScore === null || !match.winnerPlayerId) continue;
+
+      const winnerId = match.winnerPlayerId;
+      const loserId = winnerId === match.playerAId ? match.playerBId : match.playerAId;
+      const winnerGoals = winnerId === match.playerAId ? match.playerAScore : match.playerBScore;
+      const loserGoals = winnerId === match.playerAId ? match.playerBScore : match.playerAScore;
+      const knockout = Math.abs(winnerGoals - loserGoals) >= 3 && loserGoals === 0;
+
+      const recordForPlayer = (playerId: string, goalsFor: number, goalsAgainst: number, didWin: boolean) => {
+        const key = `${match.categoryId}:${playerId}`;
+        const current = summaryByPlayer.get(key) ?? {
+          playerId,
+          categoryId: match.categoryId,
+          wins: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          recentForm: [] as MatchOutcome[],
+          knockouts: 0,
+          dataStatus: "official" as const,
+        };
+
+        current.wins += didWin ? 1 : 0;
+        current.losses += didWin ? 0 : 1;
+        current.goalsFor += goalsFor;
+        current.goalsAgainst += goalsAgainst;
+        const nextRecentForm: MatchOutcome[] = [...current.recentForm, didWin ? "win" : "loss"];
+        current.recentForm = nextRecentForm.slice(-5) as MatchOutcome[];
+        if (didWin && knockout) {
+          current.knockouts += 1;
+        }
+        summaryByPlayer.set(key, current);
+      };
+
+      recordForPlayer(winnerId, winnerGoals, loserGoals, true);
+      recordForPlayer(loserId, loserGoals, winnerGoals, false);
+    }
+  }
+
+  return [...summaryByPlayer.values()].map((entry) => ({
+    ...entry,
+    recentForm: [...entry.recentForm],
+    knockouts: entry.knockouts,
   }));
 }

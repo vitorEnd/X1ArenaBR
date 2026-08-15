@@ -231,9 +231,9 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
 
             <div className={styles.lobbyActions}>
               <div>
-                {viewerIsCreator && match.state === "in_progress" && (
+                {viewerIsCreator && (match.state === "lobby" || match.state === "in_progress") && (
                   <button type="button" className={styles.primaryButton} disabled={busy} onClick={() => void onAction({ intent: "end" })}>
-                    <Square size={16} aria-hidden="true" /> Encerrar partida
+                    <Square size={16} aria-hidden="true" /> Finalizar partida
                   </button>
                 )}
                 {viewerIsCreator && match.state === "awaiting_score" && (

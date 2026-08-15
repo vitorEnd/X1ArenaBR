@@ -9,8 +9,8 @@ import {
   officialEvents,
   officialMatches,
   officialPlayers,
-  officialRankingEntries,
 } from "@/data/arena";
+import { getPublicPlayerRankingEntries } from "@/lib/arena-cards-server";
 import {
   buildCategoryRanking,
   calculateGoalDifference,
@@ -61,11 +61,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const category = categories.find(
     (item) => item.id === player.currentCategoryId,
   );
-  const entry = officialRankingEntries.find(
-    (item) => item.playerId === player.id,
-  );
+  const rankingEntries = await getPublicPlayerRankingEntries();
+  const entry = rankingEntries.find(
+    (item) => item.playerId === player.id && item.categoryId === player.currentCategoryId,
+  ) ?? rankingEntries.find((item) => item.playerId === player.id);
   const ranking = player.currentCategoryId
-    ? buildCategoryRanking(officialRankingEntries, player.currentCategoryId)
+    ? buildCategoryRanking(rankingEntries, player.currentCategoryId)
     : null;
   const standing = ranking?.standings.find(
     (item) => item.playerId === player.id,
