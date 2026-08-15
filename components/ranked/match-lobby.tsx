@@ -81,6 +81,12 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
   const canReport = ["lobby", "in_progress", "awaiting_score", "awaiting_confirmation"].includes(match.state);
   const viewerIsPlayerA = match.playerA.id === match.viewerId;
 
+  useEffect(() => {
+    if (match.state === "awaiting_score" && viewerIsCreator) {
+      setScoreOpen(true);
+    }
+  }, [match.state, viewerIsCreator]);
+
   const copyText = async (label: string, value: string) => {
     try {
       await navigator.clipboard.writeText(value);
@@ -232,7 +238,15 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
             <div className={styles.lobbyActions}>
               <div>
                 {viewerIsCreator && (match.state === "lobby" || match.state === "in_progress") && (
-                  <button type="button" className={styles.primaryButton} disabled={busy} onClick={() => void onAction({ intent: "end" })}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    disabled={busy}
+                    onClick={async () => {
+                      await onAction({ intent: "end" });
+                      setScoreOpen(true);
+                    }}
+                  >
                     <Square size={16} aria-hidden="true" /> Finalizar partida
                   </button>
                 )}
