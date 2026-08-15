@@ -10,7 +10,7 @@ import {
   officialMatches,
   officialPlayers,
 } from "@/data/arena";
-import { getPublicPlayerRankingEntries } from "@/lib/arena-cards-server";
+import { getPublicPlayerMatchHistory, getPublicPlayerRankingEntries } from "@/lib/arena-cards-server";
 import {
   buildCategoryRanking,
   calculateGoalDifference,
@@ -71,10 +71,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const standing = ranking?.standings.find(
     (item) => item.playerId === player.id,
   );
-  const history = officialMatches.filter(
-    (match) =>
-      match.playerAId === player.id || match.playerBId === player.id,
-  );
+  const history = await getPublicPlayerMatchHistory(player.id);
   const beltHistory = officialBeltHistory.filter(
     (record) => record.playerId === player.id,
   );

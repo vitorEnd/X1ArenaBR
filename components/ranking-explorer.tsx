@@ -8,13 +8,13 @@ import {
   categories,
   officialChampions,
   officialPlayers,
-  officialRankingEntries,
 } from "@/data/arena";
 import { buildCategoryRanking } from "@/lib/ranking";
-import type { CategoryId, Player } from "@/lib/types";
+import type { CategoryId, Player, RankingEntry } from "@/lib/types";
 
 type RankingExplorerProps = {
   compact?: boolean;
+  entriesByPlayer?: ReadonlyMap<string, RankingEntry>;
 };
 
 function FormDots({ form }: { form: readonly ("win" | "loss")[] }) {
@@ -33,19 +33,38 @@ function FormDots({ form }: { form: readonly ("win" | "loss")[] }) {
   );
 }
 
-export function RankingExplorer({ compact = false }: RankingExplorerProps) {
+export function RankingExplorer({ compact = false, entriesByPlayer = new Map() }: RankingExplorerProps) {
   const [categoryId, setCategoryId] = useState<CategoryId>("peso-pena");
   const [query, setQuery] = useState("");
   const championRecord = officialChampions.find(
     (champion) => champion.categoryId === categoryId && champion.type === "official",
   );
-  const ranking = useMemo(
-    () =>
-      buildCategoryRanking(officialRankingEntries, categoryId, {
-        championPlayerId: championRecord?.playerId,
-      }),
-    [categoryId, championRecord?.playerId],
-  );
+
+  const ranking = useMemo(() => {
+    const categoryPlayers = officialPlayers.filter(
+      (player) => player.currentCategoryId === categoryId,
+    );
+    const seededEntries: RankingEntry[] = categoryPlayers.map((player) => {
+      const entry = entriesByPlayer.get(player.id);
+      if (entry) {
+        return entry;
+      }
+      return {
+        playerId: player.id,
+        categoryId: categoryId,
+        wins: 0,
+        losses: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        recentForm: [],
+        dataStatus: "official",
+      };
+    });
+
+    return buildCategoryRanking(seededEntries, categoryId, {
+      championPlayerId: championRecord?.playerId,
+    });
+  }, [categoryId, championRecord?.playerId, entriesByPlayer]);
   const playerById = useMemo(
     () => new Map<string, Player>(officialPlayers.map((player) => [player.id, player])),
     [],

@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { ArenaCard, ArenaCardMatch } from "./arena-card-types";
-import type { MatchOutcome, RankingEntry } from "./types";
+import type { Match, MatchOutcome, RankingEntry } from "./types";
 import { createAdminClient } from "./supabase/admin";
 import { isSupabaseAdminConfigured } from "./supabase/env";
 
@@ -125,4 +125,51 @@ export async function getPublicPlayerRankingEntries(): Promise<readonly RankingE
     recentForm: [...entry.recentForm],
     knockouts: entry.knockouts,
   }));
+}
+
+export async function getPublicPlayerMatchHistory(playerId: string): Promise<readonly Match[]> {
+  const cards = await getPublicArenaCards();
+  const history: Match[] = [];
+
+  for (const card of cards) {
+    for (const match of card.matches) {
+      if (match.status !== "finished") continue;
+      if (match.playerAId !== playerId && match.playerBId !== playerId) continue;
+      if (match.playerAScore === null || match.playerBScore === null) continue;
+
+      const scheduledAt = match.scheduledAt ?? card.startsAt ?? new Date().toISOString();
+      const score = {
+        playerA: match.playerAScore,
+        playerB: match.playerBScore,
+      };
+      const winnerId = match.winnerPlayerId ?? (score.playerA > score.playerB ? match.playerAId : match.playerBId);
+      const method =
+        score.playerA === 0 && score.playerB === 0
+          ? "regular"
+          : Math.abs(score.playerA - score.playerB) >= 3 && Math.min(score.playerA, score.playerB) === 0
+            ? "knockout"
+            : "regular";
+
+      history.push({
+        id: match.id,
+        eventId: card.id,
+        categoryId: match.categoryId,
+        playerAId: match.playerAId,
+        playerBId: match.playerBId,
+        type: match.type === "belt" ? "belt" : "normal",
+        status: "finished",
+        scheduledAt,
+        result: winnerId
+          ? {
+              winnerId,
+              score,
+              method,
+            }
+          : null,
+        dataStatus: "official",
+      });
+    }
+  }
+
+  return history.sort((first, second) => new Date(second.scheduledAt ?? 0).getTime() - new Date(first.scheduledAt ?? 0).getTime());
 }

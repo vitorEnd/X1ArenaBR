@@ -3,11 +3,14 @@ import { PageHero } from "@/components/page-hero";
 import { RankingExplorer } from "@/components/ranking-explorer";
 import { SectionHeading } from "@/components/section-heading";
 import { arenaRules } from "@/data/arena";
+import { getPublicPlayerRankingEntries } from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata("Rankings", "Ranking contínuo por categoria, pontos e saldo de gols da Arena X1 Brasil.");
 
-export default function RankingsPage() {
+export default async function RankingsPage() {
+  const liveEntries = await getPublicPlayerRankingEntries();
+  const entriesByPlayer = new Map(liveEntries.map((entry) => [entry.playerId, entry]));
   return (
     <>
       <PageHero eyebrow="Classificação contínua • Sem temporadas" title="Rankings" description="Toda vitória soma, toda derrota conta e nenhum resultado é apagado. O campeão ocupa a posição C; a fila de desafiantes começa no #1." />
@@ -22,7 +25,7 @@ export default function RankingsPage() {
       <section className="section">
         <div className="page-container">
           <SectionHeading eyebrow="Classificação por categoria" title={<>A corrida até <span className="title-accent">o cinturão</span></>} description="Filtre a divisão e busque um jogador. As posições continuam preservadas mesmo quando a lista é filtrada." />
-          <RankingExplorer />
+          <RankingExplorer entriesByPlayer={entriesByPlayer} />
         </div>
       </section>
       <section className="section section--graphite">
