@@ -49,7 +49,6 @@ export interface RankedPublicProfile {
   readonly id: string;
   readonly username: string;
   readonly avatarUrl: string | null;
-  readonly nickname?: RankedPlayerNickname | null;
   readonly wins: number;
   readonly losses: number;
   readonly mmr: number | null;

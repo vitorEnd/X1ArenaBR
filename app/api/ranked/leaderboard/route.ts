@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { isSupabaseAdminConfigured } from "@/lib/supabase/env";
 import { z } from "zod";
 import type {
   RankedLeaderboardEntry,
@@ -81,22 +79,8 @@ export async function GET(request: Request) {
 
     const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
     if (error) throw error;
-    const nicknameByPlayer = new Map<string, unknown>();
-    if (isSupabaseAdminConfigured()) {
-      const nicknameResult = await createAdminClient()
-        .from("arena_player_nicknames")
-        .select("player_id,nickname,color")
-        .in("player_id", (data ?? []).map((row) => String(row.id)));
-      for (const nickname of nicknameResult.data ?? []) {
-        nicknameByPlayer.set(String(nickname.player_id), {
-          playerId: String(nickname.player_id),
-          nickname: String(nickname.nickname),
-          color: nickname.color,
-        });
-      }
-    }
     const entries = (data ?? [])
-      .map((row) => toRankedPublicProfile(context.supabase!, { ...row, nickname: nicknameByPlayer.get(String(row.id)) }))
+      .map((row) => toRankedPublicProfile(context.supabase!, row))
       .filter((entry): entry is RankedLeaderboardEntry => entry !== null);
 
     const totalEntries = count ?? 0;

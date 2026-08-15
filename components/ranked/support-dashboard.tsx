@@ -263,7 +263,7 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
             {response.accounts.length > 0 ? response.accounts.map((account) => (
               <article key={account.profileId} className={styles.supportItem}>
                 <div className={styles.supportItemHeader}>
-                  <strong>{account.username}</strong>{account.nickname && <span className={`${styles.nicknameBadge} ${styles[`nickname${account.nickname.color}`]}`}>{account.nickname}</span>}
+                  <strong>{account.username}</strong>
                   <span className={styles.statusPill}>{account.banned ? "Banido" : account.frozen ? "Congelado" : "Ativo"}</span>
                 </div>
                 <p>MMR: {account.mmr?.toLocaleString("pt-BR") ?? "oculto"} • {account.usernameHistory.length} alteração(ões) de nome</p>

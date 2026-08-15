@@ -4,7 +4,6 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type {
   RankedOpponent,
-  RankedPlayerNickname,
   RankedPublicProfile,
   RankedTier,
 } from "@/components/ranked/adapter";
@@ -169,7 +168,6 @@ export function toRankedPublicProfile(
   if (!id || !username) return null;
 
   const mmr = nullableNumber(row.mmr);
-  const nickname = row.nickname && typeof row.nickname === "object" ? row.nickname as RankedPlayerNickname : null;
   const globalPosition = nullableNumber(row.global_position);
   const placementMatchesPlayed = numberValue(
     row.placement_matches ?? row.placementMatches,
@@ -178,7 +176,6 @@ export function toRankedPublicProfile(
   return {
     id,
     username,
-    nickname,
     avatarUrl: getAvatarPublicUrl(
       supabase,
       row.avatar_path ?? row.avatarPath,
@@ -206,7 +203,6 @@ export function toRankedOpponent(
   return {
     id: profile.id,
     username: profile.username,
-    nickname: profile.nickname,
     avatarUrl: profile.avatarUrl,
     mmr: profile.mmr,
     tier: profile.tier,
