@@ -33,7 +33,7 @@ function resultSnapshot(
       placementPending: false,
       oldMmr: won ? 1_238 : 1_264,
       newMmr: won ? 1_264 : 1_238,
-      mmrDelta: won ? 26 : -26,
+      mmrDelta: won ? 35 : -13,
       previousTier: won ? "pro" : "craque",
       nextTier: won ? "craque" : "pro",
       rankChange,
@@ -43,8 +43,8 @@ function resultSnapshot(
 }
 
 for (const scenario of [
-  { outcome: "win" as const, rankChange: "promoted" as const, title: "Vitória", delta: "+26 MMR", change: "Promovido para Craque" },
-  { outcome: "loss" as const, rankChange: "demoted" as const, title: "Derrota", delta: "-26 MMR", change: "Rebaixado para Pro" },
+  { outcome: "win" as const, rankChange: "promoted" as const, title: "Vitória", delta: "+35 MMR", change: "Promovido para Craque" },
+  { outcome: "loss" as const, rankChange: "demoted" as const, title: "Derrota", delta: "-13 MMR", change: "Rebaixado para Pro" },
 ]) {
   test(`mostra animação de ${scenario.outcome} com MMR e mudança de Elo`, async ({ page }) => {
     await page.route("**/api/ranked/snapshot", async (route) => {

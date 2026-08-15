@@ -1,7 +1,8 @@
 import {
-  RANKED_ELO_K_FACTOR,
-  RANKED_MAX_MMR_DELTA,
-  RANKED_MIN_MMR_DELTA,
+  RANKED_MAX_LOSS_MMR,
+  RANKED_MAX_WIN_MMR_GAIN,
+  RANKED_MIN_LOSS_MMR,
+  RANKED_MIN_WIN_MMR_GAIN,
   RANKED_MMR_FLOOR,
 } from "./constants.ts";
 import type { RankedMmrChange } from "./types";
@@ -27,11 +28,27 @@ export function calculateRankedMmrDelta(
   loserMmr: number,
 ): number {
   const expectedWinner = calculateExpectedScore(winnerMmr, loserMmr);
-  const rawDelta = Math.round(RANKED_ELO_K_FACTOR * (1 - expectedWinner));
+  const range = RANKED_MAX_WIN_MMR_GAIN - RANKED_MIN_WIN_MMR_GAIN;
+  const rawDelta = Math.round(RANKED_MIN_WIN_MMR_GAIN + range * (1 - expectedWinner));
 
   return Math.min(
-    RANKED_MAX_MMR_DELTA,
-    Math.max(RANKED_MIN_MMR_DELTA, rawDelta),
+    RANKED_MAX_WIN_MMR_GAIN,
+    Math.max(RANKED_MIN_WIN_MMR_GAIN, rawDelta),
+  );
+}
+
+export function calculateRankedMmrLoss(
+  winnerMmr: number,
+  loserMmr: number,
+): number {
+  const expectedWinner = calculateExpectedScore(winnerMmr, loserMmr);
+  const expectedLoser = 1 - expectedWinner;
+  const range = RANKED_MAX_LOSS_MMR - RANKED_MIN_LOSS_MMR;
+  const rawLoss = Math.round(RANKED_MIN_LOSS_MMR + range * expectedLoser);
+
+  return Math.min(
+    RANKED_MAX_LOSS_MMR,
+    Math.max(RANKED_MIN_LOSS_MMR, rawLoss),
   );
 }
 
@@ -43,10 +60,11 @@ export function applyRankedMmrResult(
   assertMmr(loserMmr, "loserMmr");
 
   const nominalDelta = calculateRankedMmrDelta(winnerMmr, loserMmr);
+  const loserLoss = calculateRankedMmrLoss(winnerMmr, loserMmr);
   const winnerAfter = Math.trunc(winnerMmr) + nominalDelta;
   const loserAfter = Math.max(
     RANKED_MMR_FLOOR,
-    Math.trunc(loserMmr) - nominalDelta,
+    Math.trunc(loserMmr) - loserLoss,
   );
 
   return {

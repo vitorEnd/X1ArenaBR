@@ -12,9 +12,10 @@ export const RANKED_CONFIRMATION_WINDOW_MS = 3 * 60 * 1_000;
 export const RANKED_LEADERBOARD_LIMIT = 50;
 export const RANKED_CHAMPION_LIMIT = 10;
 export const RANKED_CHAMPION_MIN_MMR = 2_500;
-export const RANKED_ELO_K_FACTOR = 40;
-export const RANKED_MIN_MMR_DELTA = 10;
-export const RANKED_MAX_MMR_DELTA = 40;
+export const RANKED_MIN_WIN_MMR_GAIN = 30;
+export const RANKED_MAX_WIN_MMR_GAIN = 40;
+export const RANKED_MIN_LOSS_MMR = 10;
+export const RANKED_MAX_LOSS_MMR = 15;
 
 export const RANKED_TIER_ORDER = [
   "novato",
@@ -75,4 +76,3 @@ export const RANKED_NO_ACCEPT_PENALTY_SECONDS = [
 ] as const;
 
 export const RANKED_NO_ACCEPT_STRIKES_PER_PENALTY = 3;
-

@@ -49,6 +49,13 @@ function ArenaMatch({ match, card }: { match: ArenaCardMatch; card: ArenaCard })
   const hasScore = match.playerAScore !== null && match.playerBScore !== null;
   return (
     <article className={`match-card arena-match-card${match.type === "belt" ? " arena-match-card--belt" : ""}`}>
+      {match.type === "belt" && (
+        <div className="arena-belt-banner">
+          <span><Crown aria-hidden="true" /> Disputa de cinturão</span>
+          <strong>AXB Championship</strong>
+          <i aria-hidden="true" />
+        </div>
+      )}
       <div className="match-card__top">
         <span className={`status-badge status-badge--${match.status}`}>
           {match.status === "live" ? "Ao vivo" : match.status === "finished" ? "Finalizado" : "Confirmado"}

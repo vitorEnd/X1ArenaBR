@@ -1953,8 +1953,158 @@ img {
 }
 
 .arena-match-card--belt {
-  border-color: rgba(245, 184, 0, 0.5);
-  background: linear-gradient(135deg, rgba(245, 184, 0, 0.09), transparent 42%), #111;
+  position: relative;
+  grid-column: 1 / -1;
+  overflow: hidden;
+  border-color: rgba(255, 212, 71, 0.72);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 212, 71, 0.16), transparent 38%),
+    linear-gradient(120deg, rgba(245, 184, 0, 0.12), transparent 32% 68%, rgba(245, 184, 0, 0.1)),
+    #090909;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48), inset 0 0 55px rgba(245, 184, 0, 0.05);
+}
+
+.arena-match-card--belt::before,
+.arena-match-card--belt::after {
+  position: absolute;
+  z-index: 2;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ffd447);
+  box-shadow: 0 0 18px rgba(255, 212, 71, 0.8);
+  content: "";
+  pointer-events: none;
+}
+
+.arena-match-card--belt::before { top: 0; left: 0; }
+.arena-match-card--belt::after { right: 0; bottom: 0; transform: rotate(180deg); }
+
+.arena-belt-banner {
+  position: relative;
+  display: grid;
+  min-height: 96px;
+  place-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 212, 71, 0.25);
+  padding: 18px;
+  background:
+    linear-gradient(105deg, transparent 0 38%, rgba(255, 212, 71, 0.1) 48% 52%, transparent 62%),
+    linear-gradient(90deg, #050505, #171000 50%, #050505);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.arena-belt-banner span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffd447;
+  font-size: 0.67rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+
+.arena-belt-banner span svg {
+  width: 17px;
+  filter: drop-shadow(0 0 8px rgba(255, 212, 71, 0.65));
+}
+
+.arena-belt-banner strong {
+  margin-top: 5px;
+  background: linear-gradient(180deg, #fff4bf, #ffd447 45%, #b87800 100%);
+  background-clip: text;
+  color: transparent;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: clamp(2rem, 5vw, 4.6rem);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: 0.035em;
+  line-height: 0.85;
+  text-shadow: 0 12px 34px rgba(245, 184, 0, 0.18);
+}
+
+.arena-belt-banner i {
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: -18%;
+  width: 12%;
+  background: linear-gradient(90deg, transparent, rgba(255, 248, 210, 0.5), transparent);
+  filter: blur(5px);
+  transform: skewX(-18deg);
+  animation: arenaBeltShine 4.8s ease-in-out infinite;
+}
+
+.arena-match-card--belt .match-card__versus {
+  min-height: 220px;
+  padding: clamp(30px, 5vw, 62px);
+  background:
+    radial-gradient(circle at center, rgba(245, 184, 0, 0.11), transparent 32%),
+    linear-gradient(108deg, transparent 0 47.5%, rgba(245, 184, 0, 0.12) 47.5% 52.5%, transparent 52.5%),
+    #080808;
+}
+
+.arena-match-card--belt .match-card__versus a {
+  background: linear-gradient(180deg, #fff, #c7c7c7);
+  background-clip: text;
+  color: transparent;
+  font-size: clamp(2rem, 5vw, 4.7rem);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.arena-match-card--belt .match-card__vs {
+  display: grid;
+  min-width: 72px;
+  min-height: 72px;
+  place-items: center;
+  border: 1px solid rgba(255, 212, 71, 0.42);
+  border-radius: 50%;
+  background: #0d0a03;
+  box-shadow: 0 0 30px rgba(245, 184, 0, 0.15);
+}
+
+.arena-match-card--belt .match-card__vs svg { display: none; }
+.arena-match-card--belt .match-card__vs b { font-size: 1.35rem; }
+.arena-match-card--belt .arena-match-type { color: #ffd447; }
+
+@keyframes arenaBeltShine {
+  0%, 55% { left: -18%; opacity: 0; }
+  65% { opacity: 0.8; }
+  85%, 100% { left: 112%; opacity: 0; }
+}
+
+@media (max-width: 700px) {
+  .arena-belt-banner { min-height: 88px; padding-inline: 12px; }
+  .arena-belt-banner strong { font-size: clamp(1.8rem, 10vw, 3.1rem); }
+
+  .arena-match-card--belt .match-card__versus {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    min-height: 340px;
+    padding: 30px 20px;
+    text-align: center;
+  }
+
+  .arena-match-card--belt .match-card__versus > div:first-child,
+  .arena-match-card--belt .match-card__versus > div:last-child {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .arena-match-card--belt .match-card__versus a {
+    font-size: clamp(2.2rem, 13vw, 3.8rem);
+  }
+
+  .arena-match-card--belt .match-card__vs {
+    min-width: 58px;
+    min-height: 58px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arena-belt-banner i { animation: none; }
 }
 
 .arena-match-type,

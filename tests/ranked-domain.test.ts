@@ -16,6 +16,7 @@ const {
   applyRankedMmrResult,
   calculateExpectedScore,
   calculateRankedMmrDelta,
+  calculateRankedMmrLoss,
 } = (await import(mmrModuleUrl.href)) as typeof import("../lib/ranked/mmr");
 const { canPairRankedCandidate, compareRankedCandidates } = (
   await import(matchmakingModuleUrl.href)
@@ -77,19 +78,22 @@ test("keeps placement MMR hidden until match five and uses the approved values",
   assert.throws(() => getRankedPlacementState(2, 3), RangeError);
 });
 
-test("uses Elo expectation, clamps changes to 10–40 and enforces the 800 floor", () => {
+test("rewards wins with 30–40 MMR, limits losses to 10–15 and enforces the floor", () => {
   assert.equal(calculateExpectedScore(1_200, 1_200), 0.5);
-  assert.equal(calculateRankedMmrDelta(1_200, 1_200), 20);
-  assert.equal(calculateRankedMmrDelta(2_500, 800), 10);
-  assert.ok(calculateRankedMmrDelta(800, 2_500) <= 40);
+  assert.equal(calculateRankedMmrDelta(1_200, 1_200), 35);
+  assert.equal(calculateRankedMmrLoss(1_200, 1_200), 13);
+  assert.equal(calculateRankedMmrDelta(2_500, 800), 30);
+  assert.equal(calculateRankedMmrLoss(2_500, 800), 10);
+  assert.equal(calculateRankedMmrDelta(800, 2_500), 40);
+  assert.equal(calculateRankedMmrLoss(800, 2_500), 15);
 
   assert.deepEqual(applyRankedMmrResult(1_200, 810), {
     winnerBefore: 1_200,
-    winnerAfter: 1_210,
+    winnerAfter: 1_231,
     loserBefore: 810,
     loserAfter: 800,
-    nominalDelta: 10,
-    winnerDelta: 10,
+    nominalDelta: 31,
+    winnerDelta: 31,
     loserDelta: -10,
   });
   assert.equal(applyRankedMmrResult(1_200, 800).loserAfter, 800);

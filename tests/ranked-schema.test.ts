@@ -14,6 +14,10 @@ const supportStartMatch = await readFile(
   new URL("202608140015_ranked_support_start_match.sql", migrationRoot),
   "utf8",
 );
+const funMmrRewards = await readFile(
+  new URL("202608140016_ranked_fun_mmr_rewards.sql", migrationRoot),
+  "utf8",
+);
 
 test("keeps ranked persistence isolated from official tournament entities", () => {
   const allMigrations = `${schema}\n${rpcs}\n${security}`.toLowerCase();
@@ -117,4 +121,11 @@ test("allows only authenticated support to start a stalled lobby", () => {
     supportStartMatch,
     /grant execute on function public\.ranked_support_start_match\(uuid, text\) to authenticated/i,
   );
+});
+
+test("persists asymmetric fun MMR rewards in the authoritative database", () => {
+  assert.match(funMmrRewards, /v_winner_gain := greatest\([\s\S]*30[\s\S]*least\(40/i);
+  assert.match(funMmrRewards, /v_loser_loss := greatest\([\s\S]*10[\s\S]*least\(15/i);
+  assert.match(funMmrRewards, /v_winner\.mmr \+ v_winner_gain/i);
+  assert.match(funMmrRewards, /v_loser\.mmr - v_loser_loss/i);
 });

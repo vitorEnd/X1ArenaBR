@@ -96,7 +96,7 @@ Elos:
 - Immortal: 2.100–2.499;
 - Champion: 2.500+ e Top 10 global.
 
-As cinco colocações ocultam MMR e Elo. O resultado revelado é 800, 900, 1.000, 1.100, 1.200 ou 1.400 MMR para zero a cinco vitórias. Depois disso, a variação Elo usa K=40, fica entre 10 e 40 pontos e nunca reduz alguém abaixo de 800.
+As cinco colocações ocultam MMR e Elo. O resultado revelado é 800, 900, 1.000, 1.100, 1.200 ou 1.400 MMR para zero a cinco vitórias. Depois disso, cada vitória concede de 30 a 40 MMR, cada derrota remove de 10 a 15 MMR, e ninguém cai abaixo de 800.
 
 O matchmaking começa em uma janela de ±150 MMR. Depois de 60 segundos, a busca se torna global. Todos os prazos e resultados são decididos pelo banco; o navegador apenas exibe o estado em tempo real.
 
