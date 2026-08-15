@@ -34,16 +34,24 @@ export default async function RankedPublicProfilePage({ params }: RankedPublicPr
       supabase.auth.getUser(),
     ]);
     if (!error && !profile && authData.user) {
-      // Anonymous mode changes the public username. Redirect an owner who has
-      // an old bookmarked/public URL to the private account page instead of
-      // showing a confusing 404.
+      // Anonymous mode changes the public username, but the owner must still
+      // be able to open the public profile through the anonymous label.
       const { data: privateProfile } = await supabase
         .rpc("ranked_get_my_profile")
         .maybeSingle();
-      const ownProfile = privateProfile as { id?: string; username?: string } | null;
+      const ownProfile = privateProfile as {
+        id?: string;
+        username?: string;
+        anonymous_mode?: boolean;
+        anonymous_number?: number | string | null;
+      } | null;
+      const anonymousUsername = ownProfile?.anonymous_mode && ownProfile.anonymous_number
+        ? `Anonimo${String(ownProfile.anonymous_number).padStart(4, "0")}`
+        : null;
+      if (ownProfile?.id === authData.user.id && anonymousUsername === username) {
+        redirect(`/ranked/${encodeURIComponent(anonymousUsername)}`);
+      }
       if (ownProfile?.id === authData.user.id) {
-        // The old URL may contain the former public username. This is
-        // especially common after anonymous mode replaces it with AnonimoXXXX.
         redirect("/conta");
       }
     }

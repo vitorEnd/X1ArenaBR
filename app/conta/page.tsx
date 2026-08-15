@@ -60,6 +60,9 @@ export default async function AccountPage({
   );
   const initial = context.profile.username.slice(0, 1).toLocaleUpperCase("pt-BR");
   const placementsFinished = context.profile.placementMatches >= 5;
+  const publicProfileUsername = context.profile.anonymousMode && context.profile.anonymousNumber
+    ? `Anonimo${String(context.profile.anonymousNumber).padStart(4, "0")}`
+    : context.profile.username;
 
   return (
     <section className={styles.accountPage}>
@@ -77,7 +80,7 @@ export default async function AccountPage({
             <Link href="/matchmaking" className={styles.secondaryButton}>
               Voltar ao matchmaking
             </Link>
-            <Link href={`/ranked/${encodeURIComponent(context.profile.username)}`} className={styles.secondaryButton}>
+            <Link href={`/ranked/${encodeURIComponent(publicProfileUsername)}`} className={styles.secondaryButton}>
               Ver meu perfil público
             </Link>
             <form action={logoutAction}>
