@@ -236,13 +236,7 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
                     type="button"
                     className={styles.primaryButton}
                     disabled={busy}
-                    onClick={async () => {
-                      // Primeiro muda o estado no servidor para awaiting_score. Só depois
-                      // abrimos o formulário; caso contrário o usuário pode enviar o
-                      // placar enquanto a partida ainda está em lobby/in_progress.
-                      await onAction({ intent: "end" });
-                      setScoreOpen(true);
-                    }}
+                    onClick={() => setScoreOpen(true)}
                   >
                     <Square size={16} aria-hidden="true" /> Finalizar partida
                   </button>
@@ -288,9 +282,15 @@ export function MatchLobby({ match, busy, clockOffsetMs, onAction }: MatchLobbyP
         match={match}
         busy={busy}
         onClose={() => setScoreOpen(false)}
-        onSubmit={(playerAGoals, playerBGoals) =>
-          onAction({ intent: "submit-score", playerAGoals, playerBGoals })
-        }
+        onSubmit={async (playerAGoals, playerBGoals) => {
+          // O formulário é aberto no lobby para manter o botão disponível, mas o
+          // servidor só aceita o placar depois que o estado vira awaiting_score.
+          // Fazemos as duas mutações em sequência, sem condição de corrida.
+          if (match.state === "lobby" || match.state === "in_progress") {
+            await onAction({ intent: "end" });
+          }
+          await onAction({ intent: "submit-score", playerAGoals, playerBGoals });
+        }}
       />
       <ReportDialog
         open={reportOpen}

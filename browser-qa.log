@@ -10,3 +10,6 @@
 ✓ Running next.config.ts took 541ms
 Creating turbopack project { dir: 'C:\\Users\\Monzo\\Desktop\\X1ArenaBR', testMode: true }
 
+○ Compiling /ranked ...
+ GET /ranked 307 in 7.9s (next.js: 5.9s, proxy.ts: 828ms, application-code: 1183ms)
+ GET /matchmaking/ranking 200 in 225ms (next.js: 62ms, proxy.ts: 5ms, application-code: 159ms)
