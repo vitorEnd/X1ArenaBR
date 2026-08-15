@@ -1,3 +1,9 @@
+.nicknameBadge { display: inline-flex; margin-left: 0.55rem; padding: 0.18rem 0.55rem; border-radius: 999px; font: 700 0.68rem/1.1 var(--font-barlow), sans-serif; letter-spacing: 0.08em; text-transform: uppercase; animation: nicknamePulse 2.8s ease-in-out infinite; }
+.nicknamepurple { color: #d8b4fe; border: 1px solid #a855f7; background: #581c87aa; box-shadow: 0 0 18px #a855f766; }
+.nicknamegold { color: #fde68a; border: 1px solid #f59e0b; background: #78350faa; box-shadow: 0 0 18px #f59e0b66; }
+.nicknamered { color: #fca5a5; border: 1px solid #ef4444; background: #7f1d1daa; box-shadow: 0 0 18px #ef444466; }
+@keyframes nicknamePulse { 0%, 100% { transform: translateY(0); filter: brightness(1); } 50% { transform: translateY(-2px); filter: brightness(1.28); } }
+
 .rankedPage {
   --ranked-gold: #f5b800;
   --ranked-gold-light: #ffd447;

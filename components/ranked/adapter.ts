@@ -1,6 +1,14 @@
 import type { RankedProfileStatistics } from "@/lib/ranked/profile-statistics";
 import type { ArenaCard, ArenaCardMatchType } from "@/lib/arena-card-types";
 
+export type PlayerNicknameColor = "purple" | "gold" | "red";
+
+export interface RankedPlayerNickname {
+  readonly playerId: string;
+  readonly nickname: string;
+  readonly color: PlayerNicknameColor;
+}
+
 export type RankedTier =
   | "novato"
   | "pro"
@@ -56,6 +64,7 @@ export interface RankedPublicProfile {
 export interface RankedOpponent {
   readonly id: string;
   readonly username: string;
+  readonly nickname?: RankedPlayerNickname | null;
   readonly avatarUrl: string | null;
   readonly mmr: number | null;
   readonly tier: RankedTier | null;
@@ -210,6 +219,7 @@ export interface RankedSupportAuditEntry {
 export interface RankedSupportAccount {
   readonly profileId: string;
   readonly username: string;
+  readonly nickname?: RankedPlayerNickname | null;
   readonly avatarUrl: string | null;
   readonly mmr: number | null;
   readonly tier: RankedTier | null;
@@ -299,6 +309,29 @@ export type RankedSupportIntent =
   | {
       readonly intent: "reset-ranked";
       readonly password: string;
+    }
+  | {
+      readonly intent: "set-player-nickname";
+      readonly playerId: string;
+      readonly nickname: string;
+      readonly color: PlayerNicknameColor;
+      readonly internalNote: string;
+    }
+  | {
+      readonly intent: "delete-player-nickname";
+      readonly playerId: string;
+      readonly internalNote: string;
+    }
+  | {
+      readonly intent: "set-player-avatar";
+      readonly playerId: string;
+      readonly avatarDataUrl: string;
+      readonly internalNote: string;
+    }
+  | {
+      readonly intent: "delete-player-avatar";
+      readonly playerId: string;
+      readonly internalNote: string;
     }
   | {
       readonly intent: "correct-history-match";

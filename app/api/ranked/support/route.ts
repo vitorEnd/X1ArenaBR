@@ -126,6 +126,29 @@ const supportIntentSchema = z.discriminatedUnion("intent", [
     internalNote: z.string().trim().min(5).max(1000),
   }),
   z.object({
+    intent: z.literal("set-player-nickname"),
+    playerId: z.string().min(1).max(80),
+    nickname: z.string().trim().min(2).max(48),
+    color: z.enum(["purple", "gold", "red"]),
+    internalNote: z.string().trim().min(5).max(1000),
+  }),
+  z.object({
+    intent: z.literal("delete-player-nickname"),
+    playerId: z.string().min(1).max(80),
+    internalNote: z.string().trim().min(5).max(1000),
+  }),
+  z.object({
+    intent: z.literal("set-player-avatar"),
+    playerId: z.string().uuid(),
+    avatarDataUrl: z.string().regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/),
+    internalNote: z.string().trim().min(5).max(1000),
+  }),
+  z.object({
+    intent: z.literal("delete-player-avatar"),
+    playerId: z.string().uuid(),
+    internalNote: z.string().trim().min(5).max(1000),
+  }),
+  z.object({
     intent: z.literal("account-action"),
     profileId: z.string().uuid(),
     action: z.enum(["freeze", "unfreeze", "ban", "unban", "penalize"]),
@@ -159,6 +182,7 @@ export async function GET(request: Request) {
     if (queryValue) accountsQuery = accountsQuery.ilike("username", `%${queryValue}%`);
 
     const [
+      nicknamesResult,
       queueResult,
       activeResult,
       matchHistoryResult,
@@ -172,6 +196,9 @@ export async function GET(request: Request) {
       arenaCardMatchesResult,
     ] =
       await Promise.all([
+        admin
+          .from("arena_player_nicknames")
+          .select("player_id,nickname,color"),
         admin
           .from("ranked_queue_entries")
           .select("profile_id,joined_at")
@@ -412,6 +439,12 @@ export async function GET(request: Request) {
         penaltyByProfile.set(item.profile_id, item.ends_at);
       }
     }
+    const nicknamesByPlayer = new Map(
+      (nicknamesResult.data ?? []).map((item) => [
+        String(item.player_id),
+        { playerId: String(item.player_id), nickname: String(item.nickname), color: item.color as "purple" | "gold" | "red" },
+      ]),
+    );
     const accounts: RankedSupportAccount[] = (accountsResult.data ?? []).map(
       (account) => {
         const publicAccount = toRankedOpponent(
@@ -422,6 +455,7 @@ export async function GET(request: Request) {
         return {
           profileId: account.id,
           username: account.username,
+          nickname: nicknamesByPlayer.get(account.id) ?? null,
           avatarUrl: publicAccount?.avatarUrl ?? null,
           mmr: account.placement_matches === 5 ? account.mmr : null,
           tier: publicAccount?.tier ?? null,
@@ -490,7 +524,36 @@ export async function POST(request: Request) {
     if (!parsed.success) throw new RankedRequestError("Ação de suporte inválida.");
     const { supabase, admin, user } = await requireSupportContext();
 
-    if (parsed.data.intent === "create-arena-card") {
+    if (parsed.data.intent === "set-player-nickname") {
+      const result = await admin.from("arena_player_nicknames").upsert({ player_id: parsed.data.playerId, nickname: parsed.data.nickname, color: parsed.data.color, updated_by: user.id }, { onConflict: "player_id" });
+      if (result.error) throw result.error;
+      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: "set_player_nickname", target_type: "player", target_id: parsed.data.playerId, next_state: { nickname: parsed.data.nickname, color: parsed.data.color }, note: parsed.data.internalNote });
+      if (auditResult.error) throw auditResult.error;
+    } else if (parsed.data.intent === "delete-player-nickname") {
+      const result = await admin.from("arena_player_nicknames").delete().eq("player_id", parsed.data.playerId);
+      if (result.error) throw result.error;
+      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: "delete_player_nickname", target_type: "player", target_id: parsed.data.playerId, note: parsed.data.internalNote });
+      if (auditResult.error) throw auditResult.error;
+    } else if (parsed.data.intent === "set-player-avatar" || parsed.data.intent === "delete-player-avatar") {
+      const path = `${parsed.data.playerId}/avatar.webp`;
+      if (parsed.data.intent === "set-player-avatar") {
+        const [, encoded] = parsed.data.avatarDataUrl.split(",");
+        const bytes = Buffer.from(encoded, "base64");
+        if (bytes.byteLength > 5 * 1024 * 1024) throw new RankedRequestError("A imagem deve ter no máximo 5 MB.");
+        const contentType = parsed.data.avatarDataUrl.match(/^data:(image\/(?:jpeg|png|webp));/)?.[1] ?? "image/webp";
+        const upload = await admin.storage.from("player-avatars").upload(path, bytes, { contentType, upsert: true, cacheControl: "3600" });
+        if (upload.error) throw upload.error;
+        const publicUrl = admin.storage.from("player-avatars").getPublicUrl(path).data.publicUrl;
+        const profile = await admin.from("ranked_profiles").update({ avatar_path: publicUrl }).eq("id", parsed.data.playerId);
+        if (profile.error) throw profile.error;
+      } else {
+        await admin.storage.from("player-avatars").remove([path]);
+        const profile = await admin.from("ranked_profiles").update({ avatar_path: null }).eq("id", parsed.data.playerId);
+        if (profile.error) throw profile.error;
+      }
+      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: parsed.data.intent.replaceAll("-", "_"), target_type: "player", target_id: parsed.data.playerId, note: parsed.data.internalNote });
+      if (auditResult.error) throw auditResult.error;
+    } else if (parsed.data.intent === "create-arena-card") {
       const cardResult = await admin
         .from("arena_cards")
         .insert({
