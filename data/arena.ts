@@ -235,6 +235,15 @@ export const officialPlayers = [
     dataStatus: "official",
   },
    {
+    id: "zato",
+    slug: "zato",
+    name: "zato",
+    avatarUrl: null,
+    currentCategoryId: "peso-pena",
+    status: "active",
+    dataStatus: "official",
+  },
+   {
     id: "BG",
     slug: "BG",
     name: "BG",
