@@ -213,13 +213,14 @@ export async function GET() {
       } else if (playerOne && playerTwo) {
         const scoreOne = nullableNumber(matchRow.player_one_score);
         const scoreTwo = nullableNumber(matchRow.player_two_score);
+        const creatorId = nullableString(matchRow.creator_profile_id) ?? "";
         activeMatch = {
           matchId,
           matchNumber: numberValue(matchRow.match_number),
           state: status as RankedLobbyView["state"],
           roomName: stringValue(matchRow.room_name),
           roomPassword: stringValue(matchRow.room_password),
-          creatorId: stringValue(matchRow.creator_profile_id),
+          creatorId,
           viewerId: profile.id,
           playerA: playerOne,
           playerB: playerTwo,

@@ -50,8 +50,9 @@ export function ScoreDialog({ open, onClose, match, busy, onSubmit }: ScoreDialo
     try {
       await onSubmit(scoreA, scoreB);
       onClose();
-    } catch {
-      // The parent surface displays the server error.
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Não foi possível enviar o placar.";
+      setError(message);
     }
   };
 
@@ -154,8 +155,9 @@ export function ReportDialog({ open, onClose, busy, onSubmit }: ReportDialogProp
     try {
       await onSubmit(category, cleanObservation);
       onClose();
-    } catch {
-      // The parent surface displays the server error.
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Não foi possível enviar o reporte.";
+      setError(message);
     }
   };
 
