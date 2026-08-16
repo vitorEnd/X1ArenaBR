@@ -18,6 +18,10 @@ const funMmrRewards = await readFile(
   new URL("202608140016_ranked_fun_mmr_rewards.sql", migrationRoot),
   "utf8",
 );
+const globalMatchmaking = await readFile(
+  new URL("202608150005_ranked_global_mmr_matchmaking.sql", migrationRoot),
+  "utf8",
+);
 
 test("keeps ranked persistence isolated from official tournament entities", () => {
   const allMigrations = `${schema}\n${rpcs}\n${security}`.toLowerCase();
@@ -30,6 +34,12 @@ test("enforces case-insensitive usernames and the three-hour server cooldown", (
   assert.match(schema, /ranked_profiles_username_unique/i);
   assert.match(rpcs, /last_username_changed_at \+ interval '3 hours'/i);
   assert.match(schema, /ranked_username_history/i);
+});
+
+test("matches any ranked MMR globally, including unplaced players", () => {
+  assert.doesNotMatch(globalMatchmaking, /abs\(q\.effective_mmr - v_self\.effective_mmr\)/i);
+  assert.doesNotMatch(globalMatchmaking, /60 seconds/i);
+  assert.match(globalMatchmaking, /order by q\.joined_at, q\.id/i);
 });
 
 test("uses database guards for one active match and one MMR result", () => {
