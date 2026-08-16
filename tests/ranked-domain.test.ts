@@ -99,18 +99,15 @@ test("rewards wins with 30–40 MMR, limits losses to 10–15 and enforces the f
   assert.equal(applyRankedMmrResult(1_200, 800).loserAfter, 800);
 });
 
-test("opens matchmaking after 60 seconds and preserves chronological priority", () => {
+test("uses global matchmaking immediately and preserves chronological priority", () => {
   const now = 100_000;
-  const closeSearcher = { id: "self", effectiveMmr: 1_200, joinedAt: now - 10_000 };
-  const expandedSearcher = { ...closeSearcher, joinedAt: now - 60_000 };
+  const searcher = { id: "self", effectiveMmr: 1_200, joinedAt: now - 10_000 };
   const close = { id: "close", effectiveMmr: 1_300, joinedAt: now - 5_000 };
   const farOld = { id: "far", effectiveMmr: 2_500, joinedAt: now - 20_000 };
 
-  assert.equal(canPairRankedCandidate(closeSearcher, close, now), true);
-  assert.equal(canPairRankedCandidate(closeSearcher, farOld, now), false);
-  assert.equal(canPairRankedCandidate(expandedSearcher, farOld, now), true);
-  assert.ok(compareRankedCandidates(closeSearcher, close, farOld, now) < 0);
-  assert.ok(compareRankedCandidates(expandedSearcher, close, farOld, now) > 0);
+  assert.equal(canPairRankedCandidate(searcher, close, now), true);
+  assert.equal(canPairRankedCandidate(searcher, farOld, now), true);
+  assert.ok(compareRankedCandidates(searcher, close, farOld, now) > 0);
 });
 
 test("applies a progressive penalty on every third missed acceptance", () => {
