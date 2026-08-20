@@ -208,8 +208,8 @@ export const officialPlayers = [
     dataStatus: "official",
   },
   {
-    id: "joao00325",
-    slug: "joao00325",
+    id: "Joao00325",
+    slug: "Joao00325",
     name: "João00325",
     avatarUrl: null,
     currentCategoryId: "peso-medio",
