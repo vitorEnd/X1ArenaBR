@@ -275,7 +275,7 @@ export const officialPlayers = [
     slug: "Gabbo",
     name: "Gabbo",
     avatarUrl: null,
-    currentCategoryId: null,
+    currentCategoryId: "peso-pena",
     status: "active",
     dataStatus: "official",
   },
