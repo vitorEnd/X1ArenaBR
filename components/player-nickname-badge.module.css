@@ -1,0 +1,131 @@
+.badge {
+  --nickname-main: #f5b800;
+  --nickname-light: #ffe783;
+  --nickname-dark: #7b4d00;
+  --nickname-glow: rgb(245 184 0 / 42%);
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--nickname-main) 70%, transparent);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  background:
+    linear-gradient(105deg, transparent 0 42%, rgb(255 255 255 / 20%) 49%, transparent 56%) -180% 0 / 55% 100% no-repeat,
+    linear-gradient(135deg, color-mix(in srgb, var(--nickname-dark) 72%, #050505), #090909 46%, color-mix(in srgb, var(--nickname-main) 18%, #090909));
+  color: var(--nickname-light);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 5%),
+    0 0 16px var(--nickname-glow);
+  font-family: var(--font-title), sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px var(--nickname-glow);
+  vertical-align: middle;
+  animation: nickname-sheen 4.8s ease-in-out infinite;
+}
+
+.badge::before,
+.badge::after {
+  position: relative;
+  z-index: 1;
+  color: color-mix(in srgb, var(--nickname-main) 78%, white);
+  font-size: .72em;
+  opacity: .85;
+}
+
+.badge::before { content: "\201C"; }
+.badge::after { content: "\201D"; }
+
+.text {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spark,
+.spark::before,
+.spark::after {
+  position: absolute;
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--nickname-light);
+  box-shadow: 0 0 8px 2px var(--nickname-glow);
+  content: "";
+}
+
+.spark {
+  z-index: 0;
+  top: 20%;
+  right: 12%;
+  animation: nickname-spark 3.4s ease-in-out infinite;
+}
+
+.spark::before { top: 15px; right: 42px; animation-delay: -1.1s; }
+.spark::after { top: 5px; right: 78px; animation-delay: -2.2s; }
+
+.gold {
+  --nickname-main: #f5b800;
+  --nickname-light: #fff0a3;
+  --nickname-dark: #765000;
+  --nickname-glow: rgb(255 196 0 / 45%);
+}
+
+.red {
+  --nickname-main: #ef3232;
+  --nickname-light: #ffb0a8;
+  --nickname-dark: #69090d;
+  --nickname-glow: rgb(255 38 38 / 46%);
+}
+
+.purple {
+  --nickname-main: #a84dff;
+  --nickname-light: #eac7ff;
+  --nickname-dark: #431070;
+  --nickname-glow: rgb(174 71 255 / 48%);
+}
+
+.compact {
+  min-height: 20px;
+  padding: 3px 10px;
+  font-size: .64rem;
+}
+
+.regular {
+  min-height: 25px;
+  padding: 5px 13px;
+  font-size: .75rem;
+}
+
+.hero {
+  min-height: 32px;
+  padding: 7px 17px;
+  font-size: clamp(.78rem, 1.25vw, .95rem);
+}
+
+@keyframes nickname-sheen {
+  0%, 62%, 100% { background-position: -180% 0, 0 0; }
+  78% { background-position: 310% 0, 0 0; }
+}
+
+@keyframes nickname-spark {
+  0%, 35%, 100% { opacity: 0; transform: translate3d(0, 4px, 0) scale(.5); }
+  48% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  60% { opacity: 0; transform: translate3d(-5px, -5px, 0) scale(.7); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge,
+  .spark { animation: none; }
+}

@@ -7,12 +7,16 @@ import { arenaRules } from "@/data/arena";
 import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
 import { getPublicArenaCompetitionData } from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
+import { getPublicPlayerNicknames } from "@/lib/player-nicknames-server";
 
 export const metadata = createPageMetadata("Categorias e cinturões", "Peso Pena, Peso Médio e Peso Pesado: atributos, regras e cinturões da Arena X1 Brasil.");
 export const dynamic = "force-dynamic";
 
 export default async function CategoriesPage() {
-  const competition = await getPublicArenaCompetitionData();
+  const [competition, nicknames] = await Promise.all([
+    getPublicArenaCompetitionData(),
+    getPublicPlayerNicknames(),
+  ]);
   const entriesByPlayer = new Map(
     competition.rankingEntries.map((entry) => [
       getCategoryPlayerRankingKey(entry.categoryId, entry.playerId),
@@ -35,6 +39,7 @@ export default async function CategoriesPage() {
           <ChampionsGrid
             entriesByPlayer={entriesByPlayer}
             championsByCategory={competition.championsByCategory}
+            nicknames={nicknames}
           />
         </div>
       </section>

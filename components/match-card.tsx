@@ -1,6 +1,8 @@
 import { CalendarDays, Clock3, MapPin, Swords } from "lucide-react";
 import { categories, officialPlayers } from "@/data/arena";
-import type { Event, Match } from "@/lib/types";
+import { createPlayerNicknameMap } from "@/lib/player-nicknames";
+import type { Event, Match, PlayerNickname } from "@/lib/types";
+import { PlayerNicknameBadge } from "./player-nickname-badge";
 
 const typeLabels: Record<Match["type"], string> = {
   normal: "Normal",
@@ -24,12 +26,21 @@ const methodLabels: Record<NonNullable<Match["result"]>["method"], string> = {
   walkover: "W.O.",
 };
 
-export function MatchCard({ match, event }: { match: Match; event: Event }) {
+export function MatchCard({
+  match,
+  event,
+  nicknames = [],
+}: {
+  match: Match;
+  event: Event;
+  nicknames?: readonly PlayerNickname[];
+}) {
   const playerA = officialPlayers.find((player) => player.id === match.playerAId);
   const playerB = officialPlayers.find((player) => player.id === match.playerBId);
   const category = categories.find((item) => item.id === match.categoryId);
   const startsAt = new Date(match.scheduledAt ?? event.startsAt);
   const score = match.result?.score;
+  const nicknameByPlayer = createPlayerNicknameMap(nicknames);
 
   return (
     <article className="match-card">
@@ -48,6 +59,12 @@ export function MatchCard({ match, event }: { match: Match; event: Event }) {
         <div>
           <span>A</span>
           <strong>{playerA?.name ?? "Jogador a definir"}</strong>
+          {nicknameByPlayer.get(match.playerAId) && (
+            <PlayerNicknameBadge
+              nickname={nicknameByPlayer.get(match.playerAId)!}
+              size="compact"
+            />
+          )}
         </div>
         {score ? (
           <div className="match-card__score" aria-label={`Placar ${score.playerA} a ${score.playerB}`}>
@@ -59,6 +76,12 @@ export function MatchCard({ match, event }: { match: Match; event: Event }) {
         <div>
           <span>B</span>
           <strong>{playerB?.name ?? "Jogador a definir"}</strong>
+          {nicknameByPlayer.get(match.playerBId) && (
+            <PlayerNicknameBadge
+              nickname={nicknameByPlayer.get(match.playerBId)!}
+              size="compact"
+            />
+          )}
         </div>
       </div>
       <div className="match-card__bottom">

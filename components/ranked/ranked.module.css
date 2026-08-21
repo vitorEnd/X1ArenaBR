@@ -1669,8 +1669,340 @@
   margin-top: 18px;
 }
 
+.nicknameManager {
+  margin-bottom: 18px;
+  border-color: rgba(245, 184, 0, 0.28);
+  background:
+    linear-gradient(120deg, rgba(245, 184, 0, 0.045), transparent 42%),
+    #101010;
+}
+
+.nicknameManagerHeader,
+.nicknameManagerActions,
+.nicknameColorOption,
+.nicknamePlayerOption,
+.nicknameManagerCount {
+  display: flex;
+  align-items: center;
+}
+
+.nicknameManagerHeader {
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.nicknameManagerCount {
+  min-width: 132px;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(245, 184, 0, 0.24);
+  padding: 12px 16px;
+  background: rgba(245, 184, 0, 0.055);
+  color: var(--ranked-gold-light);
+}
+
+.nicknameManagerCount strong {
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 1.4rem;
+}
+
+.nicknameManagerCount span {
+  color: #8d8d8d;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.nicknameManagerGrid {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.82fr) minmax(0, 1.18fr);
+  gap: 18px;
+  margin-top: 22px;
+}
+
+.nicknamePlayerColumn,
+.nicknameEditor {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  background: #090909;
+}
+
+.nicknamePlayerList {
+  display: grid;
+  max-height: 420px;
+  gap: 6px;
+  margin-top: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.nicknamePlayerOption {
+  width: 100%;
+  min-height: 64px;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 11px 13px;
+  background: #0d0d0d;
+  color: var(--ranked-white);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.nicknamePlayerOption:hover,
+.nicknamePlayerOptionActive {
+  border-color: rgba(245, 184, 0, 0.48);
+  background: rgba(245, 184, 0, 0.06);
+}
+
+.nicknamePlayerOption:hover {
+  transform: translateX(2px);
+}
+
+.nicknamePlayerOption > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.nicknamePlayerOption strong,
+.nicknameEditorIdentity > strong,
+.nicknamePreviewStage > strong {
+  font-family: var(--font-barlow), sans-serif;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.nicknamePlayerOption strong {
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nicknamePlayerOption small,
+.nicknameEditorIdentity small {
+  color: #818181;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.nicknameEditor {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.nicknameEditorIdentity {
+  display: grid;
+  gap: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  padding-bottom: 14px;
+}
+
+.nicknameEditorIdentity > strong {
+  margin-top: 2px;
+  font-size: 1.65rem;
+}
+
+.nicknameColorFieldset {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.nicknameColorFieldset legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+  color: #bababa;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.nicknameColorOptions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.nicknameColorOption {
+  position: relative;
+  min-width: 0;
+  min-height: 72px;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 11px;
+  background: #0c0c0c;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.nicknameColorOption input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.nicknameColorOption:focus-within,
+.nicknameColorOptionActive {
+  border-color: var(--ranked-gold);
+  background: rgba(245, 184, 0, 0.055);
+}
+
+.nicknameColorOption > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.nicknameColorOption strong {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+}
+
+.nicknameColorOption small {
+  color: #747474;
+  font-size: 0.62rem;
+  line-height: 1.25;
+}
+
+.nicknameColorSwatchgold,
+.nicknameColorSwatchred,
+.nicknameColorSwatchpurple {
+  width: 13px;
+  height: 38px;
+  flex: 0 0 auto;
+  clip-path: polygon(50% 0, 100% 12%, 100% 88%, 50% 100%, 0 88%, 0 12%);
+}
+
+.nicknameColorSwatchgold {
+  background: linear-gradient(#fff1a6, #f5b800 54%, #704500);
+  box-shadow: 0 0 15px rgba(245, 184, 0, 0.42);
+}
+
+.nicknameColorSwatchred {
+  background: linear-gradient(#ffb1a9, #e51f2b 54%, #58030a);
+  box-shadow: 0 0 15px rgba(229, 31, 43, 0.42);
+}
+
+.nicknameColorSwatchpurple {
+  background: linear-gradient(#efc8ff, #a93cff 54%, #3f0866);
+  box-shadow: 0 0 15px rgba(169, 60, 255, 0.42);
+}
+
+.nicknamePreviewStage {
+  position: relative;
+  display: grid;
+  min-height: 132px;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  padding: 20px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(245, 184, 0, 0.08), transparent 55%),
+    #050505;
+  text-align: center;
+}
+
+.nicknamePreviewStage::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, 0.045) 49%, transparent 60%);
+  content: "";
+  transform: translateX(-100%);
+  animation: nicknameManagerSweep 5.2s ease-in-out infinite;
+}
+
+.nicknamePreviewStage > span {
+  color: #707070;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.nicknamePreviewStage > strong {
+  font-size: 1.35rem;
+}
+
+.nicknameManagerPreview {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  overflow: hidden;
+  padding: 0.28rem 0.7rem;
+  font: italic 900 0.7rem/1 var(--font-barlow), sans-serif;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nicknameManagerPreviewgold {
+  border: 1px solid rgba(245, 184, 0, 0.72);
+  background: linear-gradient(110deg, rgba(83, 49, 0, 0.76), rgba(17, 13, 5, 0.94));
+  box-shadow: 0 0 16px rgba(245, 184, 0, 0.2), inset 0 0 12px rgba(255, 212, 71, 0.08);
+  color: #ffe784;
+  text-shadow: 0 0 8px rgba(245, 184, 0, 0.58);
+}
+
+.nicknameManagerPreviewred {
+  border: 1px solid rgba(238, 46, 55, 0.72);
+  background: linear-gradient(110deg, rgba(91, 5, 13, 0.78), rgba(18, 5, 7, 0.95));
+  box-shadow: 0 0 17px rgba(238, 46, 55, 0.24), inset 0 0 12px rgba(255, 84, 91, 0.1);
+  color: #ff969a;
+  text-shadow: 0 0 8px rgba(238, 46, 55, 0.66);
+}
+
+.nicknameManagerPreviewpurple {
+  border: 1px solid rgba(179, 75, 255, 0.74);
+  background: linear-gradient(110deg, rgba(63, 7, 98, 0.82), rgba(13, 4, 20, 0.96));
+  box-shadow: 0 0 19px rgba(179, 75, 255, 0.28), inset 0 0 12px rgba(223, 153, 255, 0.11);
+  color: #e3a9ff;
+  text-shadow: 0 0 9px rgba(179, 75, 255, 0.72);
+}
+
+.nicknameManagerActions {
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+@keyframes nicknameManagerSweep {
+  0%, 66% { transform: translateX(-100%); }
+  88%, 100% { transform: translateX(100%); }
+}
+
 @media (max-width: 760px) {
   .supportHistoryList { grid-template-columns: 1fr; }
+
+  .nicknameManagerHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .nicknameManagerGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .nicknameColorOptions {
+    grid-template-columns: 1fr;
+  }
 }
 
 .rankLadder {
@@ -2469,7 +2801,8 @@
   .loadingState svg,
   .queueStage::after,
   .searchSweep,
-  .liveDot {
+  .liveDot,
+  .nicknamePreviewStage::before {
     animation: none;
   }
 
@@ -2477,7 +2810,9 @@
   .secondaryButton,
   .dangerButton,
   .quietButton,
-  .placementTrackBar span {
+  .placementTrackBar span,
+  .nicknamePlayerOption,
+  .nicknameColorOption {
     transition: none;
   }
 

@@ -4,24 +4,41 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, Search, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import {
   categories,
   officialPlayers,
   officialRankingEntries,
 } from "@/data/arena";
 import { buildCategoryRanking } from "@/lib/ranking";
-import type { CategoryId, RankingEntry } from "@/lib/types";
+import { createPlayerNicknameMap } from "@/lib/player-nicknames";
+import type { CategoryId, PlayerNickname, RankingEntry } from "@/lib/types";
 
 type Filter = CategoryId | "all" | "unassigned";
 
-export function PlayerDirectory({ entries: externalEntries }: { readonly entries?: Map<string, RankingEntry> }) {
+export function PlayerDirectory({
+  entries: externalEntries,
+  nicknames = [],
+}: {
+  readonly entries?: Map<string, RankingEntry>;
+  readonly nicknames?: readonly PlayerNickname[];
+}) {
   const [category, setCategory] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const normalized = query.trim().toLocaleLowerCase("pt-BR");
+  const nicknameByPlayer = useMemo(
+    () => createPlayerNicknameMap(nicknames),
+    [nicknames],
+  );
   const hasUnassignedPlayers = officialPlayers.some(
     (player) => !player.currentCategoryId,
   );
-  const rankingEntries = externalEntries ?? new Map(officialRankingEntries.map((entry) => [entry.playerId, entry]));
+  const rankingEntries = useMemo(
+    () => externalEntries ?? new Map(
+      officialRankingEntries.map((entry) => [entry.playerId, entry]),
+    ),
+    [externalEntries],
+  );
   const rankingPositions = useMemo(() => {
     const map = new Map<string, string>();
     categories.forEach((item) => {
@@ -39,7 +56,11 @@ export function PlayerDirectory({ entries: externalEntries }: { readonly entries
         : player.currentCategoryId === category);
     const queryMatches =
       !normalized ||
-      player.name.toLocaleLowerCase("pt-BR").includes(normalized);
+      player.name.toLocaleLowerCase("pt-BR").includes(normalized) ||
+      nicknameByPlayer
+        .get(player.id)
+        ?.nickname.toLocaleLowerCase("pt-BR")
+        .includes(normalized);
     return categoryMatches && queryMatches;
   });
 
@@ -146,6 +167,13 @@ export function PlayerDirectory({ entries: externalEntries }: { readonly entries
                     {categoryData?.name ?? "Categoria a definir"}
                   </span>
                   <h2>{player.name}</h2>
+                  {nicknameByPlayer.get(player.id) && (
+                    <div className="player-card__nickname">
+                      <PlayerNicknameBadge
+                        nickname={nicknameByPlayer.get(player.id)!}
+                      />
+                    </div>
+                  )}
                   <dl>
                     <div>
                       <dt>Pontos</dt>

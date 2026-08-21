@@ -10,6 +10,7 @@ import { Ticker } from "@/components/ticker";
 import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
 import { getPublicArenaCompetitionData } from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
+import { getPublicPlayerNicknames } from "@/lib/player-nicknames-server";
 
 export const metadata = createPageMetadata(
   "WOF Arena X1 BR | Rankings, Eventos e Cinturões",
@@ -20,7 +21,10 @@ export const metadata = createPageMetadata(
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const competition = await getPublicArenaCompetitionData();
+  const [competition, nicknames] = await Promise.all([
+    getPublicArenaCompetitionData(),
+    getPublicPlayerNicknames(),
+  ]);
   const entriesByPlayer = new Map(
     competition.rankingEntries.map((entry) => [
       getCategoryPlayerRankingKey(entry.categoryId, entry.playerId),
@@ -33,7 +37,7 @@ export default async function Home() {
       <Ticker />
       <ArenaStats />
 
-      <NextEventSection cards={competition.cards} />
+      <NextEventSection cards={competition.cards} nicknames={nicknames} />
 
       <section className="section section--graphite">
         <div className="page-container">
@@ -45,6 +49,7 @@ export default async function Home() {
           <ChampionsGrid
             entriesByPlayer={entriesByPlayer}
             championsByCategory={competition.championsByCategory}
+            nicknames={nicknames}
           />
           <Link href="/categorias" className="button-ghost section-cta">
             Conhecer os cinturões <ArrowRight size={18} aria-hidden="true" />
@@ -63,6 +68,7 @@ export default async function Home() {
             compact
             entriesByPlayer={entriesByPlayer}
             championIdsByCategory={competition.championIdsByCategory}
+            nicknames={nicknames}
           />
           <RankingsCta />
         </div>

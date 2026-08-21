@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { officialPlayers } from "@/data/arena";
+import { categories, officialPlayers } from "@/data/arena";
 import type { ArenaCard, ArenaCardMatch } from "@/lib/arena-card-types";
 import type {
   RankedMutationResponse,
@@ -11,6 +11,7 @@ import type {
   RankedSupportMatch,
   RankedSupportQueueEntry,
   RankedSupportResponse,
+  RankedSupportOfficialPlayer,
 } from "@/components/ranked/adapter";
 import {
   getRankedApiContext,
@@ -41,6 +42,7 @@ function emptySupport(
     frozenMatches: [],
     matchHistory: [],
     accounts: [],
+    officialPlayers: [],
     audit: [],
     arenaCards: [],
   };
@@ -130,12 +132,12 @@ const supportIntentSchema = z.discriminatedUnion("intent", [
     playerId: z.string().min(1).max(80),
     nickname: z.string().trim().min(2).max(48),
     color: z.enum(["purple", "gold", "red"]),
-    internalNote: z.string().trim().min(5).max(1000),
+    internalNote: z.string().trim().max(1000).default(""),
   }),
   z.object({
     intent: z.literal("delete-player-nickname"),
     playerId: z.string().min(1).max(80),
-    internalNote: z.string().trim().min(5).max(1000),
+    internalNote: z.string().trim().max(1000).default(""),
   }),
   z.object({
     intent: z.literal("set-player-avatar"),
@@ -158,6 +160,9 @@ const supportIntentSchema = z.discriminatedUnion("intent", [
 ]);
 
 const officialPlayerIds = new Set<string>(officialPlayers.map((player) => player.id));
+const categoryNames = new Map<string, string>(
+  categories.map((category) => [category.id, category.name]),
+);
 
 export async function GET(request: Request) {
   try {
@@ -261,6 +266,7 @@ export async function GET(request: Request) {
           .order("position", { ascending: true }),
       ]);
     for (const result of [
+      nicknamesResult,
       queueResult,
       activeResult,
       frozenResult,
@@ -439,12 +445,6 @@ export async function GET(request: Request) {
         penaltyByProfile.set(item.profile_id, item.ends_at);
       }
     }
-    const nicknamesByPlayer = new Map(
-      (nicknamesResult.data ?? []).map((item) => [
-        String(item.player_id),
-        { playerId: String(item.player_id), nickname: String(item.nickname), color: item.color as "purple" | "gold" | "red" },
-      ]),
-    );
     const accounts: RankedSupportAccount[] = (accountsResult.data ?? []).map(
       (account) => {
         const publicAccount = toRankedOpponent(
@@ -455,7 +455,6 @@ export async function GET(request: Request) {
         return {
           profileId: account.id,
           username: account.username,
-          nickname: nicknamesByPlayer.get(account.id) ?? null,
           avatarUrl: publicAccount?.avatarUrl ?? null,
           mmr: account.placement_matches === 5 ? account.mmr : null,
           tier: publicAccount?.tier ?? null,
@@ -466,6 +465,28 @@ export async function GET(request: Request) {
           usernameHistory: usernameHistoryByProfile.get(account.id) ?? [],
         };
       },
+    );
+    const nicknamesByPlayer = new Map(
+      (nicknamesResult.data ?? [])
+        .filter((item) => officialPlayerIds.has(String(item.player_id)))
+        .map((item) => [
+          String(item.player_id),
+          {
+            playerId: String(item.player_id),
+            nickname: String(item.nickname),
+            color: item.color as "purple" | "gold" | "red",
+          },
+        ]),
+    );
+    const supportOfficialPlayers: RankedSupportOfficialPlayer[] = officialPlayers.map(
+      (player) => ({
+        playerId: player.id,
+        name: player.name,
+        categoryName:
+          (player.currentCategoryId && categoryNames.get(player.currentCategoryId)) ||
+          "Sem categoria",
+        nickname: nicknamesByPlayer.get(player.id) ?? null,
+      }),
     );
     const arenaMatchesByCard = new Map<string, ArenaCardMatch[]>();
     for (const match of arenaCardMatchesResult.data ?? []) {
@@ -507,6 +528,7 @@ export async function GET(request: Request) {
       frozenMatches,
       matchHistory,
       accounts,
+      officialPlayers: supportOfficialPlayers,
       audit,
       arenaCards,
     };
@@ -525,14 +547,20 @@ export async function POST(request: Request) {
     const { supabase, admin, user } = await requireSupportContext();
 
     if (parsed.data.intent === "set-player-nickname") {
+      if (!officialPlayerIds.has(parsed.data.playerId)) {
+        throw new RankedRequestError("Jogador oficial invÃ¡lido.", 404);
+      }
       const result = await admin.from("arena_player_nicknames").upsert({ player_id: parsed.data.playerId, nickname: parsed.data.nickname, color: parsed.data.color, updated_by: user.id }, { onConflict: "player_id" });
       if (result.error) throw result.error;
-      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: "set_player_nickname", target_type: "player", target_id: parsed.data.playerId, next_state: { nickname: parsed.data.nickname, color: parsed.data.color }, note: parsed.data.internalNote });
+      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: "set_player_nickname", target_type: "official_player", target_id: parsed.data.playerId, next_state: { nickname: parsed.data.nickname, color: parsed.data.color }, note: parsed.data.internalNote || "Apelido oficial atualizado pela Central de Suporte." });
       if (auditResult.error) throw auditResult.error;
     } else if (parsed.data.intent === "delete-player-nickname") {
+      if (!officialPlayerIds.has(parsed.data.playerId)) {
+        throw new RankedRequestError("Jogador oficial invÃ¡lido.", 404);
+      }
       const result = await admin.from("arena_player_nicknames").delete().eq("player_id", parsed.data.playerId);
       if (result.error) throw result.error;
-      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: "delete_player_nickname", target_type: "player", target_id: parsed.data.playerId, note: parsed.data.internalNote });
+      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: "delete_player_nickname", target_type: "official_player", target_id: parsed.data.playerId, note: parsed.data.internalNote || "Apelido oficial removido pela Central de Suporte." });
       if (auditResult.error) throw auditResult.error;
     } else if (parsed.data.intent === "set-player-avatar" || parsed.data.intent === "delete-player-avatar") {
       const path = `${parsed.data.playerId}/avatar.webp`;

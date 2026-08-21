@@ -3,20 +3,25 @@
 import { motion } from "framer-motion";
 import { Crown, Shield, Trophy } from "lucide-react";
 import Link from "next/link";
+import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import { categories, officialChampions, officialPlayers, officialRankingEntries } from "@/data/arena";
 import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
+import { createPlayerNicknameMap } from "@/lib/player-nicknames";
 import { calculateRankingEntry } from "@/lib/ranking";
-import type { CategoryId, Champion, RankingEntry } from "@/lib/types";
+import type { CategoryId, Champion, PlayerNickname, RankingEntry } from "@/lib/types";
 
 type ChampionsGridProps = {
   entriesByPlayer?: ReadonlyMap<string, RankingEntry>;
   championsByCategory?: ReadonlyMap<CategoryId, Champion>;
+  nicknames?: readonly PlayerNickname[];
 };
 
 export function ChampionsGrid({
   entriesByPlayer = new Map(),
   championsByCategory = new Map(),
+  nicknames = [],
 }: ChampionsGridProps) {
+  const nicknameByPlayer = createPlayerNicknameMap(nicknames);
   return (
     <div className="champions-grid">
       {categories.map((category, index) => {
@@ -33,6 +38,7 @@ export function ChampionsGrid({
           : null;
         const hasChampion = Boolean(champion && player);
         const calculatedEntry = rankingEntry ? calculateRankingEntry(rankingEntry) : null;
+        const nickname = player ? nicknameByPlayer.get(player.id) : undefined;
         return <motion.article
           key={category.id}
           className="champion-card"
@@ -60,6 +66,11 @@ export function ChampionsGrid({
               "Cinturão a definir"
             )}
           </h3>
+          {nickname && (
+            <div className="champion-card__nickname">
+              <PlayerNicknameBadge nickname={nickname} />
+            </div>
+          )}
           <p>{hasChampion ? `${champion?.type === "interim" ? "Campeão interino" : "Campeão oficial"} da categoria.` : "A disputa pelo cinturão inaugural começa em breve."}</p>
           <dl>
             <div><dt>Defesas</dt><dd>{champion?.defenses ?? "—"}</dd></div>

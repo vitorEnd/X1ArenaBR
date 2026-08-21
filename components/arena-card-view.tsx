@@ -11,7 +11,9 @@ import {
 import Link from "next/link";
 import { officialPlayers } from "@/data/arena";
 import type { ArenaCard, ArenaCardMatch } from "@/lib/arena-card-types";
-import type { CategoryId } from "@/lib/types";
+import { createPlayerNicknameMap } from "@/lib/player-nicknames";
+import type { CategoryId, PlayerNickname } from "@/lib/types";
+import { PlayerNicknameBadge } from "./player-nickname-badge";
 
 const categoryLabels: Record<CategoryId, string> = {
   "peso-pena": "Peso Leve",
@@ -69,10 +71,12 @@ function ArenaMatch({
   match,
   card,
   variant,
+  nicknameByPlayer,
 }: {
   match: ArenaCardMatch;
   card: ArenaCard;
   variant: ArenaCardVariant;
+  nicknameByPlayer: ReadonlyMap<string, PlayerNickname>;
 }) {
   const scheduledAt = match.scheduledAt ?? card.startsAt;
   const hasScore = match.playerAScore !== null && match.playerBScore !== null;
@@ -118,7 +122,15 @@ function ArenaMatch({
             Jogador A
             {playerAWon && <em><Trophy size={11} aria-hidden="true" /> Vencedor</em>}
           </span>
-          <Link href={`/jogadores/${playerSlug(match.playerAId)}`}>{playerName(match.playerAId)}</Link>
+          <Link href={`/jogadores/${playerSlug(match.playerAId)}`}>
+            <span>{playerName(match.playerAId)}</span>
+            {nicknameByPlayer.get(match.playerAId) && (
+              <PlayerNicknameBadge
+                nickname={nicknameByPlayer.get(match.playerAId)!}
+                size="compact"
+              />
+            )}
+          </Link>
         </div>
 
         {hasScore ? (
@@ -135,7 +147,15 @@ function ArenaMatch({
             Jogador B
             {playerBWon && <em><Trophy size={11} aria-hidden="true" /> Vencedor</em>}
           </span>
-          <Link href={`/jogadores/${playerSlug(match.playerBId)}`}>{playerName(match.playerBId)}</Link>
+          <Link href={`/jogadores/${playerSlug(match.playerBId)}`}>
+            <span>{playerName(match.playerBId)}</span>
+            {nicknameByPlayer.get(match.playerBId) && (
+              <PlayerNicknameBadge
+                nickname={nicknameByPlayer.get(match.playerBId)!}
+                size="compact"
+              />
+            )}
+          </Link>
         </div>
       </div>
 
@@ -153,10 +173,13 @@ function ArenaMatch({
 export function ArenaCardView({
   card,
   variant = "schedule",
+  nicknames = [],
 }: {
   readonly card: ArenaCard;
   readonly variant?: ArenaCardVariant;
+  readonly nicknames?: readonly PlayerNickname[];
 }) {
+  const nicknameByPlayer = createPlayerNicknameMap(nicknames);
   const categories = (["peso-medio", "peso-pena", "peso-pesado"] as const)
     .map((categoryId) => ({
       categoryId,
@@ -220,7 +243,13 @@ export function ArenaCardView({
               </div>
               <div className="matches-grid">
                 {group.matches.map((match) => (
-                  <ArenaMatch key={match.id} match={match} card={card} variant={variant} />
+                  <ArenaMatch
+                    key={match.id}
+                    match={match}
+                    card={card}
+                    variant={variant}
+                    nicknameByPlayer={nicknameByPlayer}
+                  />
                 ))}
               </div>
             </section>

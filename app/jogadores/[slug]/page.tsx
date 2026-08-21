@@ -3,6 +3,7 @@ import { ArrowLeft, Crown, History, Shield, UserRound } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MatchCard } from "@/components/match-card";
+import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import type { Event } from "@/lib/types";
 import {
   categories,
@@ -15,6 +16,7 @@ import {
   getPublicPlayerMatchHistory,
   getPublicPlayerRankingEntries,
 } from "@/lib/arena-cards-server";
+import { getPublicPlayerNicknames } from "@/lib/player-nicknames-server";
 import {
   buildCategoryRanking,
   calculateGoalDifference,
@@ -22,6 +24,8 @@ import {
 } from "@/lib/ranking";
 
 type PlayerPageProps = { params: Promise<{ slug: string }> };
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return officialPlayers.map((player) => ({ slug: player.slug }));
@@ -65,7 +69,13 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const category = categories.find(
     (item) => item.id === player.currentCategoryId,
   );
-  const rankingEntries = await getPublicPlayerRankingEntries();
+  const [rankingEntries, history, liveBeltHistory, nicknames] = await Promise.all([
+    getPublicPlayerRankingEntries(),
+    getPublicPlayerMatchHistory(player.id),
+    getPublicPlayerBeltHistory(player.id),
+    getPublicPlayerNicknames(),
+  ]);
+  const nickname = nicknames.find((item) => item.playerId === player.id);
   const entry = rankingEntries.find(
     (item) => item.playerId === player.id && item.categoryId === player.currentCategoryId,
   ) ?? rankingEntries.find((item) => item.playerId === player.id);
@@ -75,11 +85,9 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const standing = ranking?.standings.find(
     (item) => item.playerId === player.id,
   );
-  const history = await getPublicPlayerMatchHistory(player.id);
   const storedBeltHistory = officialBeltHistory.filter(
     (record) => record.playerId === player.id,
   );
-  const liveBeltHistory = await getPublicPlayerBeltHistory(player.id);
   const beltHistory = [...storedBeltHistory, ...liveBeltHistory].filter(
     (record, index, records) => records.findIndex((item) => item.id === record.id) === index,
   );
@@ -107,6 +115,11 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
               {player.status === "active" ? "Ativo" : "Inativo"}
             </p>
             <h1>{player.name}</h1>
+            {nickname && (
+              <div className="player-profile-hero__nickname">
+                <PlayerNicknameBadge nickname={nickname} size="hero" />
+              </div>
+            )}
           </div>
           <div className="player-profile-hero__rank">
             <span>Ranking</span>
@@ -178,7 +191,14 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                   matchIds: [match.id],
                   dataStatus: "official",
                 };
-                return <MatchCard key={match.id} match={match} event={event} />;
+                return (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    event={event}
+                    nicknames={nicknames}
+                  />
+                );
               })}
             </div>
           ) : (

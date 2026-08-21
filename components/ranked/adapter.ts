@@ -64,7 +64,6 @@ export interface RankedPublicProfile {
 export interface RankedOpponent {
   readonly id: string;
   readonly username: string;
-  readonly nickname?: RankedPlayerNickname | null;
   readonly avatarUrl: string | null;
   readonly mmr: number | null;
   readonly tier: RankedTier | null;
@@ -219,7 +218,6 @@ export interface RankedSupportAuditEntry {
 export interface RankedSupportAccount {
   readonly profileId: string;
   readonly username: string;
-  readonly nickname?: RankedPlayerNickname | null;
   readonly avatarUrl: string | null;
   readonly mmr: number | null;
   readonly tier: RankedTier | null;
@@ -233,6 +231,13 @@ export interface RankedSupportAccount {
   }[];
 }
 
+export interface RankedSupportOfficialPlayer {
+  readonly playerId: string;
+  readonly name: string;
+  readonly categoryName: string;
+  readonly nickname: RankedPlayerNickname | null;
+}
+
 export interface RankedSupportResponse {
   readonly configured: boolean;
   readonly authenticated: boolean;
@@ -242,6 +247,7 @@ export interface RankedSupportResponse {
   readonly frozenMatches: readonly RankedSupportMatch[];
   readonly matchHistory: readonly RankedSupportHistoryMatch[];
   readonly accounts: readonly RankedSupportAccount[];
+  readonly officialPlayers: readonly RankedSupportOfficialPlayer[];
   readonly audit: readonly RankedSupportAuditEntry[];
   readonly arenaCards: readonly ArenaCard[];
 }
@@ -315,12 +321,12 @@ export type RankedSupportIntent =
       readonly playerId: string;
       readonly nickname: string;
       readonly color: PlayerNicknameColor;
-      readonly internalNote: string;
+      readonly internalNote?: string;
     }
   | {
       readonly intent: "delete-player-nickname";
       readonly playerId: string;
-      readonly internalNote: string;
+      readonly internalNote?: string;
     }
   | {
       readonly intent: "set-player-avatar";

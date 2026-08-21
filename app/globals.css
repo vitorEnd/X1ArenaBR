@@ -5297,3 +5297,42 @@ img {
     font-size: clamp(1.3rem, 7vw, 2rem);
   }
 }
+
+/* Apelidos oficiais */
+.player-card__nickname,
+.champion-card__nickname,
+.player-profile-hero__nickname {
+  position: relative;
+  z-index: 2;
+  display: flex;
+}
+
+.player-card__nickname {
+  margin: -13px 0 20px;
+}
+
+.champion-card__nickname {
+  margin: -3px 0 14px;
+}
+
+.player-profile-hero__nickname {
+  margin-top: 10px;
+}
+
+.arena-match-card .match-card__versus a,
+.ranking-mobile-card__head a {
+  display: grid;
+  width: fit-content;
+  gap: 6px;
+}
+
+.arena-match-card .match-card__player:last-child a {
+  justify-items: end;
+}
+
+@media (max-width: 520px) {
+  .arena-match-card .match-card__versus a,
+  .arena-match-card .match-card__player:last-child a {
+    justify-items: center;
+  }
+}

@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { creators, howItWorks } from "@/data/arena";
 import type { ArenaCard } from "@/lib/arena-card-types";
 import { DISCORD_URL } from "@/lib/site";
+import type { PlayerNickname } from "@/lib/types";
 import { ArenaCardView } from "./arena-card-view";
 import { BrandMark } from "./brand-mark";
 import { SectionHeading } from "./section-heading";
@@ -76,7 +77,13 @@ export function ArenaStats() {
   );
 }
 
-export function NextEventSection({ cards }: { readonly cards: readonly ArenaCard[] }) {
+export function NextEventSection({
+  cards,
+  nicknames = [],
+}: {
+  readonly cards: readonly ArenaCard[];
+  readonly nicknames?: readonly PlayerNickname[];
+}) {
   const scheduledCards = cards
     .filter((card) => card.status === "live" || card.status === "announced")
     .toSorted((first, second) => {
@@ -126,7 +133,9 @@ export function NextEventSection({ cards }: { readonly cards: readonly ArenaCard
             </a>
           </motion.div>
         )}
-        {nextOfficialCard && <ArenaCardView card={nextOfficialCard} />}
+        {nextOfficialCard && (
+          <ArenaCardView card={nextOfficialCard} nicknames={nicknames} />
+        )}
       </div>
     </section>
   );

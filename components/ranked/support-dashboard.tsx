@@ -29,6 +29,7 @@ import {
 import { RankEmblem } from "./rank-emblem";
 import styles from "./ranked.module.css";
 import { ArenaCardManager } from "./arena-card-manager";
+import { OfficialPlayerNicknameManager } from "./official-player-nickname-manager";
 import { SupportActionDialog } from "./support-action-dialog";
 import { RankedConfigurationNotice, RankedError, RankedLoading } from "./ui-feedback";
 
@@ -100,6 +101,7 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
       .on("postgres_changes", { event: "*", schema: "public", table: "support_audit_log" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "arena_cards" }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "arena_card_matches" }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "arena_player_nicknames" }, () => void load())
       .subscribe();
     const fallback = setInterval(() => void load(), 15_000);
     return () => {
@@ -180,6 +182,12 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
         <div className={styles.supportStat}><span>Exigem decisão</span><strong>{response.frozenMatches.length}</strong></div>
         <div className={styles.supportStat}><span>Partidas em 24h</span><strong>{matchHistory.length}</strong></div>
       </div>
+
+      <OfficialPlayerNicknameManager
+        players={response.officialPlayers}
+        busy={busy}
+        onSubmit={mutate}
+      />
 
       <ArenaCardManager cards={response.arenaCards} busy={busy} onSubmit={mutate} />
 

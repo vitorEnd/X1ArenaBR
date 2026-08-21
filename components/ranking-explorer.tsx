@@ -4,19 +4,22 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Crown, Search, ShieldQuestion, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import {
   categories,
   officialChampions,
   officialPlayers,
 } from "@/data/arena";
 import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
+import { createPlayerNicknameMap } from "@/lib/player-nicknames";
 import { buildCategoryRanking } from "@/lib/ranking";
-import type { CategoryId, Player, RankingEntry } from "@/lib/types";
+import type { CategoryId, Player, PlayerNickname, RankingEntry } from "@/lib/types";
 
 type RankingExplorerProps = {
   compact?: boolean;
   entriesByPlayer?: ReadonlyMap<string, RankingEntry>;
   championIdsByCategory?: ReadonlyMap<CategoryId, string>;
+  nicknames?: readonly PlayerNickname[];
 };
 
 function FormDots({ form }: { form: readonly ("win" | "loss")[] }) {
@@ -39,6 +42,7 @@ export function RankingExplorer({
   compact = false,
   entriesByPlayer = new Map(),
   championIdsByCategory = new Map(),
+  nicknames = [],
 }: RankingExplorerProps) {
   const [categoryId, setCategoryId] = useState<CategoryId>("peso-pena");
   const [query, setQuery] = useState("");
@@ -80,13 +84,23 @@ export function RankingExplorer({
     () => new Map<string, Player>(officialPlayers.map((player) => [player.id, player])),
     [],
   );
+  const nicknameByPlayer = useMemo(
+    () => createPlayerNicknameMap(nicknames),
+    [nicknames],
+  );
   const championPlayer = championRecord ? officialPlayers.find((player) => player.id === championRecord.playerId) : null;
+  const championNickname = championPlayer
+    ? nicknameByPlayer.get(championPlayer.id)
+    : undefined;
   const championStanding = ranking.champion;
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
   const visibleStandings = ranking.standings
     .filter((entry) => {
       const player = playerById.get(entry.playerId);
-      return !normalizedQuery || player?.name.toLocaleLowerCase("pt-BR").includes(normalizedQuery);
+      const nickname = nicknameByPlayer.get(entry.playerId)?.nickname;
+      return !normalizedQuery ||
+        player?.name.toLocaleLowerCase("pt-BR").includes(normalizedQuery) ||
+        nickname?.toLocaleLowerCase("pt-BR").includes(normalizedQuery);
     })
     .slice(0, compact ? 5 : undefined);
 
@@ -141,6 +155,9 @@ export function RankingExplorer({
           {championPlayer ? (
             <Link href={`/jogadores/${championPlayer.slug}`} className="ranking-player champion-row__link">
               <strong>{championPlayer.name}</strong>
+              {championNickname && (
+                <PlayerNicknameBadge nickname={championNickname} size="compact" />
+              )}
             </Link>
           ) : (
             <strong>Cinturão a definir</strong>
@@ -197,6 +214,7 @@ export function RankingExplorer({
                     {visibleStandings.map((entry) => {
                       const player = playerById.get(entry.playerId);
                       if (!player) return null;
+                      const nickname = nicknameByPlayer.get(entry.playerId);
                       return (
                         <motion.tr key={entry.playerId} layout>
                           <td><strong>{entry.marker}</strong></td>
@@ -207,6 +225,9 @@ export function RankingExplorer({
                               </span>
                               <span>
                                 <strong>{player.name}</strong>
+                                {nickname && (
+                                  <PlayerNicknameBadge nickname={nickname} size="compact" />
+                                )}
                                 {player.status === "inactive" && <small>Inativo</small>}
                               </span>
                             </Link>
@@ -231,11 +252,17 @@ export function RankingExplorer({
                 {visibleStandings.map((entry) => {
                   const player = playerById.get(entry.playerId);
                   if (!player) return null;
+                  const nickname = nicknameByPlayer.get(entry.playerId);
                   return (
                     <motion.article key={entry.playerId} className="ranking-mobile-card" layout>
                       <div className="ranking-mobile-card__head">
                         <span>{entry.marker}</span>
-                        <Link href={`/jogadores/${player.slug}`}>{player.name}</Link>
+                        <Link href={`/jogadores/${player.slug}`}>
+                          {player.name}
+                          {nickname && (
+                            <PlayerNicknameBadge nickname={nickname} size="compact" />
+                          )}
+                        </Link>
                         <strong>{entry.points} <small>PTS</small></strong>
                       </div>
                       <div className="ranking-mobile-card__stats">

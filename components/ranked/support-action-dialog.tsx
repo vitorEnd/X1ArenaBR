@@ -42,12 +42,10 @@ export function SupportActionDialog({
   const [playerBMmr, setPlayerBMmr] = useState(() =>
     String(historyMatch?.playerBCurrentMmr ?? 800),
   );
-  const [accountAction, setAccountAction] = useState<"freeze" | "unfreeze" | "ban" | "unban" | "penalize" | "adjust-mmr" | "set-nickname" | "delete-nickname" | "set-avatar" | "delete-avatar">(
+  const [accountAction, setAccountAction] = useState<"freeze" | "unfreeze" | "ban" | "unban" | "penalize" | "adjust-mmr" | "set-avatar" | "delete-avatar">(
     account?.banned ? "unban" : account?.frozen ? "unfreeze" : "freeze",
   );
   const [newMmr, setNewMmr] = useState(() => String(account?.mmr ?? 800));
-  const [nickname, setNickname] = useState(() => account?.nickname?.nickname ?? "");
-  const [nicknameColor, setNicknameColor] = useState<"purple" | "gold" | "red">(() => account?.nickname?.color ?? "purple");
   const [avatarDataUrl, setAvatarDataUrl] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [note, setNote] = useState("");
@@ -69,7 +67,6 @@ export function SupportActionDialog({
 
   const submit = async () => {
     const internalNote = note.trim();
-    if (accountAction === "set-nickname" && nickname.trim().length < 2) { setError("Informe um apelido com pelo menos 2 caracteres."); return; }
     if (internalNote.length < 6) {
       setError("Registre uma observação interna com pelo menos 6 caracteres.");
       return;
@@ -119,11 +116,7 @@ export function SupportActionDialog({
         internalNote,
       };
     } else if (account) {
-      if (accountAction === "set-nickname") {
-        payload = { intent: "set-player-nickname", playerId: account.profileId, nickname: nickname.trim(), color: nicknameColor, internalNote };
-      } else if (accountAction === "delete-nickname") {
-        payload = { intent: "delete-player-nickname", playerId: account.profileId, internalNote };
-      } else if (accountAction === "set-avatar") {
+      if (accountAction === "set-avatar") {
         if (!avatarDataUrl) { setError("Selecione uma imagem."); return; }
         payload = { intent: "set-player-avatar", playerId: account.profileId, avatarDataUrl, internalNote };
       } else if (accountAction === "delete-avatar") {
@@ -245,8 +238,6 @@ export function SupportActionDialog({
                   value={accountAction}
                   onChange={(event) => setAccountAction(event.target.value as typeof accountAction)}
                 >
-                  <option value="set-nickname">Definir/editar apelido</option>
-                  <option value="delete-nickname">Excluir apelido</option>
                   <option value="set-avatar">Enviar foto do jogador</option>
                   <option value="delete-avatar">Excluir foto do jogador</option>
                   <option value="freeze">Congelar jogador</option>
@@ -259,12 +250,6 @@ export function SupportActionDialog({
               </div>
               {accountAction === "set-avatar" && (
                 <div className={styles.field}><label htmlFor="support-player-avatar">Imagem do jogador</label><input id="support-player-avatar" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; if (file.size > 5 * 1024 * 1024) { setError("A imagem deve ter no máximo 5 MB."); return; } const reader = new FileReader(); reader.onload = () => setAvatarDataUrl(String(reader.result ?? "")); reader.readAsDataURL(file); }} /><small>PNG, JPG ou WebP · máximo 5 MB</small></div>
-              )}
-              {accountAction === "set-nickname" && (
-                <>
-                  <div className={styles.field}><label htmlFor="support-nickname">Apelido</label><input id="support-nickname" value={nickname} maxLength={48} onChange={(event) => setNickname(event.target.value)} placeholder="Ex.: Problema da Divisão" /></div>
-                  <div className={styles.field}><label htmlFor="support-nickname-color">Cor</label><select id="support-nickname-color" value={nicknameColor} onChange={(event) => setNicknameColor(event.target.value as typeof nicknameColor)}><option value="purple">Roxo</option><option value="gold">Dourado</option><option value="red">Vermelho</option></select></div>
-                </>
               )}
               {accountAction === "adjust-mmr" && (
                 <div className={styles.field}>
