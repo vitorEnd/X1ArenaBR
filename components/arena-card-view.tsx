@@ -9,6 +9,10 @@ import {
   Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  ArenaCardVotingProvider,
+  ArenaMatchVoting,
+} from "@/components/arena-match-voting";
 import { OfficialPlayerAvatar } from "@/components/official-player-avatar";
 import { officialPlayers } from "@/data/arena";
 import type { ArenaCard, ArenaCardMatch } from "@/lib/arena-card-types";
@@ -72,12 +76,14 @@ function ArenaMatch({
   match,
   card,
   variant,
+  enableVoting,
   nicknameByPlayer,
   playerById,
 }: {
   match: ArenaCardMatch;
   card: ArenaCard;
   variant: ArenaCardVariant;
+  enableVoting: boolean;
   nicknameByPlayer: ReadonlyMap<string, PlayerNickname>;
   playerById: ReadonlyMap<string, Player>;
 }) {
@@ -89,6 +95,8 @@ function ArenaMatch({
   const playerB = playerById.get(match.playerBId);
   const categoryLabel = categoryLabels[match.categoryId];
   const matchLabel = `${playerName(match.playerAId, playerById)} contra ${playerName(match.playerBId, playerById)}`;
+  const playerAName = playerName(match.playerAId, playerById);
+  const playerBName = playerName(match.playerBId, playerById);
 
   return (
     <article
@@ -189,6 +197,16 @@ function ArenaMatch({
           {match.type === "belt" ? "Cinturão" : "Confronto normal"}
         </span>
       </div>
+
+      {enableVoting && (
+        <ArenaMatchVoting
+          matchId={match.id}
+          playerAId={match.playerAId}
+          playerAName={playerAName}
+          playerBId={match.playerBId}
+          playerBName={playerBName}
+        />
+      )}
     </article>
   );
 }
@@ -198,11 +216,13 @@ export function ArenaCardView({
   variant = "schedule",
   nicknames = [],
   players = officialPlayers,
+  enableVoting = false,
 }: {
   readonly card: ArenaCard;
   readonly variant?: ArenaCardVariant;
   readonly nicknames?: readonly PlayerNickname[];
   readonly players?: readonly Player[];
+  readonly enableVoting?: boolean;
 }) {
   const nicknameByPlayer = createPlayerNicknameMap(nicknames);
   const playerById = new Map(players.map((player) => [player.id, player]));
@@ -259,30 +279,53 @@ export function ArenaCardView({
       </header>
 
       <div className="arena-card-categories">
-        {categories.map((group) => {
-          const categoryHeadingId = `${card.id}-${group.categoryId}`;
-          return (
-            <section key={group.categoryId} className="arena-card-category" aria-labelledby={categoryHeadingId}>
-              <div className="arena-card-category__heading">
-                <CategoryHeading id={categoryHeadingId}>{categoryLabels[group.categoryId]}</CategoryHeading>
-                <span>{matchCountLabel(group.matches.length)}</span>
-              </div>
-              <div className="matches-grid">
-                {group.matches.map((match) => (
-                  <ArenaMatch
-                    key={match.id}
-                    match={match}
-                    card={card}
-                    variant={variant}
-                    nicknameByPlayer={nicknameByPlayer}
-                    playerById={playerById}
-                  />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        <ArenaCardVotingProviderBoundary
+          enabled={enableVoting}
+          matchIds={card.matches.map((match) => match.id)}
+        >
+          {categories.map((group) => {
+            const categoryHeadingId = `${card.id}-${group.categoryId}`;
+            return (
+              <section key={group.categoryId} className="arena-card-category" aria-labelledby={categoryHeadingId}>
+                <div className="arena-card-category__heading">
+                  <CategoryHeading id={categoryHeadingId}>{categoryLabels[group.categoryId]}</CategoryHeading>
+                  <span>{matchCountLabel(group.matches.length)}</span>
+                </div>
+                <div className="matches-grid">
+                  {group.matches.map((match) => (
+                    <ArenaMatch
+                      key={match.id}
+                      match={match}
+                      card={card}
+                      variant={variant}
+                      enableVoting={enableVoting}
+                      nicknameByPlayer={nicknameByPlayer}
+                      playerById={playerById}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </ArenaCardVotingProviderBoundary>
       </div>
     </article>
+  );
+}
+
+function ArenaCardVotingProviderBoundary({
+  enabled,
+  matchIds,
+  children,
+}: {
+  readonly enabled: boolean;
+  readonly matchIds: readonly string[];
+  readonly children: React.ReactNode;
+}) {
+  if (!enabled) return children;
+  return (
+    <ArenaCardVotingProvider matchIds={matchIds}>
+      {children}
+    </ArenaCardVotingProvider>
   );
 }

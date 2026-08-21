@@ -4823,6 +4823,190 @@ img {
   border-color: rgba(255, 255, 255, 0.075);
 }
 
+.arena-match-vote {
+  display: grid;
+  gap: 11px;
+  border-top: 1px solid rgba(245, 184, 0, 0.16);
+  padding: 15px 14px 14px;
+  background:
+    linear-gradient(105deg, rgba(245, 184, 0, 0.045), transparent 46%),
+    #090909;
+}
+
+.arena-match-vote__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.arena-match-vote__heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.arena-match-vote__heading span,
+.arena-match-vote__heading small,
+.arena-match-vote__choices small,
+.arena-match-vote__status {
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.arena-match-vote__heading span {
+  color: var(--gold);
+}
+
+.arena-match-vote__heading strong {
+  color: var(--white);
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.arena-match-vote__heading small {
+  color: #777;
+  text-align: right;
+}
+
+.arena-match-vote__choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.arena-match-vote__choices button {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0;
+  padding: 9px 12px;
+  background: #101010;
+  color: var(--white);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.arena-match-vote__choices button:nth-child(2) {
+  text-align: right;
+}
+
+.arena-match-vote__choices button:not(:disabled) {
+  cursor: pointer;
+}
+
+.arena-match-vote__choices button:not(:disabled):hover,
+.arena-match-vote__choices button:not(:disabled):focus-visible,
+.arena-match-vote__choices button.is-selected {
+  border-color: rgba(255, 212, 71, 0.62);
+  background: rgba(245, 184, 0, 0.075);
+}
+
+.arena-match-vote__choices button:focus-visible {
+  outline: 2px solid var(--gold-light);
+  outline-offset: 2px;
+}
+
+.arena-match-vote__choices button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.arena-match-vote__choices button > span {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.arena-match-vote__choices button > strong {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  color: var(--gold-light);
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.arena-match-vote__choices button > small {
+  color: #777;
+}
+
+.arena-match-vote__choices button > svg {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  color: var(--gold-light);
+}
+
+.arena-match-vote__choices button:nth-child(2) > svg {
+  right: auto;
+  left: 5px;
+}
+
+.arena-match-vote__graph {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  background: #222;
+}
+
+.arena-match-vote__graph span {
+  min-width: 2px;
+  background: linear-gradient(90deg, #9b6c00, var(--gold-light));
+  transition: width 300ms ease;
+}
+
+.arena-match-vote__graph span:last-child {
+  background: linear-gradient(90deg, #898989, #3f3f3f);
+}
+
+.arena-match-vote__graph.is-empty span {
+  background: #2a2a2a;
+}
+
+.arena-match-vote__graph.is-empty span:last-child {
+  border-left: 1px solid #090909;
+}
+
+.arena-match-vote__status {
+  min-height: 17px;
+  color: #858585;
+}
+
+.arena-match-vote__status a {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 6px;
+  color: var(--gold-light);
+  text-decoration: none;
+}
+
+.arena-match-vote__status a:focus-visible {
+  outline: 2px solid var(--gold-light);
+  outline-offset: 3px;
+}
+
+.arena-match-vote__status .is-error {
+  color: #ff8888;
+}
+
 .arena-match-card--belt {
   grid-column: 1 / -1;
   border-color: rgba(255, 212, 71, 0.42);
@@ -5251,6 +5435,29 @@ img {
     align-items: flex-start;
     flex-direction: column;
     gap: 6px;
+  }
+
+  .arena-match-vote__heading {
+    align-items: start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .arena-match-vote__heading small {
+    text-align: left;
+  }
+
+  .arena-match-vote__choices {
+    grid-template-columns: 1fr;
+  }
+
+  .arena-match-vote__choices button:nth-child(2) {
+    text-align: left;
+  }
+
+  .arena-match-vote__choices button:nth-child(2) > svg {
+    right: 5px;
+    left: auto;
   }
 
   .arena-match-card .match-card__versus,

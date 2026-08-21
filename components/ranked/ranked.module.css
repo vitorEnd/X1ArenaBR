@@ -1649,8 +1649,66 @@
 
 .supportToolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 12px;
+}
+
+.pointsMultiplierControl,
+.pointsMultiplierControl > div {
+  display: flex;
+  align-items: center;
+}
+
+.pointsMultiplierControl {
+  gap: 12px;
+  border: 1px solid var(--ranked-line);
+  padding: 7px;
+  background: #101010;
+}
+
+.pointsMultiplierControl > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 7px;
+  color: #a7a7a7;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pointsMultiplierControl > span svg { color: var(--ranked-gold); }
+.pointsMultiplierControl > div { gap: 5px; }
+
+.pointsMultiplierButton,
+.pointsMultiplierActive {
+  min-width: 46px;
+  min-height: 38px;
+  border: 1px solid var(--ranked-line);
+  background: #080808;
+  color: #8a8a8a;
+  font-family: var(--font-barlow), sans-serif;
+  font-size: 0.9rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pointsMultiplierButton:hover,
+.pointsMultiplierButton:focus-visible {
+  border-color: rgba(245, 184, 0, 0.55);
+  color: var(--ranked-gold-light);
+}
+
+.pointsMultiplierActive {
+  border-color: var(--ranked-gold);
+  background: var(--ranked-gold);
+  color: #050505;
+  box-shadow: 0 0 18px rgba(245, 184, 0, 0.2);
 }
 
 .supportHistoryPanel {
@@ -2837,6 +2895,19 @@
     grid-template-columns: 1fr;
   }
 
+  .supportToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pointsMultiplierControl {
+    justify-content: space-between;
+  }
+
+  .supportToolbar > .dangerButton {
+    width: 100%;
+  }
+
   .rankLadder {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2873,6 +2944,16 @@
 }
 
 @media (max-width: 430px) {
+  .pointsMultiplierControl {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pointsMultiplierControl > div {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   .statsGrid,
   .profileStats {
     grid-template-columns: 1fr 1fr;

@@ -13,6 +13,7 @@ import {
   UserCog,
   Users,
   X,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -164,6 +165,30 @@ export function SupportDashboard({ adapter = rankedUiAdapter }: SupportDashboard
     <>
       {error && <RankedError message={error} onRetry={() => void load()} />}
       <div className={styles.supportToolbar}>
+        <div className={styles.pointsMultiplierControl}>
+          <span><Zap size={16} aria-hidden="true" /> Pontos Ranked</span>
+          <div role="group" aria-label="Multiplicador de pontos Ranked">
+            {([1, 2, 3] as const).map((multiplier) => (
+              <button
+                key={multiplier}
+                type="button"
+                className={
+                  response.pointsMultiplier === multiplier
+                    ? styles.pointsMultiplierActive
+                    : styles.pointsMultiplierButton
+                }
+                aria-pressed={response.pointsMultiplier === multiplier}
+                disabled={busy || response.pointsMultiplier === multiplier}
+                onClick={() => void mutate({
+                  intent: "set-ranked-points-multiplier",
+                  multiplier,
+                }).catch(() => undefined)}
+              >
+                {multiplier}x
+              </button>
+            ))}
+          </div>
+        </div>
         <button
           type="button"
           className={styles.dangerButton}

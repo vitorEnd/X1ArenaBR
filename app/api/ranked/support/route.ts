@@ -50,10 +50,15 @@ function emptySupport(
     officialPlayers: [],
     audit: [],
     arenaCards: [],
+    pointsMultiplier: 1,
   };
 }
 
 const supportIntentSchema = z.discriminatedUnion("intent", [
+  z.object({
+    intent: z.literal("set-ranked-points-multiplier"),
+    multiplier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+  }),
   z.object({
     intent: z.literal("create-arena-card"),
     name: z.string().trim().min(3).max(80),
@@ -241,6 +246,7 @@ export async function GET(request: Request) {
       penaltiesResult,
       arenaCardsResult,
       arenaCardMatchesResult,
+      rankedSettingsResult,
     ] =
       await Promise.all([
         admin
@@ -309,6 +315,11 @@ export async function GET(request: Request) {
           .from("arena_card_matches")
           .select("id,card_id,position,category_id,player_a_id,player_b_id,match_type,status,scheduled_at,player_a_score,player_b_score,winner_player_id")
           .order("position", { ascending: true }),
+        admin
+          .from("ranked_runtime_settings")
+          .select("points_multiplier")
+          .eq("id", 1)
+          .maybeSingle(),
       ]);
     for (const result of [
       nicknamesResult,
@@ -324,6 +335,7 @@ export async function GET(request: Request) {
       penaltiesResult,
       arenaCardsResult,
       arenaCardMatchesResult,
+      rankedSettingsResult,
     ]) {
       if (result.error) throw result.error;
     }
@@ -597,6 +609,11 @@ export async function GET(request: Request) {
       officialPlayers: supportOfficialPlayers,
       audit,
       arenaCards,
+      pointsMultiplier:
+        rankedSettingsResult.data?.points_multiplier === 2 ||
+        rankedSettingsResult.data?.points_multiplier === 3
+          ? rankedSettingsResult.data.points_multiplier
+          : 1,
     };
     return NextResponse.json(response, {
       headers: { "Cache-Control": "private, no-store, max-age=0" },
@@ -612,7 +629,12 @@ export async function POST(request: Request) {
     if (!parsed.success) throw new RankedRequestError("Ação de suporte inválida.");
     const { supabase, admin, user } = await requireSupportContext();
 
-    if (parsed.data.intent === "set-player-nickname") {
+    if (parsed.data.intent === "set-ranked-points-multiplier") {
+      const result = await supabase.rpc("ranked_support_set_points_multiplier", {
+        p_multiplier: parsed.data.multiplier,
+      });
+      if (result.error) throw result.error;
+    } else if (parsed.data.intent === "set-player-nickname") {
       if (!officialPlayerIds.has(parsed.data.playerId)) {
         throw new RankedRequestError("Jogador oficial inválido.", 404);
       }

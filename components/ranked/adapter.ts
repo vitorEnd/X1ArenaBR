@@ -251,6 +251,7 @@ export interface RankedSupportResponse {
   readonly officialPlayers: readonly RankedSupportOfficialPlayer[];
   readonly audit: readonly RankedSupportAuditEntry[];
   readonly arenaCards: readonly ArenaCard[];
+  readonly pointsMultiplier: 1 | 2 | 3;
 }
 
 export type RankedMatchIntent =
@@ -267,6 +268,10 @@ export type RankedMatchIntent =
     };
 
 export type RankedSupportIntent =
+  | {
+      readonly intent: "set-ranked-points-multiplier";
+      readonly multiplier: 1 | 2 | 3;
+    }
   | {
       readonly intent: "create-arena-card";
       readonly name: string;

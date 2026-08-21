@@ -103,6 +103,7 @@ export default async function EventsPage() {
                   card={card}
                   nicknames={nicknames}
                   players={players}
+                  enableVoting
                 />
               ))}
             </div>

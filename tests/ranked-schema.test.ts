@@ -22,6 +22,10 @@ const globalMatchmaking = await readFile(
   new URL("202608150005_ranked_global_mmr_matchmaking.sql", migrationRoot),
   "utf8",
 );
+const rankedMultiplierAndEventVotes = await readFile(
+  new URL("20260821232722_ranked_multiplier_and_event_votes.sql", migrationRoot),
+  "utf8",
+);
 
 test("keeps ranked persistence isolated from official tournament entities", () => {
   const allMigrations = `${schema}\n${rpcs}\n${security}`.toLowerCase();
@@ -138,4 +142,89 @@ test("persists asymmetric fun MMR rewards in the authoritative database", () => 
   assert.match(funMmrRewards, /v_loser_loss := greatest\([\s\S]*10[\s\S]*least\(15/i);
   assert.match(funMmrRewards, /v_winner\.mmr \+ v_winner_gain/i);
   assert.match(funMmrRewards, /v_loser\.mmr - v_loser_loss/i);
+});
+
+test("limits the global Ranked points multiplier to 1x, 2x or 3x and support control", () => {
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /points_multiplier\s+smallint[\s\S]*check\s*\(points_multiplier in \(1, 2, 3\)\)/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /if v_support_id is null or not public\.ranked_is_support\(v_support_id\)/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /if p_multiplier not in \(1, 2, 3\)/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /revoke all on function public\.ranked_support_set_points_multiplier\(smallint\)[\s\S]*from public, anon, authenticated/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /grant execute on function public\.ranked_support_set_points_multiplier\(smallint\)[\s\S]*to authenticated/i,
+  );
+});
+
+test("multiplies only positive post-placement Ranked result gains", () => {
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /if new\.is_placement or new\.delta is null or new\.delta <= 0[\s\S]*new\.reason <> 'ranked_result' then[\s\S]*return new/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /new\.delta := new\.delta \* v_multiplier/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /new\.new_mmr := new\.old_mmr \+ new\.delta/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /before insert on public\.ranked_mmr_ledger[\s\S]*ranked_apply_points_multiplier_to_ledger\(\)/i,
+  );
+});
+
+test("keeps event votes private and exposes only validated aggregate predictions", () => {
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /primary key \(match_id, voter_user_id\)/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /alter table public\.arena_match_votes enable row level security/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /revoke all on table public\.arena_match_votes from public, anon, authenticated/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /if v_user_id is null then[\s\S]*Entre na sua conta para votar/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /v_match_status <> 'announced' or v_card_status <> 'announced'/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /p_player_id not in \(v_player_a_id, v_player_b_id\)/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /on conflict \(match_id, voter_user_id\) do update/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /returns table \([\s\S]*player_a_votes bigint[\s\S]*player_b_votes bigint[\s\S]*own_vote text[\s\S]*voting_open boolean/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /count\(v\.(?:match_id|\*)\) filter \(where v\.predicted_player_id = m\.player_a_id\)/i,
+  );
+  assert.match(
+    rankedMultiplierAndEventVotes,
+    /grant execute on function public\.arena_get_match_vote_state\(uuid\[\]\)[\s\S]*to anon, authenticated/i,
+  );
 });
