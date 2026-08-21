@@ -39,6 +39,27 @@ npm.cmd run test:e2e
 npm.cmd run build
 ```
 
+## Hospedagem na Cloudflare
+
+A produção usa Cloudflare Workers com OpenNext. O endereço atual é:
+
+```text
+https://x1arenabr.wof-arena-x1-br.workers.dev
+```
+
+Para gerar e publicar uma nova versão depois de configurar o Wrangler:
+
+```powershell
+npm.cmd run build:cloudflare
+npm.cmd run deploy:cloudflare
+```
+
+Cadastre no Worker, como secrets, apenas as variáveis listadas em
+`.env.example`. Nunca copie `VERCEL_OIDC_TOKEN`, credenciais Postgres ou
+qualquer chave privada para `wrangler.jsonc`. O build usa Webpack para manter o
+Worker dentro do limite do plano gratuito; os ícones do App Router também são
+mantidos otimizados para não inflar o bundle.
+
 ## Configuração do Supabase
 
 1. Crie um projeto em `https://database.new`.

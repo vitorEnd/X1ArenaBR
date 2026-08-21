@@ -17,6 +17,7 @@
 
 # next.js
 /.next/
+/.open-next/
 /.vinext/
 /out/
 
@@ -42,6 +43,8 @@ next-env.d.ts
 *.tsbuildinfo
 /dist/
 /.wrangler/
+/.dev.vars*
+!/.dev.vars.example
 /outputs/
 /work/
 
