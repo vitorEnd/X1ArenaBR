@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
-import { headers } from "next/headers";
 import { IntroSplash } from "@/components/intro-splash";
 import { MotionProvider } from "@/components/motion-provider";
 import { MobileDiscordCta } from "@/components/mobile-discord-cta";
@@ -24,7 +23,11 @@ const barlow = Barlow_Condensed({
   weight: ["500", "600", "700", "800", "900"],
 });
 
-const siteMetadata: Metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+      "https://x1arenabr.wof-arena-x1-br.workers.dev",
+  ),
   title: {
     default: "WOF Arena X1 BR | Rankings, Eventos e Cinturões",
     template: "%s | WOF Arena X1 BR",
@@ -52,47 +55,24 @@ const siteMetadata: Metadata = {
     title: "WOF Arena X1 BR | Rankings, Eventos e Cinturões",
     description:
       "Eventos semanais, ranking contínuo, rivalidades e cinturões no World of Football.",
+    images: [
+      {
+        url: "/og.png",
+        width: 1736,
+        height: 906,
+        alt: "WOF Arena X1 BR — Onde cada X1 vira história",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "WOF Arena X1 BR",
     description:
       "Entre na Arena, suba no ranking e construa o seu legado.",
+    images: ["/og.png"],
   },
   robots: { index: true, follow: true },
 };
-
-export async function generateMetadata(): Promise<Metadata> {
-  const requestHeaders = await headers();
-  const host =
-    requestHeaders.get("x-forwarded-host") ??
-    requestHeaders.get("host") ??
-    "localhost:3000";
-  const protocol =
-    requestHeaders.get("x-forwarded-proto") ??
-    (host.startsWith("localhost") ? "http" : "https");
-  const metadataBase = new URL(`${protocol}://${host}`);
-
-  return {
-    ...siteMetadata,
-    metadataBase,
-    openGraph: {
-      ...siteMetadata.openGraph,
-      images: [
-        {
-          url: "/og.png",
-          width: 1736,
-          height: 906,
-          alt: "WOF Arena X1 BR — Onde cada X1 vira história",
-        },
-      ],
-    },
-    twitter: {
-      ...siteMetadata.twitter,
-      images: ["/og.png"],
-    },
-  };
-}
 
 export const viewport: Viewport = {
   themeColor: "#050505",

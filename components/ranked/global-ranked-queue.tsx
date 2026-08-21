@@ -78,7 +78,7 @@ export function GlobalRankedQueue() {
   if (snapshot.activeMatch) {
     return (
       <Link
-        href={`/matchmaking/lobby/${snapshot.activeMatch.matchId}`}
+        href="/matchmaking"
         className={`${styles.globalQueueDock} ${styles.globalQueueDockMatch}`}
         aria-label={`Voltar ao Match ${snapshot.activeMatch.matchNumber}`}
       >

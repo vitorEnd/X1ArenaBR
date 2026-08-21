@@ -6,7 +6,7 @@ import type { PublicQueueStatusResponse } from "@/lib/ranked/public-queue-status
 import { normalizePublicQueueCount } from "@/lib/ranked/public-queue-status";
 import styles from "./ranked.module.css";
 
-const REFRESH_INTERVAL_MS = 10_000;
+const REFRESH_INTERVAL_MS = 30_000;
 
 function statusCopy(status: PublicQueueStatusResponse | null, failed: boolean) {
   if (failed || (status && !status.available)) {

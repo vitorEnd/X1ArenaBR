@@ -56,9 +56,6 @@ export async function GET() {
     }
 
     const { supabase, profile } = context;
-    assertNoSupabaseError(await supabase.rpc("ranked_reconcile"));
-    assertNoSupabaseError(await supabase.rpc("ranked_try_matchmake"));
-
     const now = new Date().toISOString();
     const [publicProfileResult, queueResult, matchResult, penaltyResult, queueCount] =
       await Promise.all([
@@ -289,11 +286,8 @@ export async function GET() {
       progressionLevel: profile.noAcceptPenaltyLevel,
     };
 
-    const serverClockResult = await supabase.rpc("ranked_server_now");
-    assertNoSupabaseError(serverClockResult);
-
     const response: MatchmakingSnapshotResponse = {
-      serverNow: stringValue(serverClockResult.data),
+      serverNow: new Date().toISOString(),
       configured: true,
       authenticated: true,
       profileComplete: true,

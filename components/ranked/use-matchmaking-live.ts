@@ -4,19 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { calculateServerClockOffset } from "@/lib/ranked/server-clock";
 import {
-  rankedUiAdapter,
   type MatchmakingSnapshotResponse,
   type RankedMatchIntent,
   type RankedMutationResponse,
   type RankedUiAdapter,
 } from "./adapter";
+import { supabaseMatchmakingAdapter } from "./supabase-matchmaking-adapter";
 
 interface UseMatchmakingLiveOptions {
   readonly adapter?: RankedUiAdapter;
 }
 
 export function useMatchmakingLiveController({
-  adapter = rankedUiAdapter,
+  adapter = supabaseMatchmakingAdapter,
 }: UseMatchmakingLiveOptions = {}) {
   const [snapshot, setSnapshot] = useState<MatchmakingSnapshotResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -209,14 +209,13 @@ export function useMatchmakingLiveController({
 
   useEffect(() => {
     if (!needsLiveUpdates) return;
-    const refreshDelay = snapshot?.activeMatch ? 5_000 : 3_000;
-    const fallbackInterval = setInterval(() => void refresh(), refreshDelay);
+    const fallbackInterval = setInterval(() => void refresh(), 30_000);
     return () => clearInterval(fallbackInterval);
-  }, [needsLiveUpdates, refresh, snapshot?.activeMatch]);
+  }, [needsLiveUpdates, refresh]);
 
   useEffect(() => {
     if (!profileId || snapshot?.queue?.state !== "idle") return;
-    const queueCountInterval = setInterval(() => void refresh(), 10_000);
+    const queueCountInterval = setInterval(() => void refresh(), 60_000);
     return () => clearInterval(queueCountInterval);
   }, [profileId, refresh, snapshot?.queue?.state]);
 
@@ -231,7 +230,7 @@ export function useMatchmakingLiveController({
       }
     };
 
-    const heartbeatInterval = setInterval(() => void heartbeat(), 8_000);
+    const heartbeatInterval = setInterval(() => void heartbeat(), 10_000);
     return () => clearInterval(heartbeatInterval);
   }, [adapter, snapshot?.queue?.state]);
 

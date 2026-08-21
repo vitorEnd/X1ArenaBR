@@ -11,8 +11,9 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { normalizeRankedProfile } from "@/lib/ranked/profile";
 import { DISCORD_URL, navigation } from "@/lib/site";
 import { createClient } from "@/lib/supabase/client";
 import { BrandMark } from "./brand-mark";
@@ -30,6 +31,17 @@ function isActive(pathname: string, href: string) {
 
 function accountInitial(account: HeaderAccount | null) {
   return account?.name.trim().slice(0, 1).toLocaleUpperCase("pt-BR") || "A";
+}
+
+function metadataText(
+  metadata: Record<string, unknown>,
+  ...keys: readonly string[]
+): string | null {
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
 }
 
 function AccountAvatar({ account }: { readonly account: HeaderAccount }) {
@@ -51,13 +63,13 @@ function AccountAvatar({ account }: { readonly account: HeaderAccount }) {
 }
 
 export function SiteHeaderClient({
-  account,
+  account: initialAccount,
 }: {
   readonly account: HeaderAccount | null;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const [account, setAccount] = useState(initialAccount);
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileNavRef = useRef<HTMLElement>(null);
@@ -67,6 +79,50 @@ export function SiteHeaderClient({
   // mode the public profile name intentionally changes to AnonimoXXXX, so the
   // old username URL is no longer a reliable way to reach the owner's account.
   const accountHref = account?.hasRankedProfile ? "/conta" : "/conta/perfil";
+
+  const loadAccount = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        setAccount(null);
+        return;
+      }
+
+      const { data: profileData } = await supabase
+        .rpc("ranked_get_my_profile")
+        .maybeSingle();
+      const profile = normalizeRankedProfile(profileData);
+      const metadata = data.user.user_metadata ?? {};
+      const email = data.user.email ?? null;
+      const fallbackName =
+        metadataText(
+          metadata,
+          "full_name",
+          "global_name",
+          "name",
+          "user_name",
+          "preferred_username",
+        ) ??
+        email?.split("@")[0] ??
+        "Minha conta";
+      const providerAvatar = metadataText(metadata, "avatar_url", "picture");
+      const ownAvatar = profile?.avatarPath
+        ? supabase.storage
+            .from("ranked-avatars")
+            .getPublicUrl(profile.avatarPath).data.publicUrl
+        : null;
+
+      setAccount({
+        name: profile?.username ?? fallbackName,
+        email,
+        avatarUrl: ownAvatar ?? providerAvatar,
+        hasRankedProfile: Boolean(profile),
+      });
+    } catch {
+      setAccount(null);
+    }
+  }, []);
 
   function closeMenu(restoreFocus = true) {
     setOpen(false);
@@ -79,18 +135,25 @@ export function SiteHeaderClient({
   }, [pathname]);
 
   useEffect(() => {
+    const initialLoad = window.setTimeout(() => void loadAccount(), 0);
+    return () => window.clearTimeout(initialLoad);
+  }, [loadAccount]);
+
+  useEffect(() => {
     try {
       const supabase = createClient();
       const { data } = supabase.auth.onAuthStateChange(
-        (_event: AuthChangeEvent, session: Session | null) => {
-          if (Boolean(session?.user) !== Boolean(account)) router.refresh();
+        (event: AuthChangeEvent, session: Session | null) => {
+          if (event === "INITIAL_SESSION") return;
+          if (!session?.user) setAccount(null);
+          else void loadAccount();
         },
       );
       return () => data.subscription.unsubscribe();
     } catch {
       return;
     }
-  }, [account, router]);
+  }, [loadAccount]);
 
   useEffect(() => {
     if (!open) return;
