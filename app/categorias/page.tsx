@@ -4,11 +4,22 @@ import { ChampionsGrid } from "@/components/champions-grid";
 import { PageHero } from "@/components/page-hero";
 import { SectionHeading } from "@/components/section-heading";
 import { arenaRules } from "@/data/arena";
+import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
+import { getPublicArenaCompetitionData } from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata("Categorias e cinturões", "Peso Pena, Peso Médio e Peso Pesado: atributos, regras e cinturões da Arena X1 Brasil.");
+export const dynamic = "force-dynamic";
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const competition = await getPublicArenaCompetitionData();
+  const entriesByPlayer = new Map(
+    competition.rankingEntries.map((entry) => [
+      getCategoryPlayerRankingKey(entry.categoryId, entry.playerId),
+      entry,
+    ]),
+  );
+
   return (
     <>
       <PageHero eyebrow="Três divisões • Três cinturões" title="Categorias" description="Cada categoria define limites de altura, largura e impulso. Escolha a divisão que combina com o seu estilo e entre na disputa." />
@@ -20,8 +31,11 @@ export default function CategoriesPage() {
       </section>
       <section className="section section--graphite">
         <div className="page-container">
-          <SectionHeading eyebrow="Cinturões da Arena" title={<>Prestígio que precisa ser <span className="title-accent">defendido</span></>} description="O campeão é exibido com C e fora da numeração comum do ranking. O primeiro nome ocupará esse posto quando o cinturão inaugural for conquistado." />
-          <ChampionsGrid />
+          <SectionHeading eyebrow="Cinturões da Arena" title={<>Prestígio que precisa ser <span className="title-accent">defendido</span></>} description="O campeão ocupa a posição C, fora da numeração comum, e cada defesa fortalece seu legado. Categorias sem campeão permanecem identificadas como cinturão vago." />
+          <ChampionsGrid
+            entriesByPlayer={entriesByPlayer}
+            championsByCategory={competition.championsByCategory}
+          />
         </div>
       </section>
       <section className="section category-change-section">

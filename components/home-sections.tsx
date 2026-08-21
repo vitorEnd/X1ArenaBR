@@ -77,8 +77,20 @@ export function ArenaStats() {
 }
 
 export function NextEventSection({ cards }: { readonly cards: readonly ArenaCard[] }) {
-  const nextOfficialCard = cards.find((card) => card.status === "live")
-    ?? cards.find((card) => card.status === "announced");
+  const scheduledCards = cards
+    .filter((card) => card.status === "live" || card.status === "announced")
+    .toSorted((first, second) => {
+      if (first.status === "live" && second.status !== "live") return -1;
+      if (second.status === "live" && first.status !== "live") return 1;
+
+      const firstTime = first.startsAt ? Date.parse(first.startsAt) : Number.POSITIVE_INFINITY;
+      const secondTime = second.startsAt ? Date.parse(second.startsAt) : Number.POSITIVE_INFINITY;
+      const safeFirstTime = Number.isFinite(firstTime) ? firstTime : Number.POSITIVE_INFINITY;
+      const safeSecondTime = Number.isFinite(secondTime) ? secondTime : Number.POSITIVE_INFINITY;
+
+      return safeFirstTime - safeSecondTime;
+    });
+  const nextOfficialCard = scheduledCards[0];
   const hasOfficialEvent = Boolean(nextOfficialCard);
   return (
     <section id="proximo-evento" className="section next-event-section">

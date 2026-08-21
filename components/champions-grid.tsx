@@ -2,18 +2,37 @@
 
 import { motion } from "framer-motion";
 import { Crown, Shield, Trophy } from "lucide-react";
+import Link from "next/link";
 import { categories, officialChampions, officialPlayers, officialRankingEntries } from "@/data/arena";
-import { calculateGoalDifference } from "@/lib/ranking";
+import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
+import { calculateRankingEntry } from "@/lib/ranking";
+import type { CategoryId, Champion, RankingEntry } from "@/lib/types";
 
-export function ChampionsGrid() {
+type ChampionsGridProps = {
+  entriesByPlayer?: ReadonlyMap<string, RankingEntry>;
+  championsByCategory?: ReadonlyMap<CategoryId, Champion>;
+};
+
+export function ChampionsGrid({
+  entriesByPlayer = new Map(),
+  championsByCategory = new Map(),
+}: ChampionsGridProps) {
   return (
     <div className="champions-grid">
       {categories.map((category, index) => {
-        const champion = officialChampions.find((item) => item.categoryId === category.id && item.type === "official") ?? officialChampions.find((item) => item.categoryId === category.id && item.type === "interim");
+        const champion = championsByCategory.get(category.id)
+          ?? officialChampions.find((item) => item.categoryId === category.id && item.type === "official")
+          ?? officialChampions.find((item) => item.categoryId === category.id && item.type === "interim");
         const player = champion ? officialPlayers.find((item) => item.id === champion.playerId) : null;
-        const rankingEntry = champion ? officialRankingEntries.find((item) => item.playerId === champion.playerId && item.categoryId === category.id) : null;
+        const rankingEntry = champion
+          ? entriesByPlayer.get(getCategoryPlayerRankingKey(category.id, champion.playerId))
+            ?? entriesByPlayer.get(champion.playerId)
+            ?? officialRankingEntries.find(
+              (item) => item.playerId === champion.playerId && item.categoryId === category.id,
+            )
+          : null;
         const hasChampion = Boolean(champion && player);
-        const goalDifference = rankingEntry ? calculateGoalDifference(rankingEntry.goalsFor, rankingEntry.goalsAgainst) : null;
+        const calculatedEntry = rankingEntry ? calculateRankingEntry(rankingEntry) : null;
         return <motion.article
           key={category.id}
           className="champion-card"
@@ -34,13 +53,19 @@ export function ChampionsGrid() {
           </div>
           <span className="champion-card__c">C</span>
           <Crown className="champion-card__crown" size={34} aria-hidden="true" />
-          <h3>{hasChampion ? player?.name : "Cinturão a definir"}</h3>
+          <h3>
+            {hasChampion && player ? (
+              <Link href={`/jogadores/${player.slug}`}>{player.name}</Link>
+            ) : (
+              "Cinturão a definir"
+            )}
+          </h3>
           <p>{hasChampion ? `${champion?.type === "interim" ? "Campeão interino" : "Campeão oficial"} da categoria.` : "A disputa pelo cinturão inaugural começa em breve."}</p>
           <dl>
             <div><dt>Defesas</dt><dd>{champion?.defenses ?? "—"}</dd></div>
-            <div><dt>Vitórias</dt><dd>{rankingEntry?.wins ?? "—"}</dd></div>
-            <div><dt>Derrotas</dt><dd>{rankingEntry?.losses ?? "—"}</dd></div>
-            <div><dt>Saldo</dt><dd>{goalDifference === null ? "—" : `${goalDifference > 0 ? "+" : ""}${goalDifference}`}</dd></div>
+            <div><dt>Vitórias</dt><dd>{calculatedEntry?.wins ?? "—"}</dd></div>
+            <div><dt>Derrotas</dt><dd>{calculatedEntry?.losses ?? "—"}</dd></div>
+            <div><dt>Saldo</dt><dd>{calculatedEntry ? `${calculatedEntry.goalDifference > 0 ? "+" : ""}${calculatedEntry.goalDifference}` : "—"}</dd></div>
           </dl>
           <div className="champion-card__footer">
             <span>Conquista</span>

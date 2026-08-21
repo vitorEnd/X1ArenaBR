@@ -9,6 +9,7 @@ import {
   officialChampions,
   officialPlayers,
 } from "@/data/arena";
+import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
 import { buildCategoryRanking } from "@/lib/ranking";
 import type { CategoryId, Player, RankingEntry } from "@/lib/types";
 
@@ -53,8 +54,10 @@ export function RankingExplorer({
       (player) => player.currentCategoryId === categoryId || player.id === liveChampionId,
     );
     const seededEntries: RankingEntry[] = categoryPlayers.map((player) => {
-      const entry = entriesByPlayer.get(player.id);
-      if (entry) {
+      const entry = entriesByPlayer.get(
+        getCategoryPlayerRankingKey(categoryId, player.id),
+      ) ?? entriesByPlayer.get(player.id);
+      if (entry?.categoryId === categoryId) {
         return entry;
       }
       return {
@@ -78,6 +81,7 @@ export function RankingExplorer({
     [],
   );
   const championPlayer = championRecord ? officialPlayers.find((player) => player.id === championRecord.playerId) : null;
+  const championStanding = ranking.champion;
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
   const visibleStandings = ranking.standings
     .filter((entry) => {
@@ -143,6 +147,22 @@ export function RankingExplorer({
           )}
         </div>
         <span className="champion-row__status">{championPlayer ? championRecord?.type === "interim" ? "CAMPEÃO INTERINO" : "CAMPEÃO OFICIAL" : "CINTURÃO VAGO"}</span>
+        {championStanding && (
+          <div className="champion-row__stats" aria-label={`Estatísticas de ${championPlayer?.name ?? "campeão"}`}>
+            <span><small>V</small><b>{championStanding.wins}</b></span>
+            <span><small>D</small><b>{championStanding.losses}</b></span>
+            <span><small>GP</small><b>{championStanding.goalsFor}</b></span>
+            <span><small>GC</small><b>{championStanding.goalsAgainst}</b></span>
+            <span><small>SG</small><b className={championStanding.goalDifference >= 0 ? "positive" : "negative"}>{championStanding.goalDifference > 0 ? "+" : ""}{championStanding.goalDifference}</b></span>
+            <span><small>PTS</small><b>{championStanding.points}</b></span>
+            <span className="champion-row__form">
+              <small>Últimos</small>
+              {championStanding.recentForm.length > 0
+                ? <FormDots form={championStanding.recentForm} />
+                : <b>—</b>}
+            </span>
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">

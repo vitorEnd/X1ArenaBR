@@ -7,7 +7,8 @@ import { HomeHero } from "@/components/home-hero";
 import { RankingExplorer } from "@/components/ranking-explorer";
 import { SectionHeading } from "@/components/section-heading";
 import { Ticker } from "@/components/ticker";
-import { getPublicArenaCards } from "@/lib/arena-cards-server";
+import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
+import { getPublicArenaCompetitionData } from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata(
@@ -19,14 +20,20 @@ export const metadata = createPageMetadata(
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const arenaCards = await getPublicArenaCards();
+  const competition = await getPublicArenaCompetitionData();
+  const entriesByPlayer = new Map(
+    competition.rankingEntries.map((entry) => [
+      getCategoryPlayerRankingKey(entry.categoryId, entry.playerId),
+      entry,
+    ]),
+  );
   return (
     <>
       <HomeHero />
       <Ticker />
       <ArenaStats />
 
-      <NextEventSection cards={arenaCards} />
+      <NextEventSection cards={competition.cards} />
 
       <section className="section section--graphite">
         <div className="page-container">
@@ -35,7 +42,10 @@ export default async function Home() {
             title={<>O topo tem <span className="title-accent">outro peso</span></>}
             description="Três categorias, três cinturões e uma responsabilidade: defender o posto contra os melhores da Arena."
           />
-          <ChampionsGrid />
+          <ChampionsGrid
+            entriesByPlayer={entriesByPlayer}
+            championsByCategory={competition.championsByCategory}
+          />
           <Link href="/categorias" className="button-ghost section-cta">
             Conhecer os cinturões <ArrowRight size={18} aria-hidden="true" />
           </Link>
@@ -49,7 +59,11 @@ export default async function Home() {
             title={<>Cada resultado <span className="title-accent">muda o jogo</span></>}
             description="A classificação nunca zera. Pontos, saldo de gols e confrontos diretos mantêm a disputa em movimento durante toda a história da Arena."
           />
-          <RankingExplorer compact />
+          <RankingExplorer
+            compact
+            entriesByPlayer={entriesByPlayer}
+            championIdsByCategory={competition.championIdsByCategory}
+          />
           <RankingsCta />
         </div>
       </section>

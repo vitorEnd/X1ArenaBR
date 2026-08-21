@@ -1,24 +1,35 @@
 import "server-only";
 
+import {
+  derivePublicChampionsByCategory,
+  derivePublicPlayerRankingEntries,
+  getCanonicalOfficialPlayerId,
+} from "./arena-competition";
 import type { ArenaCard, ArenaCardMatch } from "./arena-card-types";
-import type { BeltHistory, Match, MatchOutcome, RankingEntry } from "./types";
+import type { BeltHistory, CategoryId, Champion, Match, RankingEntry } from "./types";
 import { createAdminClient } from "./supabase/admin";
 import { isSupabaseAdminConfigured } from "./supabase/env";
 
 function mapMatch(row: Record<string, unknown>): ArenaCardMatch {
+  const playerAId = getCanonicalOfficialPlayerId(String(row.player_a_id));
+  const playerBId = getCanonicalOfficialPlayerId(String(row.player_b_id));
+  const winnerPlayerId = typeof row.winner_player_id === "string"
+    ? getCanonicalOfficialPlayerId(row.winner_player_id)
+    : null;
+
   return {
     id: String(row.id),
     cardId: String(row.card_id),
     position: Number(row.position),
     categoryId: row.category_id as ArenaCardMatch["categoryId"],
-    playerAId: String(row.player_a_id),
-    playerBId: String(row.player_b_id),
+    playerAId,
+    playerBId,
     type: row.match_type as ArenaCardMatch["type"],
     status: row.status as ArenaCardMatch["status"],
     scheduledAt: typeof row.scheduled_at === "string" ? row.scheduled_at : null,
     playerAScore: typeof row.player_a_score === "number" ? row.player_a_score : null,
     playerBScore: typeof row.player_b_score === "number" ? row.player_b_score : null,
-    winnerPlayerId: typeof row.winner_player_id === "string" ? row.winner_player_id : null,
+    winnerPlayerId,
   };
 }
 
@@ -62,87 +73,41 @@ export async function getPublicArenaCards(): Promise<readonly ArenaCard[]> {
   }));
 }
 
-type MutablePlayerRankingSummary = {
-  playerId: string;
-  categoryId: ArenaCardMatch["categoryId"];
-  wins: number;
-  losses: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  recentForm: MatchOutcome[];
-  knockouts: number;
-  dataStatus: "official";
+export type PublicArenaCompetitionData = {
+  readonly cards: readonly ArenaCard[];
+  readonly rankingEntries: readonly RankingEntry[];
+  readonly championsByCategory: ReadonlyMap<CategoryId, Champion>;
+  readonly championIdsByCategory: ReadonlyMap<CategoryId, string>;
 };
+
+export async function getPublicArenaCompetitionData(): Promise<PublicArenaCompetitionData> {
+  const cards = await getPublicArenaCards();
+  const championsByCategory = derivePublicChampionsByCategory(cards);
+
+  return {
+    cards,
+    rankingEntries: derivePublicPlayerRankingEntries(cards),
+    championsByCategory,
+    championIdsByCategory: new Map(
+      [...championsByCategory].map(([categoryId, champion]) => [
+        categoryId,
+        champion.playerId,
+      ]),
+    ),
+  };
+}
 
 export async function getPublicChampionIdsByCategory(): Promise<ReadonlyMap<ArenaCardMatch["categoryId"], string>> {
   const cards = await getPublicArenaCards();
-  const champions = new Map<ArenaCardMatch["categoryId"], { playerId: string; at: number }>();
-
-  for (const card of cards) {
-    for (const match of card.matches) {
-      if (match.type !== "belt" || match.status !== "finished" || !match.winnerPlayerId) continue;
-      const at = Date.parse(match.scheduledAt ?? card.startsAt ?? card.updatedAt);
-      const current = champions.get(match.categoryId);
-      if (!current || at >= current.at) {
-        champions.set(match.categoryId, { playerId: match.winnerPlayerId, at });
-      }
-    }
-  }
-
-  return new Map([...champions].map(([categoryId, value]) => [categoryId, value.playerId]));
+  const champions = derivePublicChampionsByCategory(cards);
+  return new Map(
+    [...champions].map(([categoryId, champion]) => [categoryId, champion.playerId]),
+  );
 }
 
 export async function getPublicPlayerRankingEntries(): Promise<readonly RankingEntry[]> {
   const cards = await getPublicArenaCards();
-  const summaryByPlayer = new Map<string, MutablePlayerRankingSummary>();
-
-  for (const card of cards) {
-    for (const match of card.matches) {
-      if (match.status !== "finished") continue;
-      if (match.playerAScore === null || match.playerBScore === null || !match.winnerPlayerId) continue;
-
-      const winnerId = match.winnerPlayerId;
-      const loserId = winnerId === match.playerAId ? match.playerBId : match.playerAId;
-      const winnerGoals = winnerId === match.playerAId ? match.playerAScore : match.playerBScore;
-      const loserGoals = winnerId === match.playerAId ? match.playerBScore : match.playerAScore;
-      const knockout = Math.abs(winnerGoals - loserGoals) >= 3 && loserGoals === 0;
-
-      const recordForPlayer = (playerId: string, goalsFor: number, goalsAgainst: number, didWin: boolean) => {
-        const key = `${match.categoryId}:${playerId}`;
-        const current = summaryByPlayer.get(key) ?? {
-          playerId,
-          categoryId: match.categoryId,
-          wins: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          recentForm: [] as MatchOutcome[],
-          knockouts: 0,
-          dataStatus: "official" as const,
-        };
-
-        current.wins += didWin ? 1 : 0;
-        current.losses += didWin ? 0 : 1;
-        current.goalsFor += goalsFor;
-        current.goalsAgainst += goalsAgainst;
-        const nextRecentForm: MatchOutcome[] = [...current.recentForm, didWin ? "win" : "loss"];
-        current.recentForm = nextRecentForm.slice(-5) as MatchOutcome[];
-        if (didWin && knockout) {
-          current.knockouts += 1;
-        }
-        summaryByPlayer.set(key, current);
-      };
-
-      recordForPlayer(winnerId, winnerGoals, loserGoals, true);
-      recordForPlayer(loserId, loserGoals, winnerGoals, false);
-    }
-  }
-
-  return [...summaryByPlayer.values()].map((entry) => ({
-    ...entry,
-    recentForm: [...entry.recentForm],
-    knockouts: entry.knockouts,
-  }));
+  return derivePublicPlayerRankingEntries(cards);
 }
 
 export async function getPublicPlayerBeltHistory(playerId: string): Promise<readonly BeltHistory[]> {

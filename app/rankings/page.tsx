@@ -3,20 +3,21 @@ import { PageHero } from "@/components/page-hero";
 import { RankingExplorer } from "@/components/ranking-explorer";
 import { SectionHeading } from "@/components/section-heading";
 import { arenaRules } from "@/data/arena";
-import {
-  getPublicChampionIdsByCategory,
-  getPublicPlayerRankingEntries,
-} from "@/lib/arena-cards-server";
+import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
+import { getPublicArenaCompetitionData } from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata("Rankings", "Ranking contínuo por categoria, pontos e saldo de gols da Arena X1 Brasil.");
+export const dynamic = "force-dynamic";
 
 export default async function RankingsPage() {
-  const [liveEntries, championIdsByCategory] = await Promise.all([
-    getPublicPlayerRankingEntries(),
-    getPublicChampionIdsByCategory(),
-  ]);
-  const entriesByPlayer = new Map(liveEntries.map((entry) => [entry.playerId, entry]));
+  const competition = await getPublicArenaCompetitionData();
+  const entriesByPlayer = new Map(
+    competition.rankingEntries.map((entry) => [
+      getCategoryPlayerRankingKey(entry.categoryId, entry.playerId),
+      entry,
+    ]),
+  );
   return (
     <>
       <PageHero eyebrow="Classificação contínua • Sem temporadas" title="Rankings" description="Toda vitória soma, toda derrota conta e nenhum resultado é apagado. O campeão ocupa a posição C; a fila de desafiantes começa no #1." />
@@ -33,7 +34,7 @@ export default async function RankingsPage() {
           <SectionHeading eyebrow="Classificação por categoria" title={<>A corrida até <span className="title-accent">o cinturão</span></>} description="Filtre a divisão e busque um jogador. As posições continuam preservadas mesmo quando a lista é filtrada." />
           <RankingExplorer
             entriesByPlayer={entriesByPlayer}
-            championIdsByCategory={championIdsByCategory}
+            championIdsByCategory={competition.championIdsByCategory}
           />
         </div>
       </section>
