@@ -37,7 +37,11 @@ export default async function Home() {
       <Ticker />
       <ArenaStats />
 
-      <NextEventSection cards={competition.cards} nicknames={nicknames} />
+      <NextEventSection
+        cards={competition.cards}
+        nicknames={nicknames}
+        players={competition.players}
+      />
 
       <section className="section section--graphite">
         <div className="page-container">
@@ -50,6 +54,7 @@ export default async function Home() {
             entriesByPlayer={entriesByPlayer}
             championsByCategory={competition.championsByCategory}
             nicknames={nicknames}
+            players={competition.players}
           />
           <Link href="/categorias" className="button-ghost section-cta">
             Conhecer os cinturões <ArrowRight size={18} aria-hidden="true" />
@@ -69,6 +74,7 @@ export default async function Home() {
             entriesByPlayer={entriesByPlayer}
             championIdsByCategory={competition.championIdsByCategory}
             nicknames={nicknames}
+            players={competition.players}
           />
           <RankingsCta />
         </div>

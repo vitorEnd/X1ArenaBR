@@ -1,7 +1,8 @@
 import { CalendarDays, Clock3, MapPin, Swords } from "lucide-react";
+import { OfficialPlayerAvatar } from "@/components/official-player-avatar";
 import { categories, officialPlayers } from "@/data/arena";
 import { createPlayerNicknameMap } from "@/lib/player-nicknames";
-import type { Event, Match, PlayerNickname } from "@/lib/types";
+import type { Event, Match, Player, PlayerNickname } from "@/lib/types";
 import { PlayerNicknameBadge } from "./player-nickname-badge";
 
 const typeLabels: Record<Match["type"], string> = {
@@ -30,13 +31,15 @@ export function MatchCard({
   match,
   event,
   nicknames = [],
+  players = officialPlayers,
 }: {
   match: Match;
   event: Event;
   nicknames?: readonly PlayerNickname[];
+  players?: readonly Player[];
 }) {
-  const playerA = officialPlayers.find((player) => player.id === match.playerAId);
-  const playerB = officialPlayers.find((player) => player.id === match.playerBId);
+  const playerA = players.find((player) => player.id === match.playerAId);
+  const playerB = players.find((player) => player.id === match.playerBId);
   const category = categories.find((item) => item.id === match.categoryId);
   const startsAt = new Date(match.scheduledAt ?? event.startsAt);
   const score = match.result?.score;
@@ -57,6 +60,15 @@ export function MatchCard({
       </div>
       <div className="match-card__versus">
         <div>
+          <div className="match-card__participant-avatar">
+            <OfficialPlayerAvatar
+              player={playerA}
+              size={104}
+              sizes="52px"
+              alt=""
+              fallbackSize={21}
+            />
+          </div>
           <span>A</span>
           <strong>{playerA?.name ?? "Jogador a definir"}</strong>
           {nicknameByPlayer.get(match.playerAId) && (
@@ -74,6 +86,15 @@ export function MatchCard({
           <div className="match-card__vs"><Swords size={19} /><b>VS</b></div>
         )}
         <div>
+          <div className="match-card__participant-avatar">
+            <OfficialPlayerAvatar
+              player={playerB}
+              size={104}
+              sizes="52px"
+              alt=""
+              fallbackSize={21}
+            />
+          </div>
           <span>B</span>
           <strong>{playerB?.name ?? "Jogador a definir"}</strong>
           {nicknameByPlayer.get(match.playerBId) && (

@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, Search, UserRound, Users, X } from "lucide-react";
+import { ArrowUpRight, Search, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { OfficialPlayerAvatar } from "@/components/official-player-avatar";
 import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import {
   categories,
@@ -12,16 +13,18 @@ import {
 } from "@/data/arena";
 import { buildCategoryRanking } from "@/lib/ranking";
 import { createPlayerNicknameMap } from "@/lib/player-nicknames";
-import type { CategoryId, PlayerNickname, RankingEntry } from "@/lib/types";
+import type { CategoryId, Player, PlayerNickname, RankingEntry } from "@/lib/types";
 
 type Filter = CategoryId | "all" | "unassigned";
 
 export function PlayerDirectory({
   entries: externalEntries,
   nicknames = [],
+  players = officialPlayers,
 }: {
   readonly entries?: Map<string, RankingEntry>;
   readonly nicknames?: readonly PlayerNickname[];
+  readonly players?: readonly Player[];
 }) {
   const [category, setCategory] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -30,7 +33,7 @@ export function PlayerDirectory({
     () => createPlayerNicknameMap(nicknames),
     [nicknames],
   );
-  const hasUnassignedPlayers = officialPlayers.some(
+  const hasUnassignedPlayers = players.some(
     (player) => !player.currentCategoryId,
   );
   const rankingEntries = useMemo(
@@ -48,7 +51,7 @@ export function PlayerDirectory({
     });
     return map;
   }, [rankingEntries]);
-  const visiblePlayers = officialPlayers.filter((player) => {
+  const visiblePlayers = players.filter((player) => {
     const categoryMatches =
       category === "all" ||
       (category === "unassigned"
@@ -161,7 +164,13 @@ export function PlayerDirectory({
                     </small>
                   </div>
                   <div className="player-card__avatar">
-                    <UserRound size={36} aria-hidden="true" />
+                    <OfficialPlayerAvatar
+                      player={player}
+                      size={116}
+                      sizes="82px"
+                      alt=""
+                      fallbackSize={36}
+                    />
                   </div>
                   <span className="player-card__category">
                     {categoryData?.name ?? "Categoria a definir"}

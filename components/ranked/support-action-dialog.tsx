@@ -42,11 +42,10 @@ export function SupportActionDialog({
   const [playerBMmr, setPlayerBMmr] = useState(() =>
     String(historyMatch?.playerBCurrentMmr ?? 800),
   );
-  const [accountAction, setAccountAction] = useState<"freeze" | "unfreeze" | "ban" | "unban" | "penalize" | "adjust-mmr" | "set-avatar" | "delete-avatar">(
+  const [accountAction, setAccountAction] = useState<"freeze" | "unfreeze" | "ban" | "unban" | "penalize" | "adjust-mmr">(
     account?.banned ? "unban" : account?.frozen ? "unfreeze" : "freeze",
   );
   const [newMmr, setNewMmr] = useState(() => String(account?.mmr ?? 800));
-  const [avatarDataUrl, setAvatarDataUrl] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -116,12 +115,7 @@ export function SupportActionDialog({
         internalNote,
       };
     } else if (account) {
-      if (accountAction === "set-avatar") {
-        if (!avatarDataUrl) { setError("Selecione uma imagem."); return; }
-        payload = { intent: "set-player-avatar", playerId: account.profileId, avatarDataUrl, internalNote };
-      } else if (accountAction === "delete-avatar") {
-        payload = { intent: "delete-player-avatar", playerId: account.profileId, internalNote };
-      } else if (accountAction === "adjust-mmr") {
+      if (accountAction === "adjust-mmr") {
         const parsedMmr = Number(newMmr);
         if (!Number.isInteger(parsedMmr) || parsedMmr < 800) {
           setError("Informe um novo MMR inteiro a partir de 800.");
@@ -238,8 +232,6 @@ export function SupportActionDialog({
                   value={accountAction}
                   onChange={(event) => setAccountAction(event.target.value as typeof accountAction)}
                 >
-                  <option value="set-avatar">Enviar foto do jogador</option>
-                  <option value="delete-avatar">Excluir foto do jogador</option>
                   <option value="freeze">Congelar jogador</option>
                   <option value="unfreeze">Descongelar jogador</option>
                   <option value="penalize">Aplicar punição</option>
@@ -248,9 +240,6 @@ export function SupportActionDialog({
                   <option value="unban">Desbanir jogador</option>
                 </select>
               </div>
-              {accountAction === "set-avatar" && (
-                <div className={styles.field}><label htmlFor="support-player-avatar">Imagem do jogador</label><input id="support-player-avatar" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; if (file.size > 5 * 1024 * 1024) { setError("A imagem deve ter no máximo 5 MB."); return; } const reader = new FileReader(); reader.onload = () => setAvatarDataUrl(String(reader.result ?? "")); reader.readAsDataURL(file); }} /><small>PNG, JPG ou WebP · máximo 5 MB</small></div>
-              )}
               {accountAction === "adjust-mmr" && (
                 <div className={styles.field}>
                   <label htmlFor="support-new-mmr">Novo MMR absoluto</label>

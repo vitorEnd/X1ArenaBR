@@ -235,6 +235,7 @@ export interface RankedSupportOfficialPlayer {
   readonly playerId: string;
   readonly name: string;
   readonly categoryName: string;
+  readonly avatarUrl: string | null;
   readonly nickname: RankedPlayerNickname | null;
 }
 
@@ -329,15 +330,15 @@ export type RankedSupportIntent =
       readonly internalNote?: string;
     }
   | {
-      readonly intent: "set-player-avatar";
+      readonly intent: "set-official-player-avatar";
       readonly playerId: string;
       readonly avatarDataUrl: string;
-      readonly internalNote: string;
+      readonly internalNote?: string;
     }
   | {
-      readonly intent: "delete-player-avatar";
+      readonly intent: "delete-official-player-avatar";
       readonly playerId: string;
-      readonly internalNote: string;
+      readonly internalNote?: string;
     }
   | {
       readonly intent: "correct-history-match";

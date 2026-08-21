@@ -17,10 +17,10 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { creators, howItWorks } from "@/data/arena";
+import { creators, howItWorks, officialPlayers } from "@/data/arena";
 import type { ArenaCard } from "@/lib/arena-card-types";
 import { DISCORD_URL } from "@/lib/site";
-import type { PlayerNickname } from "@/lib/types";
+import type { Player, PlayerNickname } from "@/lib/types";
 import { ArenaCardView } from "./arena-card-view";
 import { BrandMark } from "./brand-mark";
 import { SectionHeading } from "./section-heading";
@@ -80,9 +80,11 @@ export function ArenaStats() {
 export function NextEventSection({
   cards,
   nicknames = [],
+  players = officialPlayers,
 }: {
   readonly cards: readonly ArenaCard[];
   readonly nicknames?: readonly PlayerNickname[];
+  readonly players?: readonly Player[];
 }) {
   const scheduledCards = cards
     .filter((card) => card.status === "live" || card.status === "announced")
@@ -134,7 +136,11 @@ export function NextEventSection({
           </motion.div>
         )}
         {nextOfficialCard && (
-          <ArenaCardView card={nextOfficialCard} nicknames={nicknames} />
+          <ArenaCardView
+            card={nextOfficialCard}
+            nicknames={nicknames}
+            players={players}
+          />
         )}
       </div>
     </section>

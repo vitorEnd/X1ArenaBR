@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Crown, Search, ShieldQuestion, UserRound, X } from "lucide-react";
+import { Search, ShieldQuestion, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { OfficialPlayerAvatar } from "@/components/official-player-avatar";
 import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import {
   categories,
@@ -20,6 +21,7 @@ type RankingExplorerProps = {
   entriesByPlayer?: ReadonlyMap<string, RankingEntry>;
   championIdsByCategory?: ReadonlyMap<CategoryId, string>;
   nicknames?: readonly PlayerNickname[];
+  players?: readonly Player[];
 };
 
 function FormDots({ form }: { form: readonly ("win" | "loss")[] }) {
@@ -43,6 +45,7 @@ export function RankingExplorer({
   entriesByPlayer = new Map(),
   championIdsByCategory = new Map(),
   nicknames = [],
+  players = officialPlayers,
 }: RankingExplorerProps) {
   const [categoryId, setCategoryId] = useState<CategoryId>("peso-pena");
   const [query, setQuery] = useState("");
@@ -54,7 +57,7 @@ export function RankingExplorer({
       );
 
   const ranking = useMemo(() => {
-    const categoryPlayers = officialPlayers.filter(
+    const categoryPlayers = players.filter(
       (player) => player.currentCategoryId === categoryId || player.id === liveChampionId,
     );
     const seededEntries: RankingEntry[] = categoryPlayers.map((player) => {
@@ -79,16 +82,16 @@ export function RankingExplorer({
     return buildCategoryRanking(seededEntries, categoryId, {
       championPlayerId: championRecord?.playerId,
     });
-  }, [categoryId, championRecord?.playerId, entriesByPlayer, liveChampionId]);
+  }, [categoryId, championRecord?.playerId, entriesByPlayer, liveChampionId, players]);
   const playerById = useMemo(
-    () => new Map<string, Player>(officialPlayers.map((player) => [player.id, player])),
-    [],
+    () => new Map<string, Player>(players.map((player) => [player.id, player])),
+    [players],
   );
   const nicknameByPlayer = useMemo(
     () => createPlayerNicknameMap(nicknames),
     [nicknames],
   );
-  const championPlayer = championRecord ? officialPlayers.find((player) => player.id === championRecord.playerId) : null;
+  const championPlayer = championRecord ? playerById.get(championRecord.playerId) ?? null : null;
   const championNickname = championPlayer
     ? nicknameByPlayer.get(championPlayer.id)
     : undefined;
@@ -148,7 +151,13 @@ export function RankingExplorer({
       <div className="champion-row">
         <span className="champion-marker">C</span>
         <div className="champion-row__icon">
-          <Crown size={24} aria-hidden="true" />
+          <OfficialPlayerAvatar
+            player={championPlayer}
+            size={92}
+            sizes="46px"
+            alt=""
+            fallbackSize={24}
+          />
         </div>
         <div>
           <span>Campeão da categoria</span>
@@ -220,8 +229,14 @@ export function RankingExplorer({
                           <td><strong>{entry.marker}</strong></td>
                           <td>
                             <Link href={`/jogadores/${player.slug}`} className="ranking-player">
-                              <span className="avatar-placeholder" aria-hidden="true">
-                                <UserRound size={17} />
+                              <span className="avatar-placeholder">
+                                <OfficialPlayerAvatar
+                                  player={player}
+                                  size={72}
+                                  sizes="36px"
+                                  alt=""
+                                  fallbackSize={17}
+                                />
                               </span>
                               <span>
                                 <strong>{player.name}</strong>
@@ -257,11 +272,22 @@ export function RankingExplorer({
                     <motion.article key={entry.playerId} className="ranking-mobile-card" layout>
                       <div className="ranking-mobile-card__head">
                         <span>{entry.marker}</span>
-                        <Link href={`/jogadores/${player.slug}`}>
-                          {player.name}
-                          {nickname && (
-                            <PlayerNicknameBadge nickname={nickname} size="compact" />
-                          )}
+                        <Link href={`/jogadores/${player.slug}`} className="ranking-mobile-card__player">
+                          <span className="avatar-placeholder">
+                            <OfficialPlayerAvatar
+                              player={player}
+                              size={72}
+                              sizes="36px"
+                              alt=""
+                              fallbackSize={17}
+                            />
+                          </span>
+                          <span>
+                            {player.name}
+                            {nickname && (
+                              <PlayerNicknameBadge nickname={nickname} size="compact" />
+                            )}
+                          </span>
                         </Link>
                         <strong>{entry.points} <small>PTS</small></strong>
                       </div>

@@ -3,23 +3,26 @@
 import { motion } from "framer-motion";
 import { Crown, Shield, Trophy } from "lucide-react";
 import Link from "next/link";
+import { OfficialPlayerAvatar } from "@/components/official-player-avatar";
 import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import { categories, officialChampions, officialPlayers, officialRankingEntries } from "@/data/arena";
 import { getCategoryPlayerRankingKey } from "@/lib/arena-competition";
 import { createPlayerNicknameMap } from "@/lib/player-nicknames";
 import { calculateRankingEntry } from "@/lib/ranking";
-import type { CategoryId, Champion, PlayerNickname, RankingEntry } from "@/lib/types";
+import type { CategoryId, Champion, Player, PlayerNickname, RankingEntry } from "@/lib/types";
 
 type ChampionsGridProps = {
   entriesByPlayer?: ReadonlyMap<string, RankingEntry>;
   championsByCategory?: ReadonlyMap<CategoryId, Champion>;
   nicknames?: readonly PlayerNickname[];
+  players?: readonly Player[];
 };
 
 export function ChampionsGrid({
   entriesByPlayer = new Map(),
   championsByCategory = new Map(),
   nicknames = [],
+  players = officialPlayers,
 }: ChampionsGridProps) {
   const nicknameByPlayer = createPlayerNicknameMap(nicknames);
   return (
@@ -28,7 +31,7 @@ export function ChampionsGrid({
         const champion = championsByCategory.get(category.id)
           ?? officialChampions.find((item) => item.categoryId === category.id && item.type === "official")
           ?? officialChampions.find((item) => item.categoryId === category.id && item.type === "interim");
-        const player = champion ? officialPlayers.find((item) => item.id === champion.playerId) : null;
+        const player = champion ? players.find((item) => item.id === champion.playerId) : null;
         const rankingEntry = champion
           ? entriesByPlayer.get(getCategoryPlayerRankingKey(category.id, champion.playerId))
             ?? entriesByPlayer.get(champion.playerId)
@@ -58,7 +61,19 @@ export function ChampionsGrid({
             {category.name}
           </div>
           <span className="champion-card__c">C</span>
-          <Crown className="champion-card__crown" size={34} aria-hidden="true" />
+          {hasChampion && player ? (
+            <div className="champion-card__avatar">
+              <OfficialPlayerAvatar
+                player={player}
+                size={192}
+                sizes="96px"
+                alt=""
+                fallbackSize={34}
+              />
+            </div>
+          ) : (
+            <Crown className="champion-card__crown" size={34} aria-hidden="true" />
+          )}
           <h3>
             {hasChampion && player ? (
               <Link href={`/jogadores/${player.slug}`}>{player.name}</Link>

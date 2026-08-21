@@ -40,6 +40,7 @@ export default async function RankingsPage() {
             entriesByPlayer={entriesByPlayer}
             championIdsByCategory={competition.championIdsByCategory}
             nicknames={nicknames}
+            players={competition.players}
           />
         </div>
       </section>

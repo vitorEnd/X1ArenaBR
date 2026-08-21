@@ -9,10 +9,11 @@ import {
   Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import { OfficialPlayerAvatar } from "@/components/official-player-avatar";
 import { officialPlayers } from "@/data/arena";
 import type { ArenaCard, ArenaCardMatch } from "@/lib/arena-card-types";
 import { createPlayerNicknameMap } from "@/lib/player-nicknames";
-import type { CategoryId, PlayerNickname } from "@/lib/types";
+import type { CategoryId, Player, PlayerNickname } from "@/lib/types";
 import { PlayerNicknameBadge } from "./player-nickname-badge";
 
 const categoryLabels: Record<CategoryId, string> = {
@@ -49,12 +50,12 @@ function formatTime(value: string | null) {
   }).format(new Date(value));
 }
 
-function playerName(id: string) {
-  return officialPlayers.find((player) => player.id === id)?.name ?? id;
+function playerName(id: string, playerById: ReadonlyMap<string, Player>) {
+  return playerById.get(id)?.name ?? id;
 }
 
-function playerSlug(id: string) {
-  return officialPlayers.find((player) => player.id === id)?.slug ?? id;
+function playerSlug(id: string, playerById: ReadonlyMap<string, Player>) {
+  return playerById.get(id)?.slug ?? id;
 }
 
 function matchStatusLabel(status: ArenaCardMatch["status"]) {
@@ -72,18 +73,22 @@ function ArenaMatch({
   card,
   variant,
   nicknameByPlayer,
+  playerById,
 }: {
   match: ArenaCardMatch;
   card: ArenaCard;
   variant: ArenaCardVariant;
   nicknameByPlayer: ReadonlyMap<string, PlayerNickname>;
+  playerById: ReadonlyMap<string, Player>;
 }) {
   const scheduledAt = match.scheduledAt ?? card.startsAt;
   const hasScore = match.playerAScore !== null && match.playerBScore !== null;
   const playerAWon = match.winnerPlayerId === match.playerAId;
   const playerBWon = match.winnerPlayerId === match.playerBId;
+  const playerA = playerById.get(match.playerAId);
+  const playerB = playerById.get(match.playerBId);
   const categoryLabel = categoryLabels[match.categoryId];
-  const matchLabel = `${playerName(match.playerAId)} contra ${playerName(match.playerBId)}`;
+  const matchLabel = `${playerName(match.playerAId, playerById)} contra ${playerName(match.playerBId, playerById)}`;
 
   return (
     <article
@@ -118,12 +123,21 @@ function ArenaMatch({
 
       <div className="match-card__versus">
         <div className={playerAWon ? "match-card__player match-card__player--winner" : "match-card__player"}>
+          <div className="match-card__player-avatar">
+            <OfficialPlayerAvatar
+              player={playerA}
+              size={128}
+              sizes={match.type === "belt" ? "64px" : "52px"}
+              alt=""
+              fallbackSize={21}
+            />
+          </div>
           <span>
             Jogador A
             {playerAWon && <em><Trophy size={11} aria-hidden="true" /> Vencedor</em>}
           </span>
-          <Link href={`/jogadores/${playerSlug(match.playerAId)}`}>
-            <span>{playerName(match.playerAId)}</span>
+          <Link href={`/jogadores/${playerSlug(match.playerAId, playerById)}`}>
+            <span>{playerName(match.playerAId, playerById)}</span>
             {nicknameByPlayer.get(match.playerAId) && (
               <PlayerNicknameBadge
                 nickname={nicknameByPlayer.get(match.playerAId)!}
@@ -143,12 +157,21 @@ function ArenaMatch({
         )}
 
         <div className={playerBWon ? "match-card__player match-card__player--winner" : "match-card__player"}>
+          <div className="match-card__player-avatar">
+            <OfficialPlayerAvatar
+              player={playerB}
+              size={128}
+              sizes={match.type === "belt" ? "64px" : "52px"}
+              alt=""
+              fallbackSize={21}
+            />
+          </div>
           <span>
             Jogador B
             {playerBWon && <em><Trophy size={11} aria-hidden="true" /> Vencedor</em>}
           </span>
-          <Link href={`/jogadores/${playerSlug(match.playerBId)}`}>
-            <span>{playerName(match.playerBId)}</span>
+          <Link href={`/jogadores/${playerSlug(match.playerBId, playerById)}`}>
+            <span>{playerName(match.playerBId, playerById)}</span>
             {nicknameByPlayer.get(match.playerBId) && (
               <PlayerNicknameBadge
                 nickname={nicknameByPlayer.get(match.playerBId)!}
@@ -174,12 +197,15 @@ export function ArenaCardView({
   card,
   variant = "schedule",
   nicknames = [],
+  players = officialPlayers,
 }: {
   readonly card: ArenaCard;
   readonly variant?: ArenaCardVariant;
   readonly nicknames?: readonly PlayerNickname[];
+  readonly players?: readonly Player[];
 }) {
   const nicknameByPlayer = createPlayerNicknameMap(nicknames);
+  const playerById = new Map(players.map((player) => [player.id, player]));
   const categories = (["peso-medio", "peso-pena", "peso-pesado"] as const)
     .map((categoryId) => ({
       categoryId,
@@ -249,6 +275,7 @@ export function ArenaCardView({
                     card={card}
                     variant={variant}
                     nicknameByPlayer={nicknameByPlayer}
+                    playerById={playerById}
                   />
                 ))}
               </div>

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { ArrowLeft, Crown, History, Shield, UserRound } from "lucide-react";
+import { ArrowLeft, Crown, History, Shield } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MatchCard } from "@/components/match-card";
+import { OfficialPlayerAvatar } from "@/components/official-player-avatar";
 import { PlayerNicknameBadge } from "@/components/player-nickname-badge";
 import type { Event } from "@/lib/types";
 import {
@@ -15,6 +16,7 @@ import {
   getPublicPlayerBeltHistory,
   getPublicPlayerMatchHistory,
   getPublicPlayerRankingEntries,
+  getPublicOfficialPlayers,
 } from "@/lib/arena-cards-server";
 import { getPublicPlayerNicknames } from "@/lib/player-nicknames-server";
 import {
@@ -63,18 +65,20 @@ export async function generateMetadata({
 
 export default async function PlayerPage({ params }: PlayerPageProps) {
   const { slug } = await params;
-  const player = officialPlayers.find((item) => item.slug === slug);
-  if (!player) notFound();
+  const staticPlayer = officialPlayers.find((item) => item.slug === slug);
+  if (!staticPlayer) notFound();
 
+  const [rankingEntries, history, liveBeltHistory, nicknames, players] = await Promise.all([
+    getPublicPlayerRankingEntries(),
+    getPublicPlayerMatchHistory(staticPlayer.id),
+    getPublicPlayerBeltHistory(staticPlayer.id),
+    getPublicPlayerNicknames(),
+    getPublicOfficialPlayers(),
+  ]);
+  const player = players.find((item) => item.id === staticPlayer.id) ?? staticPlayer;
   const category = categories.find(
     (item) => item.id === player.currentCategoryId,
   );
-  const [rankingEntries, history, liveBeltHistory, nicknames] = await Promise.all([
-    getPublicPlayerRankingEntries(),
-    getPublicPlayerMatchHistory(player.id),
-    getPublicPlayerBeltHistory(player.id),
-    getPublicPlayerNicknames(),
-  ]);
   const nickname = nicknames.find((item) => item.playerId === player.id);
   const entry = rankingEntries.find(
     (item) => item.playerId === player.id && item.categoryId === player.currentCategoryId,
@@ -106,7 +110,13 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
             <ArrowLeft size={17} aria-hidden="true" /> Voltar aos jogadores
           </Link>
           <div className="player-profile-hero__avatar">
-            <UserRound size={62} aria-hidden="true" />
+            <OfficialPlayerAvatar
+              player={player}
+              size={300}
+              sizes="150px"
+              alt={`Foto oficial de ${player.name}`}
+              fallbackSize={62}
+            />
           </div>
           <div className="player-profile-hero__copy">
             <span className="status-badge">JOGADOR OFICIAL</span>
@@ -197,6 +207,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                     match={match}
                     event={event}
                     nicknames={nicknames}
+                    players={players}
                   />
                 );
               })}

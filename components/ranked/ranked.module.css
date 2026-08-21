@@ -1691,6 +1691,11 @@
   gap: 24px;
 }
 
+.nicknameManagerCounts {
+  display: flex;
+  gap: 8px;
+}
+
 .nicknameManagerCount {
   min-width: 132px;
   justify-content: center;
@@ -1807,6 +1812,82 @@
 .nicknameEditorIdentity > strong {
   margin-top: 2px;
   font-size: 1.65rem;
+}
+
+.officialAvatarEditor {
+  display: grid;
+  grid-template-columns: 144px minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  background:
+    linear-gradient(120deg, rgba(245, 184, 0, 0.045), transparent 56%),
+    #0c0c0c;
+}
+
+.officialAvatarPreview {
+  position: relative;
+  display: grid;
+  width: 144px;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(245, 184, 0, 0.34);
+  background:
+    linear-gradient(135deg, transparent 72%, rgba(245, 184, 0, 0.11) 72%),
+    #141414;
+  background-position: center;
+  background-size: cover;
+  clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+  color: #666;
+}
+
+.officialAvatarPreview::after {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  content: "";
+  pointer-events: none;
+}
+
+.officialAvatarPreviewHasImage {
+  box-shadow: 0 0 28px rgba(245, 184, 0, 0.11);
+}
+
+.officialAvatarPreview svg {
+  width: 36px;
+  height: 36px;
+}
+
+.officialAvatarControls {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+.officialAvatarControls p,
+.officialAvatarControls > small {
+  margin: 5px 0 0;
+  color: #828282;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.officialAvatarButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.officialAvatarButtons > label {
+  cursor: pointer;
+}
+
+.officialAvatarButtons > label[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+  pointer-events: none;
 }
 
 .nicknameColorFieldset {
@@ -1996,12 +2077,40 @@
     flex-direction: column;
   }
 
+  .nicknameManagerCounts {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .nicknameManagerCount {
+    flex: 1 1 132px;
+  }
+
   .nicknameManagerGrid {
     grid-template-columns: 1fr;
   }
 
   .nicknameColorOptions {
     grid-template-columns: 1fr;
+  }
+
+  .officialAvatarEditor {
+    grid-template-columns: 1fr;
+  }
+
+  .officialAvatarPreview {
+    width: min(100%, 180px);
+    justify-self: center;
+  }
+
+  .officialAvatarButtons {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .officialAvatarButtons > * {
+    justify-content: center;
+    width: 100%;
   }
 }
 

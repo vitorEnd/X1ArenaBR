@@ -5,8 +5,9 @@ import {
   derivePublicPlayerRankingEntries,
   getCanonicalOfficialPlayerId,
 } from "./arena-competition";
+import { officialPlayers } from "../data/arena";
 import type { ArenaCard, ArenaCardMatch } from "./arena-card-types";
-import type { BeltHistory, CategoryId, Champion, Match, RankingEntry } from "./types";
+import type { BeltHistory, CategoryId, Champion, Match, Player, RankingEntry } from "./types";
 import { createAdminClient } from "./supabase/admin";
 import { isSupabaseAdminConfigured } from "./supabase/env";
 
@@ -73,19 +74,78 @@ export async function getPublicArenaCards(): Promise<readonly ArenaCard[]> {
   }));
 }
 
+function withAvatarVersion(publicUrl: string, updatedAt: unknown): string {
+  if (typeof updatedAt !== "string" || !updatedAt) return publicUrl;
+
+  try {
+    const url = new URL(publicUrl);
+    const timestamp = Date.parse(updatedAt);
+    url.searchParams.set("v", Number.isFinite(timestamp) ? String(timestamp) : updatedAt);
+    return url.toString();
+  } catch {
+    return publicUrl;
+  }
+}
+
+export async function getPublicOfficialPlayers(): Promise<readonly Player[]> {
+  if (!isSupabaseAdminConfigured()) return officialPlayers;
+
+  const admin = createAdminClient();
+  const result = await admin
+    .from("arena_player_avatars")
+    .select("player_id,storage_path,updated_at")
+    .order("updated_at", { ascending: true });
+
+  if (result.error) {
+    console.error("Official player avatars read failed", result.error.message);
+    return officialPlayers;
+  }
+
+  const avatarUrlByPlayer = new Map<string, string>();
+  for (const row of result.data ?? []) {
+    if (typeof row.player_id !== "string" || typeof row.storage_path !== "string") {
+      continue;
+    }
+
+    const playerId = getCanonicalOfficialPlayerId(row.player_id);
+    if (!officialPlayers.some((player) => player.id === playerId)) continue;
+    if (row.storage_path !== `official/${playerId.toLowerCase()}/avatar.webp`) {
+      continue;
+    }
+
+    const publicUrl = admin.storage
+      .from("player-avatars")
+      .getPublicUrl(row.storage_path).data.publicUrl;
+    avatarUrlByPlayer.set(
+      playerId,
+      withAvatarVersion(publicUrl, row.updated_at),
+    );
+  }
+
+  return officialPlayers.map((player) => ({
+    ...player,
+    avatarUrl: avatarUrlByPlayer.get(player.id) ?? player.avatarUrl,
+  }));
+}
+
 export type PublicArenaCompetitionData = {
   readonly cards: readonly ArenaCard[];
+  readonly players: readonly Player[];
   readonly rankingEntries: readonly RankingEntry[];
   readonly championsByCategory: ReadonlyMap<CategoryId, Champion>;
   readonly championIdsByCategory: ReadonlyMap<CategoryId, string>;
 };
 
 export async function getPublicArenaCompetitionData(): Promise<PublicArenaCompetitionData> {
-  const cards = await getPublicArenaCards();
+  const [cards, players] = await Promise.all([
+    getPublicArenaCards(),
+    getPublicOfficialPlayers(),
+  ]);
   const championsByCategory = derivePublicChampionsByCategory(cards);
 
   return {
     cards,
+    players,
     rankingEntries: derivePublicPlayerRankingEntries(cards),
     championsByCategory,
     championIdsByCategory: new Map(

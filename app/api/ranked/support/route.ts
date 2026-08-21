@@ -25,6 +25,11 @@ import {
   stringValue,
   toRankedOpponent,
 } from "@/lib/ranked/api-server";
+import {
+  AVATAR_MAX_BYTES,
+  AVATAR_MAX_DIMENSION,
+  getImageDimensions,
+} from "@/lib/ranked/avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -140,15 +145,18 @@ const supportIntentSchema = z.discriminatedUnion("intent", [
     internalNote: z.string().trim().max(1000).default(""),
   }),
   z.object({
-    intent: z.literal("set-player-avatar"),
-    playerId: z.string().uuid(),
-    avatarDataUrl: z.string().regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/),
-    internalNote: z.string().trim().min(5).max(1000),
+    intent: z.literal("set-official-player-avatar"),
+    playerId: z.string().min(1).max(80),
+    avatarDataUrl: z
+      .string()
+      .max(7_000_000)
+      .regex(/^data:image\/webp;base64,[A-Za-z0-9+/]+={0,2}$/),
+    internalNote: z.string().trim().max(1000).default(""),
   }),
   z.object({
-    intent: z.literal("delete-player-avatar"),
-    playerId: z.string().uuid(),
-    internalNote: z.string().trim().min(5).max(1000),
+    intent: z.literal("delete-official-player-avatar"),
+    playerId: z.string().min(1).max(80),
+    internalNote: z.string().trim().max(1000).default(""),
   }),
   z.object({
     intent: z.literal("account-action"),
@@ -163,6 +171,39 @@ const officialPlayerIds = new Set<string>(officialPlayers.map((player) => player
 const categoryNames = new Map<string, string>(
   categories.map((category) => [category.id, category.name]),
 );
+const OFFICIAL_AVATAR_BUCKET = "player-avatars";
+
+function officialAvatarPath(playerId: string): string {
+  return `official/${playerId.toLocaleLowerCase("en-US")}/avatar.webp`;
+}
+
+function decodeOfficialAvatar(dataUrl: string): Uint8Array {
+  const encoded = dataUrl.slice("data:image/webp;base64,".length);
+  const bytes = Buffer.from(encoded, "base64");
+  const normalizedInput = encoded.replace(/=+$/u, "");
+  const normalizedDecoded = bytes.toString("base64").replace(/=+$/u, "");
+  if (!bytes.byteLength || normalizedDecoded !== normalizedInput) {
+    throw new RankedRequestError("O arquivo WebP enviado é inválido.");
+  }
+  if (bytes.byteLength > AVATAR_MAX_BYTES) {
+    throw new RankedRequestError("A imagem deve ter no máximo 5 MB.");
+  }
+
+  const dimensions = getImageDimensions(bytes, "image/webp");
+  if (!dimensions) {
+    throw new RankedRequestError("O arquivo não contém uma imagem WebP válida.");
+  }
+  if (dimensions.width !== dimensions.height) {
+    throw new RankedRequestError("A foto oficial precisa ter formato quadrado.");
+  }
+  if (
+    dimensions.width > AVATAR_MAX_DIMENSION ||
+    dimensions.height > AVATAR_MAX_DIMENSION
+  ) {
+    throw new RankedRequestError("A foto oficial deve ter no máximo 2048 × 2048 pixels.");
+  }
+  return bytes;
+}
 
 export async function GET(request: Request) {
   try {
@@ -188,6 +229,7 @@ export async function GET(request: Request) {
 
     const [
       nicknamesResult,
+      officialAvatarsResult,
       queueResult,
       activeResult,
       matchHistoryResult,
@@ -204,6 +246,9 @@ export async function GET(request: Request) {
         admin
           .from("arena_player_nicknames")
           .select("player_id,nickname,color"),
+        admin
+          .from("arena_player_avatars")
+          .select("player_id,storage_path,updated_at"),
         admin
           .from("ranked_queue_entries")
           .select("profile_id,joined_at")
@@ -267,6 +312,7 @@ export async function GET(request: Request) {
       ]);
     for (const result of [
       nicknamesResult,
+      officialAvatarsResult,
       queueResult,
       activeResult,
       frozenResult,
@@ -478,6 +524,25 @@ export async function GET(request: Request) {
           },
         ]),
     );
+    const avatarsByPlayer = new Map(
+      (officialAvatarsResult.data ?? [])
+        .filter((item) => {
+          const playerId = String(item.player_id);
+          return (
+            officialPlayerIds.has(playerId) &&
+            String(item.storage_path) === officialAvatarPath(playerId)
+          );
+        })
+        .map((item) => {
+          const publicUrl = admin.storage
+            .from(OFFICIAL_AVATAR_BUCKET)
+            .getPublicUrl(String(item.storage_path)).data.publicUrl;
+          return [
+            String(item.player_id),
+            `${publicUrl}?v=${encodeURIComponent(String(item.updated_at))}`,
+          ];
+        }),
+    );
     const supportOfficialPlayers: RankedSupportOfficialPlayer[] = officialPlayers.map(
       (player) => ({
         playerId: player.id,
@@ -485,6 +550,7 @@ export async function GET(request: Request) {
         categoryName:
           (player.currentCategoryId && categoryNames.get(player.currentCategoryId)) ||
           "Sem categoria",
+        avatarUrl: avatarsByPlayer.get(player.id) ?? null,
         nickname: nicknamesByPlayer.get(player.id) ?? null,
       }),
     );
@@ -548,7 +614,7 @@ export async function POST(request: Request) {
 
     if (parsed.data.intent === "set-player-nickname") {
       if (!officialPlayerIds.has(parsed.data.playerId)) {
-        throw new RankedRequestError("Jogador oficial invÃ¡lido.", 404);
+        throw new RankedRequestError("Jogador oficial inválido.", 404);
       }
       const result = await admin.from("arena_player_nicknames").upsert({ player_id: parsed.data.playerId, nickname: parsed.data.nickname, color: parsed.data.color, updated_by: user.id }, { onConflict: "player_id" });
       if (result.error) throw result.error;
@@ -556,30 +622,66 @@ export async function POST(request: Request) {
       if (auditResult.error) throw auditResult.error;
     } else if (parsed.data.intent === "delete-player-nickname") {
       if (!officialPlayerIds.has(parsed.data.playerId)) {
-        throw new RankedRequestError("Jogador oficial invÃ¡lido.", 404);
+        throw new RankedRequestError("Jogador oficial inválido.", 404);
       }
       const result = await admin.from("arena_player_nicknames").delete().eq("player_id", parsed.data.playerId);
       if (result.error) throw result.error;
       const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: "delete_player_nickname", target_type: "official_player", target_id: parsed.data.playerId, note: parsed.data.internalNote || "Apelido oficial removido pela Central de Suporte." });
       if (auditResult.error) throw auditResult.error;
-    } else if (parsed.data.intent === "set-player-avatar" || parsed.data.intent === "delete-player-avatar") {
-      const path = `${parsed.data.playerId}/avatar.webp`;
-      if (parsed.data.intent === "set-player-avatar") {
-        const [, encoded] = parsed.data.avatarDataUrl.split(",");
-        const bytes = Buffer.from(encoded, "base64");
-        if (bytes.byteLength > 5 * 1024 * 1024) throw new RankedRequestError("A imagem deve ter no máximo 5 MB.");
-        const contentType = parsed.data.avatarDataUrl.match(/^data:(image\/(?:jpeg|png|webp));/)?.[1] ?? "image/webp";
-        const upload = await admin.storage.from("player-avatars").upload(path, bytes, { contentType, upsert: true, cacheControl: "3600" });
-        if (upload.error) throw upload.error;
-        const publicUrl = admin.storage.from("player-avatars").getPublicUrl(path).data.publicUrl;
-        const profile = await admin.from("ranked_profiles").update({ avatar_path: publicUrl }).eq("id", parsed.data.playerId);
-        if (profile.error) throw profile.error;
-      } else {
-        await admin.storage.from("player-avatars").remove([path]);
-        const profile = await admin.from("ranked_profiles").update({ avatar_path: null }).eq("id", parsed.data.playerId);
-        if (profile.error) throw profile.error;
+    } else if (
+      parsed.data.intent === "set-official-player-avatar" ||
+      parsed.data.intent === "delete-official-player-avatar"
+    ) {
+      if (!officialPlayerIds.has(parsed.data.playerId)) {
+        throw new RankedRequestError("Jogador oficial inválido.", 404);
       }
-      const auditResult = await admin.from("support_audit_log").insert({ support_user_id: user.id, action: parsed.data.intent.replaceAll("-", "_"), target_type: "player", target_id: parsed.data.playerId, note: parsed.data.internalNote });
+      const path = officialAvatarPath(parsed.data.playerId);
+      if (parsed.data.intent === "set-official-player-avatar") {
+        const bytes = decodeOfficialAvatar(parsed.data.avatarDataUrl);
+        const upload = await admin.storage
+          .from(OFFICIAL_AVATAR_BUCKET)
+          .upload(path, bytes, {
+            contentType: "image/webp",
+            upsert: true,
+            cacheControl: "3600",
+          });
+        if (upload.error) throw upload.error;
+        const avatarResult = await admin
+          .from("arena_player_avatars")
+          .upsert(
+            {
+              player_id: parsed.data.playerId,
+              storage_path: path,
+              updated_by: user.id,
+            },
+            { onConflict: "player_id" },
+          );
+        if (avatarResult.error) throw avatarResult.error;
+      } else {
+        const avatarResult = await admin
+          .from("arena_player_avatars")
+          .delete()
+          .eq("player_id", parsed.data.playerId);
+        if (avatarResult.error) throw avatarResult.error;
+        const removal = await admin.storage
+          .from(OFFICIAL_AVATAR_BUCKET)
+          .remove([path]);
+        if (removal.error) throw removal.error;
+      }
+      const auditResult = await admin.from("support_audit_log").insert({
+        support_user_id: user.id,
+        action: parsed.data.intent.replaceAll("-", "_"),
+        target_type: "official_player",
+        target_id: parsed.data.playerId,
+        ...(parsed.data.intent === "set-official-player-avatar"
+          ? { next_state: { storage_path: path } }
+          : { previous_state: { storage_path: path } }),
+        note:
+          parsed.data.internalNote ||
+          (parsed.data.intent === "set-official-player-avatar"
+            ? "Foto oficial atualizada pela Central de Suporte."
+            : "Foto oficial removida pela Central de Suporte."),
+      });
       if (auditResult.error) throw auditResult.error;
     } else if (parsed.data.intent === "create-arena-card") {
       const cardResult = await admin

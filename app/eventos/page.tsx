@@ -3,7 +3,10 @@ import { ArenaCardView } from "@/components/arena-card-view";
 import { PageHero } from "@/components/page-hero";
 import { SectionHeading } from "@/components/section-heading";
 import type { ArenaCard } from "@/lib/arena-card-types";
-import { getPublicArenaCards } from "@/lib/arena-cards-server";
+import {
+  getPublicArenaCards,
+  getPublicOfficialPlayers,
+} from "@/lib/arena-cards-server";
 import { createPageMetadata } from "@/lib/metadata";
 import { getPublicPlayerNicknames } from "@/lib/player-nicknames-server";
 import { DISCORD_URL } from "@/lib/site";
@@ -56,9 +59,10 @@ function groupHistory(cards: readonly ArenaCard[]) {
 }
 
 export default async function EventsPage() {
-  const [cards, nicknames] = await Promise.all([
+  const [cards, nicknames, players] = await Promise.all([
     getPublicArenaCards(),
     getPublicPlayerNicknames(),
+    getPublicOfficialPlayers(),
   ]);
   const currentCards = cards
     .filter((card) => card.status !== "finished")
@@ -94,7 +98,12 @@ export default async function EventsPage() {
           {currentCards.length > 0 ? (
             <div className="arena-cards-stack arena-cards-stack--schedule">
               {currentCards.map((card) => (
-                <ArenaCardView key={card.id} card={card} nicknames={nicknames} />
+                <ArenaCardView
+                  key={card.id}
+                  card={card}
+                  nicknames={nicknames}
+                  players={players}
+                />
               ))}
             </div>
           ) : (
@@ -140,6 +149,7 @@ export default async function EventsPage() {
                             card={card}
                             variant="history"
                             nicknames={nicknames}
+                            players={players}
                           />
                         </li>
                       );
