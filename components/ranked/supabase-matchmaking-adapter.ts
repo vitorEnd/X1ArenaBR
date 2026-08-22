@@ -156,7 +156,8 @@ async function getSnapshot(
 
   const userResult = await supabase.auth.getUser();
   throwIfAborted(signal);
-  if (userResult.error || !userResult.data.user) {
+  if (userResult.error) throw new Error(userResult.error.message);
+  if (!userResult.data.user) {
     return emptySnapshot(true, false);
   }
 
@@ -290,9 +291,7 @@ async function getSnapshot(
     queue = {
       state: stringValue(queueRow.status) === "matched" ? "match_found" : "searching",
       joinedAt,
-      searchExpandedAt: joinedAt
-        ? new Date(Date.parse(joinedAt) + 60_000).toISOString()
-        : null,
+      searchExpandedAt: null,
       playersSearching,
     };
   }
@@ -425,27 +424,29 @@ async function updateQueue(
   intent: "join" | "leave" | "heartbeat",
 ): Promise<RankedMutationResponse> {
   const supabase = createClient();
+  let matchFound = false;
 
   if (intent === "join") {
     const joinResult = await supabase.rpc("ranked_join_queue");
     assertResult(joinResult);
-    const matchResult = await supabase.rpc("ranked_try_matchmake");
+    const matchResult = await supabase.rpc("ranked_queue_tick");
     assertResult(matchResult);
+    matchFound = Boolean(matchResult.data);
+  } else if (intent === "heartbeat") {
+    const matchResult = await supabase.rpc("ranked_queue_tick");
+    assertResult(matchResult);
+    matchFound = Boolean(matchResult.data);
   } else {
     const entryId = await activeQueueEntryId(supabase);
-    const result = await supabase.rpc(
-      intent === "leave" ? "ranked_leave_queue" : "ranked_queue_heartbeat",
-      { p_queue_entry_id: entryId },
-    );
+    const result = await supabase.rpc("ranked_leave_queue", {
+      p_queue_entry_id: entryId,
+    });
     assertResult(result);
-    if (intent === "heartbeat") {
-      const matchResult = await supabase.rpc("ranked_try_matchmake");
-      assertResult(matchResult);
-    }
   }
 
   return {
     ok: true,
+    matchFound,
     message:
       intent === "join"
         ? "Busca iniciada."

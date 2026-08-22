@@ -174,9 +174,7 @@ export async function GET() {
       queue = {
         state: stringValue(queueRow.status) === "matched" ? "match_found" : "searching",
         joinedAt,
-        searchExpandedAt: joinedAt
-          ? new Date(Date.parse(joinedAt) + 60_000).toISOString()
-          : null,
+        searchExpandedAt: null,
         playersSearching: Number.isFinite(playersSearching) ? playersSearching : 0,
       };
     }

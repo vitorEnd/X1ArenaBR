@@ -23,11 +23,17 @@ export async function POST(request: Request) {
       throw new RankedRequestError("Finalize seu perfil ranked antes de entrar na fila.", 409);
     }
 
-    assertNoSupabaseError(await supabase.rpc("ranked_reconcile"));
+    let matchFound = false;
 
     if (payload.data.intent === "join") {
       assertNoSupabaseError(await supabase.rpc("ranked_join_queue"));
-      assertNoSupabaseError(await supabase.rpc("ranked_try_matchmake"));
+      const matchResult = await supabase.rpc("ranked_queue_tick");
+      assertNoSupabaseError(matchResult);
+      matchFound = Boolean(matchResult.data);
+    } else if (payload.data.intent === "heartbeat") {
+      const matchResult = await supabase.rpc("ranked_queue_tick");
+      assertNoSupabaseError(matchResult);
+      matchFound = Boolean(matchResult.data);
     } else {
       const { data: queueEntry, error } = await supabase
         .from("ranked_queue_entries")
@@ -42,24 +48,16 @@ export async function POST(request: Request) {
         throw new RankedRequestError("Você não está em uma fila ativa.", 409);
       }
 
-      if (payload.data.intent === "leave") {
-        assertNoSupabaseError(
-          await supabase.rpc("ranked_leave_queue", {
-            p_queue_entry_id: queueEntry.id,
-          }),
-        );
-      } else {
-        assertNoSupabaseError(
-          await supabase.rpc("ranked_queue_heartbeat", {
-            p_queue_entry_id: queueEntry.id,
-          }),
-        );
-        assertNoSupabaseError(await supabase.rpc("ranked_try_matchmake"));
-      }
+      assertNoSupabaseError(
+        await supabase.rpc("ranked_leave_queue", {
+          p_queue_entry_id: queueEntry.id,
+        }),
+      );
     }
 
     const response: RankedMutationResponse = {
       ok: true,
+      matchFound,
       message:
         payload.data.intent === "join"
           ? "Busca iniciada."

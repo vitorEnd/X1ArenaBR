@@ -26,6 +26,10 @@ const rankedMultiplierAndEventVotes = await readFile(
   new URL("20260821232722_ranked_multiplier_and_event_votes.sql", migrationRoot),
   "utf8",
 );
+const resilientRankedQueue = await readFile(
+  new URL("20260822002542_instant_resilient_ranked_queue.sql", migrationRoot),
+  "utf8",
+);
 
 test("keeps ranked persistence isolated from official tournament entities", () => {
   const allMigrations = `${schema}\n${rpcs}\n${security}`.toLowerCase();
@@ -44,6 +48,33 @@ test("matches any ranked MMR globally, including unplaced players", () => {
   assert.doesNotMatch(globalMatchmaking, /abs\(q\.effective_mmr - v_self\.effective_mmr\)/i);
   assert.doesNotMatch(globalMatchmaking, /60 seconds/i);
   assert.match(globalMatchmaking, /order by q\.joined_at, q\.id/i);
+});
+
+test("matches the next eligible player immediately without an MMR window", () => {
+  assert.doesNotMatch(
+    resilientRankedQueue,
+    /abs\(q\.effective_mmr - v_self\.effective_mmr\)/i,
+  );
+  assert.doesNotMatch(resilientRankedQueue, /interval '60 seconds'/i);
+  assert.match(
+    resilientRankedQueue,
+    /perform pg_advisory_xact_lock\(1096301645, 1\)/i,
+  );
+  assert.match(resilientRankedQueue, /order by q\.joined_at, q\.id/i);
+});
+
+test("keeps a resilient queue lease and renews it through one atomic tick", () => {
+  const twoMinuteLease =
+    /heartbeat_at [<>]=? clock_timestamp\(\) - interval '2 minutes'/gi;
+  assert.equal([...resilientRankedQueue.matchAll(twoMinuteLease)].length, 3);
+  assert.match(
+    resilientRankedQueue,
+    /create or replace function public\.ranked_queue_tick\(\)[\s\S]*set heartbeat_at = clock_timestamp\(\)[\s\S]*return public\.ranked_try_matchmake\(\)/i,
+  );
+  assert.match(
+    resilientRankedQueue,
+    /grant execute on function public\.ranked_queue_tick\(\)[\s\S]*to authenticated/i,
+  );
 });
 
 test("uses database guards for one active match and one MMR result", () => {

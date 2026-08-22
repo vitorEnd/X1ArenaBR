@@ -267,9 +267,7 @@ export function MatchmakingDashboard() {
                 </div>
                 <h2 id="queue-title">Buscando adversário</h2>
                 <p aria-live="polite">
-                  {queue?.searchExpandedAt && authoritativeNow >= new Date(queue.searchExpandedAt).getTime()
-                    ? "Busca global expandida: qualquer MMR elegível pode ser encontrado."
-                    : "Primeiro minuto: priorizando rivais com MMR próximo ao seu."}
+                  Fila global imediata: o próximo jogador elegível entra no confronto.
                 </p>
                 <button type="button" className={styles.dangerButton} disabled={busy || Boolean(foundMatch)} onClick={() => void updateQueue("leave")}>
                   Cancelar busca
@@ -380,7 +378,7 @@ export function MatchmakingDashboard() {
               <span className={styles.microLabel}>Fila competitiva</span>
               <h2 className={styles.panelTitle}>Pronto para o próximo X1?</h2>
               <p className={styles.placementCopy}>
-                A busca começa por MMR próximo e abre para toda a fila após um minuto.
+                Se houver outro jogador na fila, a partida é criada imediatamente.
               </p>
               <div className={styles.queueAvailability} aria-live="polite">
                 <Users size={18} aria-hidden="true" />
@@ -485,7 +483,7 @@ export function RankLadder() {
           ))}
         </div>
         <div className={styles.rankedRules}>
-          <div><Search aria-hidden="true" /><strong>60 segundos</strong><span>por MMR próximo</span></div>
+          <div><Search aria-hidden="true" /><strong>Match imediato</strong><span>com qualquer Elo</span></div>
           <div><Users aria-hidden="true" /><strong>Fila única</strong><span>sem categorias</span></div>
           <div><Gamepad2 aria-hidden="true" /><strong>X1 decisivo</strong><span>empate não existe</span></div>
           <div><ShieldCheck aria-hidden="true" /><strong>Resultado seguro</strong><span>com suporte AXB</span></div>

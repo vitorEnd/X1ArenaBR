@@ -221,18 +221,37 @@ export function useMatchmakingLiveController({
 
   useEffect(() => {
     if (snapshot?.queue?.state !== "searching") return;
+    let heartbeatRunning = false;
 
     const heartbeat = async () => {
+      if (heartbeatRunning) return;
+      heartbeatRunning = true;
       try {
-        await adapter.updateQueue("heartbeat");
+        const response = await adapter.updateQueue("heartbeat");
+        if (response.matchFound) await refresh();
       } catch {
-        // The short polling fallback will surface a persistent failure.
+        // A transient network failure must not remove a healthy local queue.
+      } finally {
+        heartbeatRunning = false;
       }
     };
 
+    const resumeHeartbeat = () => {
+      if (document.visibilityState === "visible") void heartbeat();
+    };
+
+    void heartbeat();
     const heartbeatInterval = setInterval(() => void heartbeat(), 10_000);
-    return () => clearInterval(heartbeatInterval);
-  }, [adapter, snapshot?.queue?.state]);
+    document.addEventListener("visibilitychange", resumeHeartbeat);
+    window.addEventListener("online", resumeHeartbeat);
+    window.addEventListener("focus", resumeHeartbeat);
+    return () => {
+      clearInterval(heartbeatInterval);
+      document.removeEventListener("visibilitychange", resumeHeartbeat);
+      window.removeEventListener("online", resumeHeartbeat);
+      window.removeEventListener("focus", resumeHeartbeat);
+    };
+  }, [adapter, refresh, snapshot?.queue?.state]);
 
   const mutate = useCallback(
     async (operation: () => Promise<RankedMutationResponse>) => {

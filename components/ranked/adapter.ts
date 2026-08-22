@@ -379,6 +379,7 @@ export type RankedSupportIntent =
 export interface RankedMutationResponse {
   readonly ok: boolean;
   readonly message: string;
+  readonly matchFound?: boolean;
 }
 
 export class RankedApiError extends Error {
